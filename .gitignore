@@ -7,7 +7,7 @@ Wallet/
 instantclient_23_4/
 # C extensions
 *.so
-
+dumpdata.json
 # Distribution / packaging
 .Python
 build/
