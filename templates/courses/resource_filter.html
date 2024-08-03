@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Filtered Resources{% endblock %}
+
+{% block content %}
+<h2 class="text-3xl font-bold mb-4">Filtered Resources</h2>
+{% if resources %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {% for resource in resources %}
+        <div class="bg-white p-4 rounded-lg shadow">
+            <h4 class="text-xl font-bold mb-2">{{ resource.title }}</h4>
+            <p class="text-gray-700">{{ resource.description }}</p>
+            <p class="text-gray-600">Type: {{ resource.get_resource_type_display }}</p>
+            <a href="{{ resource.file.url }}" class="text-blue-500 hover:underline mt-2 block">Download</a>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-gray-700">No resources found for the given query.</p>
+{% endif %}
+<a href="{% url 'home' %}" class="text-blue-500 hover:underline mt-4 block">Go back to Home</a>
+{% endblock %}

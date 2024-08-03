@@ -1,0 +1,39 @@
+<!-- search_results.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<main class="min-h-[100vh] bg-[url('https://flowbite.s3.amazonaws.com/docs/jumbotron/hero-pattern-dark.svg')]">
+    <div
+        class="flex min-h-[80vh] flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+
+        <h1 class="text-3xl font-bold mb-6">Search Results for "{{ query }}"</h1>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Subjects</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for subject in subjects %}
+                {%url 'subject_detail' subject.slug as url%}
+                {%include "courses/components/subject_card_hero.html" with url=url subject=subject%}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Resources</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for resource in resources %}
+                <div
+                    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ resource.title }}</h3>
+                    <p class="text-gray-700 dark:text-gray-400">{{ resource.description }}</p>
+                    <a href="{% url 'resource_view' resource.slug %}" class="text-blue-700 dark:text-blue-400">View
+                        Resource</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
+    </div>
+</main>
+{% endblock %}

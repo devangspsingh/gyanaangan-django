@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ stream.name }}{% endblock %}
+
+{% block content %}
+
+<section id="stream"
+    class="min-h-[100vh] bg-[url('https://flowbite.s3.amazonaws.com/docs/jumbotron/hero-pattern-dark.svg')]">
+    <div
+        class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+        <div>
+            <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{stream.name}} {{s}}</h1>
+            <p class="my-4 text-lg text-gray-400">Browse a variety of courses, subjects, and resources to enhance
+                your
+                knowledge. Browse a variety of courses, subjects, and resources to enhance your knowledge. Browse a
+                variety of courses, subjects, and resources to enhance your knowledge.</p>
+        </div>
+        <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
+            {% for year in years %}
+            {% url 'year_detail' course.slug stream.slug year.slug as url %}
+            {% include "courses/components/year_card.html" with subject=subject course=course year=year %}
+            {% endfor %}
+        </div>
+
+
+
+    </div>
+    <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
+    </div>
+</section>
+{% endblock %}

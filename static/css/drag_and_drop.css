@@ -1,0 +1,45 @@
+.drag-and-drop-zone {
+    position: relative;
+    border: 2px dashed #4a90e2;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    background-color: #f0f8ff;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.drag-and-drop-zone .drop-area {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.7;
+    background-color: rgba(74, 144, 226, 0.2);
+    transition: opacity 0.3s ease;
+}
+
+.drag-and-drop-zone input[type="file"] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.drag-and-drop-zone.drag-over {
+    background-color: #e0f7fa;
+    border-color: #1e88e5;
+}
+
+.drag-and-drop-zone .drop-area.drag-over {
+    opacity: 1;
+    background-color: rgba(30, 136, 229, 0.3);
+}

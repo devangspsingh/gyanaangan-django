@@ -1,0 +1,88 @@
+<div
+    class="w-full overflow-hidden items-stretch justify-between flex flex-col gap-2 h-full mx-auto border rounded-lg shadow-md bg-stone-800 border-gray-700 p-6 transition-transform transform">
+
+    <div class="flex w-full justify-between items-start">
+        <h2 class="text-xl font-bold text-white mb-4">
+            <a href="{{url}}" class="hover:underline">{{subject.name}}</a>
+        </h2>
+
+        {%comment%}
+        <div class="relative">
+            <button data-popover-target="popover-{{subject.id}}" data-popover-placement="bottom-end"
+                data-popover-trigger="click" type="button"><svg class="w-5 h-5 ms-2 text-gray-400 hover:text-gray-500"
+                    aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                        clip-rule="evenodd"></path>
+                </svg><span class="sr-only">Show information</span>
+            </button>
+
+            <div data-popover id="popover-{{subject.id}}" role="tooltip"
+                class="absolute z-10 inline-block w-64 text-sm transition-opacity duration-300 border rounded-lg shadow-sm opacity-0 text-gray-400 border-gray-600 bg-gray-800">
+
+                <div class="px-3 py-2 border-b rounded-t-lg border-gray-600 bg-gray-700">
+                    <h3 class="font-semibold text-white">Description</h3>
+                </div>
+                <div class="px-3 py-2">
+                    <p>{{subject.description}}</p>
+                </div>
+
+                <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
+                    {% for type in subject.get_all_available_resource_types %}
+                    <li class="bg-yellow-700 text-white rounded-2xl px-3">{{type|upper}}</li>
+                    {% endfor %}
+                </ul>
+
+                <div data-popper-arrow></div>
+            </div>
+
+
+            <div class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-black dark:bg-gray-700 dark:border-gray-600 z-10"
+                id="popover-content">
+                <p>{{subject.description}}</p>
+                <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
+                    {% for type in subject.get_all_available_resource_types %}
+                    <li class="bg-yellow-700 text-white rounded-2xl px-3">{{type|upper}}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {%endcomment%}
+    </div>
+
+    <div>
+        {{subject.description}}
+    </div>
+    <div>
+        <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
+            {% for type in subject.get_all_available_resource_types %}
+            <li class="bg-stone-700 text-white rounded-2xl px-3 p-0.5">{{type|upper}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="flex flex-wrap items-center text-sm justify-between mt-2">
+        <time class="rounded-full text-gray-400 font-bold">
+            {{subject.get_last_updated_resource.status }}</time>
+        <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group">
+            <a href="{{url}}" title="{{subject.name}} subject"
+                class="text-blue-400 hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                Explore Subject
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                    <path fill-rule="evenodd"
+                        d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <div
+        class="-z-10 transition-all duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px]">
+        <div
+            class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
+        </div>
+    </div>
+
+</div>

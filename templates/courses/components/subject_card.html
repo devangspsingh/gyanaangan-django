@@ -1,0 +1,73 @@
+<!-- group_card.html -->
+<div
+    class="overflow-hidden w-full sm:max-w-lg bg-stone-800 border rounded-lg p-5 border-gray-700 transform transition-all ease-in-out">
+    <div class="flex justify-between gap-1 items-start">
+        <h2 class="block w-full text-xl font-bold flex-grow">
+            <a href="{{url}}" class="w-full block">{{subject.name}}</a>
+        </h2>
+        <button class="block p-2 -mt-1 -mr-2" aria-expanded="false" aria-controls="disclosure-panel"
+            onclick="toggleDisclosure(this)">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="hidden flex-wrap transition duration-200 ease-out transform scale-95 opacity-0" id="disclosure-panel">
+        <a href="{{url}}">
+            <p>{{subject.description}}</p>
+            <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
+                {% for type in subject.get_all_available_resource_types %}
+                <li class="bg-yellow-700 rounded-2xl px-3">{{type|upper}}</li>
+                {% endfor %}
+            </ul>
+        </a>
+    </div>
+
+    <div class="flex flex-wrap text-sm justify-between mt-2">
+        <time class="rounded-full text-gray-400 font-bold">{{ subject.get_last_updated_resource.status }}</time>
+
+        <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group">
+            <a href="{{url}}" title="{{subject.name}} subject"
+                class="text-blue-400 hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                Explore Subject
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                    <path fill-rule="evenodd"
+                        d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
+
+    </div>
+    <div
+        class="-z-10 transition-all duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px]">
+        <div
+            class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDisclosure(button) {
+        const panel = button.parentElement.nextElementSibling;
+        const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+        button.setAttribute('aria-expanded', !isExpanded);
+        if (!isExpanded) {
+            panel.classList.remove('hidden');
+            setTimeout(() => {
+                panel.classList.remove('scale-95', 'opacity-0');
+                panel.classList.add('scale-100', 'opacity-100');
+            }, 10); // Slight delay to ensure the transition is visible
+        } else {
+            panel.classList.remove('scale-100', 'opacity-100');
+            panel.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                panel.classList.add('hidden');
+            }, 200); // Match the transition duration
+        }
+    }
+</script>

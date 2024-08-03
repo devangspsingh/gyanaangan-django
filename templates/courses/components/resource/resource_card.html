@@ -1,0 +1,99 @@
+<div
+    class="w-full overflow-hidden items-stretch justify-between flex flex-col gap-2 h-full mx-auto border rounded-lg shadow-md bg-stone-800 border-gray-700 p-6 transition-transform transform">
+    <div class="flex w-full justify-between items-start">
+        <div class="flex items-center gap-2">
+            <div class="flex justify-center w-6">
+                {% if item.type == "pyq" %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-6 h-6" viewBox="0 0 16 16">
+                    <path
+                        d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1" />
+                    <text x="50%" y="50%" font-family="Arial" font-size="4.5" font-weight="bold" fill="#fff"
+                        text-anchor="middle" dominant-baseline="middle">PYQ</text>
+                </svg>
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-6 h-6" viewBox="0 0 16 16">
+                    <path
+                        d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1" />
+                    <path
+                        d="M4.603 12.087a.8.8 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.7 7.7 0 0 1 1.482-.645 20 20 0 0 0 1.062-2.227 7.3 7.3 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .477.365c.088.164.12.356.127.538.007.187-.012.395-.047.614-.084.51-.27 1.134-.52 1.794a11 11 0 0 0 .98 1.686 5.8 5.8 0 0 1 1.334.05c.364.065.734.195.96.465.12.144.193.32.2.518.007.192-.047.382-.138.563a1.04 1.04 0 0 1-.354.416.86.86 0 0 1-.51.138c-.331-.014-.654-.196-.933-.417a5.7 5.7 0 0 1-.911-.95 11.6 11.6 0 0 0-1.997.406 11.3 11.3 0 0 1-1.021 1.51c-.29.35-.608.655-.926.787a.8.8 0 0 1-.58.029m1.379-1.901q-.25.115-.459.238c-.328.194-.541.383-.647.547-.094.145-.096.25-.04.361q.016.032.026.044l.035-.012c.137-.056.355-.235.635-.572a8 8 0 0 0 .45-.606m1.64-1.33a13 13 0 0 1 1.01-.193 12 12 0 0 1-.51-.858 21 21 0 0 1-.5 1.05zm2.446.45q.226.244.435.41c.24.19.407.253.498.256a.1.1 0 0 0 .07-.015.3.3 0 0 0 .094-.125.44.44 0 0 0 .059-.2.1.1 0 0 0-.026-.063c-.052-.062-.2-.152-.518-.209a4 4 0 0 0-.612-.053zM8.078 5.8a7 7 0 0 0 .2-.828q.046-.282.038-.465a.6.6 0 0 0-.032-.198.5.5 0 0 0-.145.04c-.087.035-.158.106-.196.283-.04.192-.03.469.046.822q.036.167.09.346z" />
+                </svg>
+                {% endif %}
+            </div>
+            <h1 class="font-semibold text-white hover:text-blue-400">
+                {%if slugs%}
+                <a
+                    href="{% url 'resource_view_all_detail' slugs.course_slug slugs.stream_slug slugs.year_slug slugs.subject_slug item.slug %}">
+                    {{item.title }} - {{ item.type | upper }}
+                </a>
+                {%else%}
+                <a href="{% url 'resource_view' item.slug %}">
+                    {{item.title }} - {{ item.type | upper }}
+                </a>
+                {%endif%}
+            </h1>
+        </div>
+
+    </div>
+
+    <div class="flex flex-wrap items-center text-sm justify-between mt-2">
+        <time class="rounded-full text-gray-400 font-bold">{{ item.get_last_updated_at.status }}</time>
+        <div class="flex items-center gap-6">
+            <div class="flex justify-center w-6">
+                {%if slugs%}
+                <a
+                    href="{% url 'resource_view_all_detail' slugs.course_slug slugs.stream_slug slugs.year_slug slugs.subject_slug item.slug %}">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 4.5 12 4.5c4.477 0 8.268 3.443 9.542 7.5-1.274 4.057-5.065 7.5-9.542 7.5-4.477 0-8.268-3.443-9.542-7.5z" />
+                    </svg>
+                </a>
+                {%else%}
+                <a href="{% url 'resource_view' item.slug %}">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 4.5 12 4.5c4.477 0 8.268 3.443 9.542 7.5-1.274 4.057-5.065 7.5-9.542 7.5-4.477 0-8.268-3.443-9.542-7.5z" />
+                    </svg>
+                </a>
+                {%endif%}
+
+            </div>
+            <div class="flex justify-center w-6">
+                {% if "download" in item.privacy %}
+                <a target="_blank" href="{{ item.file.url }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hover:fill-yellow-100" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                        <path
+                            d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                    </svg>
+                </a>
+                {% else %}
+                <span title="download is not allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-400 pointer-events-none opacity-60"
+                        fill="currentColor" viewBox="0 0 16 16">
+                        <path
+                            d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                        <path
+                            d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                        <line x1="0" y1="0" x2="16" y2="16" stroke="gray" stroke-width="1.5" />
+                    </svg>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="transition-all -z-10 duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px]">
+        <div
+            class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
+        </div>
+    </div>
+</div>

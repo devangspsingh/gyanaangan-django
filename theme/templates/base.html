@@ -1,0 +1,89 @@
+{% load static tailwind_tags %}
+{% load breadcrumbs %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>{%block title%}{%endblock title%}</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	{% tailwind_css %}
+	{%block meta%}
+	{%endblock meta%}
+	<style>
+		.printable {
+			display: none;
+		}
+
+		@media print {
+			.container {
+				display: none !important;
+			}
+
+			.printable {
+				display: block !important;
+				text-align: center;
+				font-size: 24px;
+				color: red;
+			}
+		}
+
+		/* Custom scrollbar styles */
+		::-webkit-scrollbar {
+			width: 8px;
+			/* Adjust the width of the scrollbar */
+			height: 4px;
+			/* Adjust the height of the scrollbar for horizontal scrolling */
+		}
+
+		::-webkit-scrollbar-thumb {
+			background-color: #888;
+			/* Color of the scrollbar thumb */
+			border-radius: 10px;
+			/* Roundness of the scrollbar thumb */
+			border: 2px solid #555;
+			/* Border around the scrollbar thumb */
+		}
+
+		::-webkit-scrollbar-thumb:hover {
+			background-color: #555;
+			/* Color of the scrollbar thumb when hovered */
+		}
+
+		::-webkit-scrollbar-track {
+			background-color: #f1f1f1;
+			/* Color of the scrollbar track */
+			border-radius: 10px;
+			/* Roundness of the scrollbar track */
+			border: 2px solid #ccc;
+			/* Border around the scrollbar track */
+		}
+	</style>
+</head>
+
+<body class="bg-gray-950">
+	<div>
+		<div class="p-2">
+			{% include 'courses/header.html' %}
+		</div>
+		<div class="p-2 py-0">
+			{% show_breadcrumbs %}
+		</div>
+	</div>
+
+	<div class="container mx-auto py-4 text-gray-100">
+		{% block content %}{% endblock %}
+	</div>
+	{% include 'courses/footer.html' %}
+
+	<div class="printable">
+		<p>🚫 Oops! This page doesn't like printers. 😊<br> Please enjoy it online!</p>
+	</div>
+
+	{%block script%}
+	{%endblock script%}
+	<script src="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.js"></script>
+</body>
+
+</html>
