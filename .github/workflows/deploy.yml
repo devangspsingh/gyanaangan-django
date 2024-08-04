@@ -25,10 +25,8 @@ jobs:
           git pull origin main  # Pull the latest changes from the repository
           source /home/ubuntu/gyanaangan-django/venv/bin/activate  # Activate virtual environment if needed
           
-          # Check if requirements.txt has changed and update dependencies
-          if [ -n "$(git diff origin/main HEAD -- requirements.txt)" ]; then
-            pip install -r requirements.txt
-          fi
+
+          pip install -r requirements.txt
 
           python manage.py makemigrations
           python manage.py migrate
