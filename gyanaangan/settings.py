@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.forms",
     "storages",
     "multiselectfield",
+     'analytical',
     "courses",
     "core",
     "tailwind",
@@ -202,3 +203,5 @@ class PrivateMediaStorage(S3Boto3Storage):
 
 # Set the default file storage to private
 DEFAULT_FILE_STORAGE = "gyanaangan.settings.PublicMediaStorage"
+
+GOOGLE_ANALYTICS_GTAG_PROPERTY_ID = os.getenv("G_TAG")

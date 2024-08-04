@@ -1,11 +1,13 @@
 {% load static tailwind_tags %}
 {% load breadcrumbs %}
+{% load analytical %}
 <!DOCTYPE html>
 <html lang="en">
 
 
 
 <head>
+
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{{ title|default:default_full_title }}</title>
@@ -16,16 +18,16 @@
 	<meta property="og:site_name" content="{{ site_name|default:default_site_name }}">
 
 	<!-- Favicon and App Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'favicons/apple-touch-icon.png' %}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicons/favicon-32x32.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicons/favicon-16x16.png' %}">
-    <link rel="manifest" href="{% static 'favicons/site.webmanifest' %}">
-    <link rel="shortcut icon" href="{% static 'favicons/favicon.ico' %}">
-    <meta name="apple-mobile-web-app-title" content="Gyan Aangan">
-    <meta name="application-name" content="Gyan Aangan">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
-
+	<link rel="apple-touch-icon" sizes="180x180" href="{% static 'favicons/apple-touch-icon.png' %}">
+	<link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicons/favicon-32x32.png' %}">
+	<link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicons/favicon-16x16.png' %}">
+	<link rel="manifest" href="{% static 'favicons/site.webmanifest' %}">
+	<link rel="shortcut icon" href="{% static 'favicons/favicon.ico' %}">
+	<meta name="apple-mobile-web-app-title" content="Gyan Aangan">
+	<meta name="application-name" content="Gyan Aangan">
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="theme-color" content="#ffffff">
+	{% analytical_head_bottom %}
 	{% tailwind_css %}
 	{%block meta%}
 	{%endblock meta%}
@@ -78,9 +80,16 @@
 			/* Border around the scrollbar track */
 		}
 	</style>
+	{% with analytical_identity=request.user.uuid|default:None %}
+	{% analytical_head_top %}
+	{% endwith %}
+	{% analytical_head_bottom %}
+
 </head>
 
 <body class="bg-gray-950">
+	{% analytical_body_top %}
+
 	<div>
 		<div class="p-2">
 			{% include 'courses/header.html' %}
@@ -102,6 +111,7 @@
 	{%block script%}
 	{%endblock script%}
 	<script src="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.js"></script>
+	{% analytical_body_bottom %}
 </body>
 
 </html>
