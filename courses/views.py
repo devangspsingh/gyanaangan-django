@@ -40,9 +40,9 @@ def search(request):
 
 
 def home(request):
-    courses = Course.published.all()
+    courses = Course.published.all()[:5]
     subjects = Subject.published.all().order_by("-last_resource_updated_at")[:5]
-    resources = Resource.published.all()
+    resources = Resource.published.all()[:5]
     latest_notification = (
         Notification.published.filter(show_until__gt=timezone.now())
         .order_by("-created_at")

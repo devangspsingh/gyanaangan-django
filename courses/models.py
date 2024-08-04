@@ -42,6 +42,7 @@ class SEOModel(BaseModel):
 
     class Meta:
         abstract = True
+        ordering =['-updated_at']
 
     def generate_og_image_svg(self) -> str:
         """Generate the SVG for the Open Graph image as a string"""
