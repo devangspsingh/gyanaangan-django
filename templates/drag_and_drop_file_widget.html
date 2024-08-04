@@ -1,0 +1,15 @@
+<div class="drag-and-drop-zone relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+    <input type="file" name="{{ widget.name }}" id="{{ widget.attrs.id }}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+    <div class="drop-area absolute inset-0 flex items-center justify-center bg-gray-100 opacity-75">
+        <p class="text-gray-600">Drag & drop a file here or click to select a file.</p>
+    </div>
+</div>
+<div id="{{ widget.attrs.id }}-file-details" class="file-details mt-4 text-center {% if not widget.value %}hidden{% endif %}">
+    {% if widget.value %}
+        <p class="text-gray-700">File: <span id="{{ widget.attrs.id }}-file-name">{{ widget.value.name }}</span></p>
+        <a id="{{ widget.attrs.id }}-file-link" href="{{ widget.value.url }}" class="text-blue-500" target="_blank">View File</a>
+    {% else %}
+        <p class="text-gray-700">File: <span id="{{ widget.attrs.id }}-file-name"></span></p>
+        <a id="{{ widget.attrs.id }}-file-link" href="#" class="text-blue-500 hidden" target="_blank">View File</a>
+    {% endif %}
+</div>

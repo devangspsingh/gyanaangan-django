@@ -1,0 +1,40 @@
+<svg width="1200" height="628" viewBox="0 0 1200 628" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <rect width="1200" height="628" fill="url(#paint0_linear_1_2)" />
+
+    <text fill="white" xml:space="preserve" style="white-space: pre" font-weight="700" font-size="80">
+        <tspan x="75" y="120">Bachelor of Technology</tspan>
+    </text>
+
+    <g filter="url(#filter0_dd_1_2)">
+        <rect x="75" y="370" width="146" height="146" fill="url(#pattern0_1_2)" shape-rendering="crispEdges" />
+    </g>
+    <text fill="white" xml:space="preserve" font-size="80" letter-spacing="0em">
+        <tspan x="250" y="471.591">Gyan Aangan</tspan>
+    </text>
+    <defs>
+        <filter id="filter0_dd_1_2" x="71" y="370" width="154" height="154" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+            <feOffset dy="4" />
+            <feGaussianBlur stdDeviation="2" />
+            <feComposite in2="hardAlpha" operator="out" />
+            <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0" />
+            <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_2" />
+            <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+            <feOffset dy="4" />
+            <feGaussianBlur stdDeviation="2" />
+            <feComposite in2="hardAlpha" operator="out" />
+            <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0" />
+            <feBlend mode="normal" in2="effect1_dropShadow_1_2" result="effect2_dropShadow_1_2" />
+            <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_1_2" result="shape" />
+        </filter>
+        <pattern id="pattern0_1_2" patternContentUnits="objectBoundingBox" width="1" height="1">
+            <use xlink:href="#image0_1_2" transform="scale(0.00290698)" />
+        </pattern>
+        <linearGradient id="paint0_linear_1_2" x1="592.5" y1="147.554" x2="592.5" y2="572" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#1F2B3E" />
+            <stop offset="1" />
+        </linearGradient>
+        <image id="image0_1_2" xlink:href="https://media.dspsc.live/djangotest/public/logo%20white.png" width="344" height="344" />
+    </defs>
+</svg>

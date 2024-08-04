@@ -23,11 +23,11 @@
                 {%if slugs%}
                 <a
                     href="{% url 'resource_view_all_detail' slugs.course_slug slugs.stream_slug slugs.year_slug slugs.subject_slug item.slug %}">
-                    {{item.title }} - {{ item.type | upper }}
+                    {{item.name }} - {{ item.type | upper }}
                 </a>
                 {%else%}
                 <a href="{% url 'resource_view' item.slug %}">
-                    {{item.title }} - {{ item.type | upper }}
+                    {{item.name }} - {{ item.type | upper }}
                 </a>
                 {%endif%}
             </h1>
@@ -61,7 +61,10 @@
                     </svg>
                 </a>
                 {%endif%}
-
+                {%if item.og_image%}
+                <a target="_blank" href="{{item.og_image.url}}">asd</a>
+            
+                {%endif%}
             </div>
             <div class="flex justify-center w-6">
                 {% if "download" in item.privacy %}

@@ -11,10 +11,17 @@ from .models import (
     Year,
     EducationalYear,
     Advertisement,
+    Notification,
 )
 from .forms import CourseForm, StreamForm, SubjectForm, ResourceForm
-from .forms import ResourceForm
 from django.utils.translation import gettext_lazy as _
+
+
+def generate_og_images(modeladmin, request, queryset):
+    for obj in queryset:
+        obj.write_og_image()
+        obj.save(update_fields=["og_image"])
+    modeladmin.message_user(request, "OG images have been generated successfully.")
 
 
 def make_published(modeladmin, request, queryset):
@@ -37,7 +44,11 @@ class BaseModelAdmin(admin.ModelAdmin):
     search_fields = ["id"]
     ordering = ["id"]
     date_hierarchy = "created_at"
-    actions = [make_published, make_draft]
+    actions = [
+        make_published,
+        make_draft,
+        generate_og_images,
+    ]  # Add the generate_og_images action
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return self.model.objects.get_queryset()
@@ -79,7 +90,7 @@ class CourseAdmin(BaseModelAdmin):
                     "description",
                     "meta_description",
                     "keywords",
-                    "image",
+                    "og_image",
                 ),
             },
         ),
@@ -96,7 +107,7 @@ class StreamAdmin(BaseModelAdmin):
     search_fields = ["name", "abbreviation", "common_name", "slug"]
     list_filter = ["status", "courses"]
     fieldsets = (
-        (None, {"fields": ("name", "slug", "status", "courses","years")}),
+        (None, {"fields": ("name", "slug", "status", "courses", "years")}),
         (
             "Additional Info",
             {
@@ -107,7 +118,7 @@ class StreamAdmin(BaseModelAdmin):
                     "description",
                     "meta_description",
                     "keywords",
-                    "image",
+                    "og_image",
                 ),
             },
         ),
@@ -124,7 +135,7 @@ class SubjectAdmin(BaseModelAdmin):
     search_fields = ["name", "abbreviation", "common_name", "slug"]
     list_filter = ["status", "stream"]
     fieldsets = (
-        (None, {"fields": ("name", "slug", "status", "stream","years")}),
+        (None, {"fields": ("name", "slug", "status", "stream", "years")}),
         (
             "Additional Info",
             {
@@ -135,7 +146,7 @@ class SubjectAdmin(BaseModelAdmin):
                     "description",
                     "meta_description",
                     "keywords",
-                    "image",
+                    "og_image",
                 ),
             },
         ),
@@ -148,11 +159,11 @@ class SubjectAdmin(BaseModelAdmin):
 @admin.register(Resource)
 class ResourceAdmin(BaseModelAdmin):
     form = ResourceForm
-    list_display = ["title", "resource_type", "slug", "status", "educational_year"]
-    search_fields = ["title", "resource_type", "slug"]
+    list_display = ["name", "resource_type", "slug", "status", "educational_year"]
+    search_fields = ["name", "resource_type", "slug"]
     list_filter = ["status", "resource_type", "subject", "educational_year"]
     fieldsets = (
-        (None, {"fields": ("title", "slug", "resource_type", "status")}),
+        (None, {"fields": ("name", "slug", "resource_type", "status")}),
         (
             "File and Links",
             {"fields": ("file", "privacy", "embed_link", "description")},
@@ -162,7 +173,7 @@ class ResourceAdmin(BaseModelAdmin):
             "Additional Info",
             {
                 "classes": ("collapse",),
-                "fields": ("meta_description", "keywords", "image"),
+                "fields": ("meta_description", "keywords", "og_image"),
             },
         ),
     )
@@ -172,33 +183,54 @@ class ResourceAdmin(BaseModelAdmin):
 
 
 @admin.register(Advertisement)
-class AdvertisementAdmin(BaseModelAdmin):
+class AdvertisementAdmin(admin.ModelAdmin):
     list_display = ["title", "content", "url"]
     search_fields = ["title", "content", "url"]
-    
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return self.model.objects.get_queryset()
 
-from django.contrib import admin
-from .models import Notification
+    actions = [
+        make_published,
+        make_draft,
+    ]
 
-class NotificationAdmin(BaseModelAdmin):
-    list_display = ('title', 'importance', 'tags', 'status', 'created_at', 'updated_at')
-    list_filter = ('status', 'importance', 'tags', 'created_at')
-    search_fields = ('title', 'message')
 
-# SpecialPageAdmin class
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("title", "importance", "tags", "status", "created_at", "updated_at")
+    list_filter = ("status", "importance", "tags", "created_at")
+    search_fields = ("title", "message")
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return self.model.objects.get_queryset()
+
+    actions = [
+        make_published,
+        make_draft,
+    ]  # Add the generate_og_images action
+
+
+@admin.register(SpecialPage)
 class SpecialPageAdmin(BaseModelAdmin):
     list_display = ["course", "stream", "year", "status", "updated_at"]
     search_fields = ["course__name", "stream__name", "year__year"]
     list_filter = ["status", "course", "stream", "year"]
     fieldsets = (
         (None, {"fields": ("course", "stream", "year", "status")}),
-        ("Additional Info", {
-            "classes": ("collapse",),
-            "fields": ("description", "meta_description", "keywords", "image", "notifications"),
-        }),
+        (
+            "Additional Info",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "description",
+                    "meta_description",
+                    "keywords",
+                    "og_image",
+                    "notifications",
+                ),
+            },
+        ),
     )
+
+
 admin.site.register(Notification, NotificationAdmin)
-admin.site.register(SpecialPage, SpecialPageAdmin)

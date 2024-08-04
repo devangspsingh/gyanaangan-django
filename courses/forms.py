@@ -32,7 +32,7 @@ class SubjectForm(UniqueSlugForm):
 class ResourceForm(UniqueSlugForm):
     class Meta:
         model = Resource
-        fields = ['title', 'slug', 'resource_type', 'status', 'file', 'privacy', 'embed_link', 'description', 'subject', 'educational_year', 'meta_description', 'keywords', 'image']
+        fields = ['name', 'slug', 'resource_type', 'status', 'file', 'privacy', 'embed_link', 'description', 'subject', 'educational_year', 'meta_description', 'keywords', 'og_image']
         widgets = {
             'file': DragAndDropFileWidget(),
         }

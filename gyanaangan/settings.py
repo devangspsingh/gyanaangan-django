@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS =os.getenv("ALLOWED_HOSTS").split(",") if not DEBUG else ["*"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",") if not DEBUG else ["*"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -37,9 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.forms",
     "storages",
     "multiselectfield",
     "courses",
+    "core",
     "tailwind",
     "theme",
     "django_browser_reload",
@@ -70,6 +72,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.seo_defaults",
             ],
         },
     },
@@ -145,6 +148,8 @@ INTERNAL_IPS = [
 ]
 NPM_BIN_PATH = "npm.cmd"
 
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
+
 # MinIO configuration
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
@@ -176,3 +181,24 @@ LOGGING = {
         },
     },
 }
+
+# Public media settings
+from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class PublicMediaStorage(S3Boto3Storage):
+    location = "public"
+    default_acl = "public-read"
+    file_overwrite = False
+    querystring_auth = False
+
+
+class PrivateMediaStorage(S3Boto3Storage):
+    location = ""
+    default_acl = "private"
+    file_overwrite = False
+    querystring_auth = True
+
+
+# Set the default file storage to private
+DEFAULT_FILE_STORAGE = "gyanaangan.settings.PublicMediaStorage"

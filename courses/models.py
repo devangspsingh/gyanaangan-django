@@ -2,8 +2,12 @@ from django.db import models
 from django.utils.text import slugify
 from django.db.models import Max
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime, timedelta
 from multiselectfield import MultiSelectField
+import io
+import cairosvg
+from django.template.loader import render_to_string
+from gyanaangan.settings import PrivateMediaStorage, PublicMediaStorage
 
 
 class BaseModel(models.Model):
@@ -33,16 +37,44 @@ class SEOModel(BaseModel):
     description = models.TextField(blank=True)
     meta_description = models.CharField(max_length=160, blank=True)
     keywords = models.CharField(max_length=200, blank=True)
-    image = models.ImageField(upload_to="images/", blank=True, null=True)
+    og_image = models.FileField(storage=PublicMediaStorage(), upload_to="og-image/", blank=True, null=True)
 
     class Meta:
         abstract = True
 
+    def generate_og_image_svg(self) -> str:
+        """Generate the SVG for the Open Graph image as a string"""
+        template_name = f"og-image.html"
+        return render_to_string(template_name, {"item": self.name})
+
+    def delete_previous_og_image(self):
+        """Delete the previous Open Graph image if it exists"""
+        if self.og_image:
+            self.og_image.delete(save=False)
+
+    def write_og_image(self) -> None:
+        """Write the Open Graph image to the storage as a PNG with versioning"""
+        if self.status == "published":
+            # Delete previous image
+            self.delete_previous_og_image()
+            
+            # Generate new image
+            png_filelike = io.BytesIO()
+            cairosvg.svg2png(
+                bytestring=self.generate_og_image_svg().encode(), write_to=png_filelike, unsafe=True
+            )
+            png_filelike.seek(0)
+            
+            # Versioned filename
+            version = int(datetime.timestamp(datetime.now()))
+            filename = f"{self.slug}_v{version}.png"
+            
+            self.og_image.save(filename, png_filelike, save=False)
 
 class Year(BaseModel):
     year = models.IntegerField()
     slug = models.SlugField(unique=True, blank=True)
-    name = models.CharField(max_length=10,blank=True,null=True)
+    name = models.CharField(max_length=10, blank=True, null=True)
     published = PublishedManager()
     objects = models.Manager()  # Default manager
 
@@ -105,9 +137,7 @@ class Subject(SEOModel):
     slug = models.SlugField(unique=True, blank=True)
     abbreviation = models.CharField(max_length=20, blank=True, null=True)
     common_name = models.CharField(max_length=100, blank=True, null=True)
-    stream = models.ManyToManyField(
-        Stream, related_name="subjects", blank=True
-    )
+    stream = models.ManyToManyField(Stream, related_name="subjects", blank=True)
     years = models.ManyToManyField(Year, related_name="subjects")
     last_resource_updated_at = models.DateTimeField(
         null=True, blank=True
@@ -188,12 +218,12 @@ class Resource(SEOModel):
         ("view", "View"),
     )
 
-    title = models.CharField(max_length=200, db_index=True)
+    name = models.CharField(max_length=200, db_index=True)
     slug = models.SlugField(unique=True, blank=True)
     resource_type = models.CharField(
         max_length=20, choices=RESOURCE_TYPE_CHOICES, db_index=True
     )
-    file = models.FileField(upload_to="resources/")
+    file = models.FileField(storage=PrivateMediaStorage, upload_to="resources/")
 
     privacy = MultiSelectField(choices=RESOURCE_PRIVACY_CHOICES, default=["view"])
 
@@ -219,11 +249,11 @@ class Resource(SEOModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(self.name)
         super(Resource, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title} - {self.resource_type}"
+        return f"{self.name} - {self.resource_type}"
 
     @property
     def type(self):
@@ -295,11 +325,20 @@ class Notification(BaseModel):
             return timezone.now() < self.show_until
         return True
 
+
 class SpecialPage(SEOModel):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='special_page')
-    stream = models.ForeignKey(Stream, on_delete=models.CASCADE, related_name='special_page')
-    year = models.ForeignKey(Year, on_delete=models.CASCADE, related_name='special_page')
-    notifications = models.ManyToManyField(Notification, related_name='special_pages', blank=True)
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="special_page"
+    )
+    stream = models.ForeignKey(
+        Stream, on_delete=models.CASCADE, related_name="special_page"
+    )
+    year = models.ForeignKey(
+        Year, on_delete=models.CASCADE, related_name="special_page"
+    )
+    notifications = models.ManyToManyField(
+        Notification, related_name="special_pages", blank=True
+    )
 
     published = PublishedManager()
     objects = models.Manager()  # Default manager
@@ -309,12 +348,14 @@ class SpecialPage(SEOModel):
         super(SpecialPage, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"Special Page for {self.course.name}, {self.stream.name}, {self.year.year}"
+        return (
+            f"Special Page for {self.course.name}, {self.stream.name}, {self.year.year}"
+        )
 
     def get_last_updated_subject(self):
         related_subjects = Subject.objects.filter(
             courses=self.course, streams=self.stream, years=self.year
-        ).order_by('-updated_at')
+        ).order_by("-updated_at")
         if related_subjects.exists():
             last_subject = related_subjects.first()
             return last_subject.get_last_updated_resource()

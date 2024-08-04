@@ -2,6 +2,8 @@
 
 {% block meta %}
 <link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:image" content="{% if subject.og_image %}{{ post.og_image.url }}{%endif%}" />
+
 {% endblock %}
 
 {% block title %}{{ subject.name }}{% endblock %}
@@ -15,7 +17,7 @@
             <p class="my-4 text-lg text-gray-400">{{subject.description}}</p>
         </div>
         {%if subject.get_all_available_resource_types%}
-      
+
         <div>
             <h2 class="text-xl sm:text-2xl font-bold mb-6">Available Resources</h2>
             <div class="mb-4 flex">
@@ -40,14 +42,15 @@
             <div class="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mb-8">
                 {% for resource in resources %}
                 {% url 'resource_detail' resource.slug as url %}
-                
+
                 {% include 'courses/components/resource/resource_card.html' with slugs=slugs url=url item=resource%}
                 {% endfor %}
             </div>
             {% endfor %}
         </div>
         {%else%}
-        <p class="my-4 text-lg text-gray-400">Currenty there are no available resources for this subject! Thank you for visiting us.</p>
+        <p class="my-4 text-lg text-gray-400">Currenty there are no available resources for this subject! Thank you for
+            visiting us.</p>
         {%endif%}
 
     </div>
