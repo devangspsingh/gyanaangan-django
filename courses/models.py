@@ -161,7 +161,8 @@ class Subject(SEOModel):
         return self.name
 
     def get_all_available_resource_types(self):
-        return self.resources.values_list("resource_type", flat=True).distinct()
+        return self.resources.order_by("resource_type").values_list("resource_type", flat=True).distinct()
+
 
     def update_last_resource_updated(self):
         last_updated = self.resources.aggregate(Max("updated_at"))["updated_at__max"]
