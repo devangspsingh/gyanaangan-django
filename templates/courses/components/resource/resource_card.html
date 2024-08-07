@@ -36,7 +36,11 @@
     </div>
 
     <div class="flex flex-wrap items-center text-sm justify-between mt-2">
-        <time class="rounded-full text-gray-400 font-bold">{{ item.get_last_updated_at.status }}</time>
+
+        <div class="flex gap-2 text-gray-400 font-bold">
+            <time class="rounded-full">{{item.get_last_updated_at.status }}</time>
+            <p>{{item.educational_year.name}}</p>
+        </div>
         <div class="flex items-center gap-6">
             <div class="flex justify-center w-6">
                 {%if slugs%}

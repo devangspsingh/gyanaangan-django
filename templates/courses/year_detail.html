@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{%load static%}
 {% block content %}
 
 <section id="stream"
-    class="min-h-[100vh] bg-[url('https://flowbite.s3.amazonaws.com/docs/jumbotron/hero-pattern-dark.svg')]">
+    style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
     <div
         class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
         <div>
