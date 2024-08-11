@@ -158,7 +158,7 @@ def toggle_save_resource(request, resource_id):
 
     return redirect(request.META.get("HTTP_REFERER", "home"))
 
-
+@login_required
 def saved_resources(request):
     saved_resources = SavedResource.objects.filter(user=request.user).select_related('resource')
     return render(request, 'accounts/saved_resources.html', {'saved_resources': saved_resources})
