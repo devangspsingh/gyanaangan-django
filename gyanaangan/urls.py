@@ -16,7 +16,12 @@ urlpatterns = (
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 )
 
-handler404 = 'core.views.custom_page_not_found_view'
-handler500 = 'core.views.custom_error_view'
-handler403 = 'core.views.custom_permission_denied_view'
-handler400 = 'core.views.custom_bad_request_view'
+handler404 = "core.views.custom_page_not_found_view"
+handler500 = "core.views.custom_error_view"
+handler403 = "core.views.custom_permission_denied_view"
+handler400 = "core.views.custom_bad_request_view"
+
+
+admin.site.site_header = "Gyan Aangan Administration"
+admin.site.site_title = "Gyan Aangane Admin Portal"
+admin.site.index_title = "Welcome to Gyan Aangan"

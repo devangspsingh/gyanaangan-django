@@ -9,6 +9,9 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 import requests
 
+from courses.models import Course, Resource, Subject, Stream, SpecialPage
+
+
 def profile_pic_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     filename = f"{uuid.uuid4()}.{ext}"
@@ -18,14 +21,21 @@ def profile_pic_upload_path(instance, filename):
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     bio = models.TextField(max_length=500, blank=True)
-    profile_pic = models.ImageField(upload_to=profile_pic_upload_path, default="default.jpg")
+    profile_pic = models.ImageField(
+        upload_to=profile_pic_upload_path, default="default.jpg"
+    )
     emoji_tag = models.CharField(max_length=5, blank=True)
     img_google_url = models.URLField(max_length=500, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         # Check if the image URL has changed
         if self.img_google_url:
-            if not self.pk or not Profile.objects.filter(pk=self.pk, img_google_url=self.img_google_url).exists():
+            if (
+                not self.pk
+                or not Profile.objects.filter(
+                    pk=self.pk, img_google_url=self.img_google_url
+                ).exists()
+            ):
                 # Download the image from the new Google URL
                 response = requests.get(self.img_google_url)
                 img_temp = ContentFile(response.content)
@@ -42,10 +52,75 @@ class Profile(models.Model):
 
                 # Save the processed image to the model
                 image_io = BytesIO()
-                image.save(image_io, format='JPEG')
-                self.profile_pic.save(f"{self.user.username}_profile_pic.jpg", ContentFile(image_io.getvalue()), save=False)
+                image.save(image_io, format="JPEG")
+                self.profile_pic.save(
+                    f"{self.user.username}_profile_pic.jpg",
+                    ContentFile(image_io.getvalue()),
+                    save=False,
+                )
 
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.username} Profile"
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions"
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscribed_users",
+    )
+    special_page = models.ForeignKey(
+        SpecialPage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscribed_users",
+    )
+    stream = models.ForeignKey(
+        Stream,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscribed_users",
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subscribed_users",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        subscription_name = (
+            self.course.name
+            if self.course
+            else (
+                self.stream.name
+                if self.stream
+                else (
+                    self.subject.name
+                    if self.subject
+                    else (self.special_page.name if self.special_page else "Unknown")
+                )
+            )
+        )
+        return f"{self.user.username} - {subscription_name}"
+
+
+class SavedResource(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='saved_resources', on_delete=models.CASCADE)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def is_resource_saved(user, resource):
+        return SavedResource.objects.filter(user=user, resource=resource).exists()

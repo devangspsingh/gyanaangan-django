@@ -18,13 +18,13 @@
     <div class="container mx-auto">
         <section class="min-h-[90vh]"
                  style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-            <div class="flex justify-center min-h-[80vh] h-full flex-col px-4 mx-auto max-w-screen-xl text-center lg:py-16 z-10 relative">
+            <div class="flex justify-center min-h-[75vh] h-full flex-col px-4 mx-auto max-w-screen-xl text-center lg:py-16 z-10 relative">
                 {% if notification %}
                     {% include "courses/components/notification.html" with notification=notification %}
                 {% endif %}
                 <div>
                     <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl">
-                        Welcome to Gyan Aangan
+                        Welcome to <span class="underline text-blue-400">Gyan Aangan</span> 
                     </h1>
                     <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 lg:px-48">
                         Browser a variety of courses subjects,

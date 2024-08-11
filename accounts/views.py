@@ -7,11 +7,13 @@ from PIL import Image
 from io import BytesIO
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-
+from django.contrib import messages
 from core.models import SEODetail
-from .models import Profile
+from courses.models import Resource
+from .models import Profile, SavedResource
 from django.urls import reverse
 from django.templatetags.static import static
+from django.shortcuts import get_object_or_404, redirect
 
 
 @login_required
@@ -137,3 +139,26 @@ def login_page(request):
 def google_logout(request):
     logout(request)
     return redirect(reverse("login_page"))
+
+
+@login_required
+def toggle_save_resource(request, resource_id):
+    resource = get_object_or_404(Resource, id=resource_id)
+    saved_resource, created = SavedResource.objects.get_or_create(
+        user=request.user, resource=resource
+    )
+
+    if created:
+        messages.success(request, f'Resource "{resource.name}" saved successfully!')
+    else:
+        saved_resource.delete()
+        messages.info(
+            request, f'Resource "{resource.name}" removed from your saved resources.'
+        )
+
+    return redirect(request.META.get("HTTP_REFERER", "home"))
+
+
+def saved_resources(request):
+    saved_resources = SavedResource.objects.filter(user=request.user).select_related('resource')
+    return render(request, 'accounts/saved_resources.html', {'saved_resources': saved_resources})
