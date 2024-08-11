@@ -211,5 +211,5 @@ GOOGLE_ANALYTICS_GTAG_PROPERTY_ID = os.getenv("G_TAG")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = (
-    "http://localhost:8000/accounts/oauth/callback/"  # Update with your redirect URI
+    "http://localhost:8000/accounts/oauth/callback/" if DEBUG else "https://gyanaangan.dspsc.live/accounts/oauth/callback/"
 )
