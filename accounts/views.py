@@ -13,6 +13,7 @@ from .models import Profile
 from django.urls import reverse
 from django.templatetags.static import static
 
+
 @login_required
 def profile(request):
     seo_detail = SEODetail.objects.filter(page_name="profile").first()
@@ -93,15 +94,14 @@ def google_callback(request):
     if profile.img_google_url != picture_url:
         profile.img_google_url = picture_url
 
-    # Save the profile, which will trigger the save logic to handle the image
-    profile.save()
-
-    # Set the bio and emoji tag if the profile is newly created
     if profile_created:
         profile.bio = (
             f"This is {name}'s bio."  # Set a default bio (can be customized later)
         )
         profile.emoji_tag = "😊"  # Set a default emoji tag
+
+    # Save the profile, which will trigger the save logic to handle the image
+    profile.save()
 
     login(request, user)
     return redirect(reverse("profile"))

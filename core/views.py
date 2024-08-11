@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils.timezone import now
 from .models import SEODetail
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 
 
 def terms_and_conditions(request):
@@ -54,3 +56,23 @@ def privacy_policy(request):
         "site_name": seo_detail.site_name,
     }
     return render(request, "core/privacy_policy.html", context)
+
+
+def custom_page_not_found_view(request, exception):
+    context = {"is_error_page": True, "title": "Page Not Found"}
+    return render(request, "errors/404.html", context, status=404)
+
+
+def custom_error_view(request):
+    context = {"is_error_page": True, "title": "Server Error"}
+    return render(request, "errors/500.html", context, status=500)
+
+
+def custom_permission_denied_view(request, exception):
+    context = {"is_error_page": True, "title": "Permission Denied"}
+    return render(request, "errors/403.html", context, status=403)
+
+
+def custom_bad_request_view(request, exception):
+    context = {"is_error_page": True, "title": "Bad Request"}
+    return render(request, "errors/400.html", context, status=400)

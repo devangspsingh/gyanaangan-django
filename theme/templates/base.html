@@ -85,7 +85,6 @@
 			border: 2px solid #ccc;
 			/* Border around the scrollbar track */
 		}
-	
         </style>
         {% with analytical_identity=request.user.uuid|default:None %}
             {% analytical_head_top %}
@@ -96,10 +95,13 @@
         {% analytical_body_top %}
         <div>
             <div class="p-2">{% include 'courses/header.html' %}</div>
-            <div class="p-2 py-0">{% show_breadcrumbs %}</div>
+            {% if not is_error_page %}
+                <div class="p-2 py-0">{% show_breadcrumbs %}</div>
+            {% endif %}
         </div>
         <div class="container mx-auto py-4 text-gray-100">
-            {% block content %}{% endblock content %}
+            {% block content %}
+            {% endblock content %}
         </div>
         {% include 'courses/footer.html' %}
         <div class="printable">

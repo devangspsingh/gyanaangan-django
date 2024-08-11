@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",") if not DEBUG else ["*"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",") 
 
 # Application definition
 INSTALLED_APPS = [
@@ -165,24 +165,25 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
 # settings.py
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": "debug.log",
+if not DEBUG:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "file": {
+                "level": "DEBUG",
+                "class": "logging.FileHandler",
+                "filename": "debug.log",
+            },
         },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["file"],
-            "level": "DEBUG",
-            "propagate": True,
+        "loggers": {
+            "django": {
+                "handlers": ["file"],
+                "level": "DEBUG",
+                "propagate": True,
+            },
         },
-    },
-}
+    }
 
 # Public media settings
 from storages.backends.s3boto3 import S3Boto3Storage

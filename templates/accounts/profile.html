@@ -10,7 +10,7 @@
                      class="w-24 h-24 rounded-full mx-auto mb-4">
                 {{ user.first_name }}
                 <p class="text-gray-200">Email: {{ user.email }}</p>
-                <p class="mt-2 text-gray-200">{{ user.profile.bio }}</p>
+                {% comment %} <p class="mt-2 text-gray-200">{{ user.profile.bio }}</p> {% endcomment %}
             </div>
             <div class="mt-6 flex justify-center">
                 {% comment %} <a href="{% url 'profile_edit' %}" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded inline-flex items-center justify-center w-full">
