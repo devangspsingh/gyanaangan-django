@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Profile
+from .models import Profile, SavedResource
 
 
 class ProfileInline(admin.StackedInline):
@@ -41,3 +41,10 @@ admin.site.register(Profile, ProfileAdmin)
 admin.site.unregister(User)
 # Register the custom User admin
 admin.site.register(User, UserAdmin)
+
+class SavedResourceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'resource', 'saved_at')
+    list_filter = ('user', 'resource', 'saved_at')
+    search_fields = ('user__username', 'resource__name')
+
+admin.site.register(SavedResource, SavedResourceAdmin)
