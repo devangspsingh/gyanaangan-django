@@ -1,171 +1,159 @@
 {% extends 'base.html' %}
-{%load static%}
-{% block title %}Home{% endblock %}
-
+{% load static %}
+{% block title %}Home{% endblock title %}
 {% block meta %}
-<meta name="description" content="Welcome to our education platform. Browse courses, subjects, and resources.">
-<meta name="keywords" content="education, courses, subjects, resources">
- <script type="application/ld+json">
+    <meta name="description"
+          content="Welcome to our education platform. Browse courses, subjects, and resources.">
+    <meta name="keywords" content="education, courses, subjects, resources">
+    <script type="application/ld+json">
     {
       "@context" : "https://schema.org",
       "@type" : "WebSite",
       "name" : "Gyan Aangan",
       "url" : "https://gyanaangan.dspsc.live/"
     }
-  </script>
-{% endblock %}
-
+    </script>
+{% endblock meta %}
 {% block content %}
-<div class="container mx-auto">
-    <section class="min-h-[90vh]" style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-        <div
-            class="flex justify-center min-h-[80vh]  h-full flex-col px-4 mx-auto max-w-screen-xl text-center lg:py-16 z-10 relative">
-            {%if notification%}
-
-            {%include 'courses/components/notification.html' with notification=notification%}
-            {%endif%}
-
-            <div>
-                <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl">
-                    Welcome to Gyan Aangan</h1>
-                <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 lg:px-48">Browser a variety of courses subjects,
-                    and
-                    resources to enchacne your knowledge</p>
-            </div>
-
-            <form action="{% url 'search' %}" method="get" class="w-full max-w-md mx-auto">
-                <label for="search" class="mb-2 text-sm font-medium sr-only">Search</label>
-                <div class="relative flex items-center">
-                    <input type="search" id="search" name="q"
-                        class="block w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-e-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        placeholder="Search Courses, Subjects..." required />
-                    <button type="submit"
-                        class="absolute end-0 bottom-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 20 20">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                        </svg>
-                        <span class="sr-only">Search</span>
-                    </button>
+    <div class="container mx-auto">
+        <section class="min-h-[90vh]"
+                 style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+            <div class="flex justify-center min-h-[80vh]  h-full flex-col px-4 mx-auto max-w-screen-xl text-center lg:py-16 z-10 relative">
+                {% if notification %}
+                    {% include "courses/components/notification.html" with notification=notification %}
+                {% endif %}
+                <div>
+                    <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl">
+                        Welcome to Gyan Aangan
+                    </h1>
+                    <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 lg:px-48">
+                        Browser a variety of courses subjects,
+                        and
+                        resources to enchacne your knowledge
+                    </p>
                 </div>
-            </form>
-
-
-
-        </div>
-        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
-        </div>
-    </section>
-
-    <section id="courses"
-        style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-        <div
-            class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
-            <div>
-                <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Courses for Students</h2>
-                <p class="my-4 text-lg text-gray-400">Explore a variety of courses to enhance your knowledge and skills.
-                    Our offerings include Bachelor of Technology (B.Tech) with specializations in Computer Science,
-                    Information Technology, and a common first-year stream for all disciplines, as well as Bachelor of
-                    Science (B.Sc) programs covering fundamental scientific concepts.</p>
+                <form action="{% url 'search' %}"
+                      method="get"
+                      class="w-full max-w-md mx-auto">
+                    <label for="search" class="mb-2 text-sm font-medium sr-only">Search</label>
+                    <div class="relative flex items-center">
+                        <input type="search"
+                               id="search"
+                               name="q"
+                               class="block w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-e-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                               placeholder="Search Courses, Subjects..."
+                               required />
+                        <button type="submit"
+                                class="absolute end-0 bottom-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                            <svg class="w-4 h-4"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="none"
+                                 viewBox="0 0 20 20">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                            </svg>
+                            <span class="sr-only">Search</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-6">
-                {% for course in courses %}
-                {%url 'course_detail' course.slug as url%}
-                {% include 'courses/components/course_card.html' with url=url item=course %}
-                {% endfor %}
+            <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
+        </section>
+        <section id="courses"
+                 style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+            <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+                <div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Courses for Students</h2>
+                    <p class="my-4 text-lg text-gray-400">
+                        Explore a variety of courses to enhance your knowledge and skills.
+                        Our offerings include Bachelor of Technology (B.Tech) with specializations in Computer Science,
+                        Information Technology, and a common first-year stream for all disciplines, as well as Bachelor of
+                        Science (B.Sc) programs covering fundamental scientific concepts.
+                    </p>
+                </div>
+                <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-6">
+                    {% for course in courses %}
+                        {% url 'course_detail' course.slug as url %}
+                        {% include 'courses/components/course_card.html' with url=url item=course %}
+                    {% endfor %}
+                </div>
+                <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
+                    <a href="{% url 'course_list' %}"
+                       class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                        Explore All Available Courses
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24"
+                             fill="currentColor"
+                             class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                            <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
             </div>
-
-            <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
-                <a href="{%url 'course_list'%}"
-                    class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
-                    Explore All Available Courses
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                        class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
-                        <path fill-rule="evenodd"
-                            d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </a>
+        </section>
+        <section id="subjects"
+                 style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+            <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl py-12 lg:py-16 z-10 relative">
+                <div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Subjects for Students</h2>
+                    <p class="my-4 text-lg text-gray-400">
+                        Discover a wide range of subjects to boost your knowledge and
+                        skills. Our offerings include detailed notes, lab manuals, previous year questions, and curated
+                        resources, all designed to enhance your learning experience. Stay updated with the latest materials
+                        and explore comprehensive content for your studies.
+                    </p>
+                </div>
+                <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
+                    {% for subject in subjects %}
+                        {% url 'subject_detail' subject.slug as url %}
+                        {% include "courses/components/subject_card_hero.html" with url=url subject=subject %}
+                    {% endfor %}
+                </div>
+                <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
+                    <a href="{% url 'subject_list' %}"
+                       class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                        Explore All Available Subjects
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24"
+                             fill="currentColor"
+                             class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                            <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
             </div>
-
-        </div>
-
-    </section>
-
-    <section id="subjects"
-        style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-        <div
-            class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl py-12 lg:py-16 z-10 relative">
-            <div>
-                <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Subjects for Students</h2>
-                <p class="my-4 text-lg text-gray-400">Discover a wide range of subjects to boost your knowledge and
-                    skills. Our offerings include detailed notes, lab manuals, previous year questions, and curated
-                    resources, all designed to enhance your learning experience. Stay updated with the latest materials
-                    and explore comprehensive content for your studies.</p>
+        </section>
+        <section id="resources"
+                 style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+            <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+                <div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Resources for Students</h2>
+                    <p class="my-4 text-lg text-gray-400">
+                        Explore a variety of resources to
+                        enhance your knowledge and skills. Our offerings include lab manuals, previous year questions (PYQ),
+                        PDFs, and notes, updated regularly to support your learning journey. Access comprehensive materials
+                        for practicals, assignments, and exam preparation to excel in your studies.
+                    </p>
+                </div>
+                <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
+                    {% for resource in resources %}
+                        {% url 'resource_detail' resource.slug as url %}
+                        {% include 'courses/components/resource/resource_card.html' with url=url item=resource %}
+                    {% endfor %}
+                </div>
+                <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
+                    <a href="{% url 'resource_list' %}"
+                       class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                        Explore All Available Resources
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24"
+                             fill="currentColor"
+                             class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                            <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
             </div>
-            <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
-                {% for subject in subjects %}
-                {%url 'subject_detail' subject.slug as url%}
-                {%include "courses/components/subject_card_hero.html" with url=url subject=subject%}
-                {% endfor %}
-            </div>
-
-
-            <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
-                <a href="{%url 'subject_list'%}"
-                    class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
-                    Explore All Available Subjects
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                        class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
-                        <path fill-rule="evenodd"
-                            d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </a>
-            </div>
-
-        </div>
-
-    </section>
-
-    <section id="resources"
-        style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-        <div
-            class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
-            <div>
-                <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Resources for Students</h2>
-                <p class="my-4 text-lg text-gray-400">Explore a variety of resources to
-                    enhance your knowledge and skills. Our offerings include lab manuals, previous year questions (PYQ),
-                    PDFs, and notes, updated regularly to support your learning journey. Access comprehensive materials
-                    for practicals, assignments, and exam preparation to excel in your studies.</p>
-            </div>
-            <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
-                {% for resource in resources %}
-                {%url 'resource_detail' resource.slug as url%}
-                {% include 'courses/components/resource/resource_card.html' with url=url item=resource %}
-                {% endfor %}
-            </div>
-
-
-            <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
-                <a href="{%url 'resource_list'%}"
-                    class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
-                    Explore All Available Resources
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                        class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
-                        <path fill-rule="evenodd"
-                            d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </a>
-            </div>
-
-        </div>
-
-    </section>
-
-
-
-</div>
+        </section>
+    </div>
 {% endblock %}

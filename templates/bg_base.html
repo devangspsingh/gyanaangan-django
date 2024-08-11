@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+        <!-- The original content block remains here -->
+        {% block body %}
+        {% endblock body %}
+        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
+    </div>
+{% endblock content %}

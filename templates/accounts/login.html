@@ -1,0 +1,21 @@
+{% extends "bg_base.html" %}
+
+{% block body %}
+
+<div class="flex justify-center items-center h-[70vh]">
+    <div class="p-10 rounded-lg shadow-lg text-center">
+        <h2 class="text-4xl font-bold mb-8 text-white">Login to access more features | Gyan Aangan</h2>
+        <p class="mb-6 text-gray-200">Please login to continue to your account</p>
+        <a href="{% url 'login' %}" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-900 font-medium py-2 px-4 rounded-lg inline-flex items-center shadow-md">
+            <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path fill="#4285F4" d="M45.12 24.56c0-1.68-.15-3.36-.48-4.98H24v9.44h11.76c-.51 2.76-2.07 5.1-4.41 6.66v5.52h7.08c4.14-3.84 6.57-9.48 6.57-16.64z"></path>
+                <path fill="#34A853" d="M24 48c6.3 0 11.58-2.07 15.44-5.64l-7.08-5.52c-2.07 1.38-4.77 2.19-8.36 2.19-6.43 0-11.85-4.32-13.77-10.14H3.87v6.36C7.73 43.38 15.21 48 24 48z"></path>
+                <path fill="#FBBC05" d="M10.23 28.86c-.48-1.38-.75-2.88-.75-4.44s.27-3.06.75-4.44V13.62H3.87C2.36 16.86 1.5 20.35 1.5 24s.86 7.14 2.37 10.38l6.36-5.52z"></path>
+                <path fill="#EA4335" d="M24 9.36c4.11 0 7.5 1.41 10.26 4.14l7.68-7.68C37.44 1.92 31.74 0 24 0 15.21 0 7.73 4.62 3.87 11.64l6.36 5.52c1.92-5.82 7.34-10.14 13.77-10.14z"></path>
+            </svg>
+            <span>Login with Google</span>
+        </a>
+    </div>
+</div>
+
+{% endblock body %}
