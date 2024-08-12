@@ -115,9 +115,45 @@ class Subscription(models.Model):
         )
         return f"{self.user.username} - {subscription_name}"
 
+    @staticmethod
+    def is_subscribed(user, course=None, stream=None, subject=None, special_page=None):
+        return Subscription.objects.filter(
+            user=user,
+            course=course,
+            stream=stream,
+            subject=subject,
+            special_page=special_page,
+        ).exists()
+
+    @staticmethod
+    def subscribe(user, course=None, stream=None, subject=None, special_page=None):
+        if not Subscription.is_subscribed(user, course, stream, subject, special_page):
+            subscription = Subscription(
+                user=user,
+                course=course,
+                stream=stream,
+                subject=subject,
+                special_page=special_page,
+            )
+            subscription.save()
+
+    @staticmethod
+    def unsubscribe(user, course=None, stream=None, subject=None, special_page=None):
+        Subscription.objects.filter(
+            user=user,
+            course=course,
+            stream=stream,
+            subject=subject,
+            special_page=special_page,
+        ).delete()
+
 
 class SavedResource(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='saved_resources', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="saved_resources",
+        on_delete=models.CASCADE,
+    )
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
     saved_at = models.DateTimeField(auto_now_add=True)
 

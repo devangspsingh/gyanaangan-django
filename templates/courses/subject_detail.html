@@ -1,66 +1,61 @@
 {% extends 'base.html' %}
-{%load static%}
+{% load static %}
+{% load tags %}
 {% block meta %}
-<link rel="canonical" href="{{ canonical_url }}">
-<meta property="og:image" content="{% if subject.og_image %}{{ post.og_image.url }}{%endif%}" />
-
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:image"
+          content="{% if subject.og_image %}{{ post.og_image.url }}{% endif %}" />
 {% endblock %}
-
 {% block title %}{{ subject.name }}{% endblock %}
-
 {% block content %}
-<main style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-    <div
-        class="flex min-h-[80vh] flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
-        <div>
-            <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{subject.name}}</h2>
-            <p class="my-4 text-lg text-gray-400">{{subject.description}}</p>
-        </div>
-        {%if subject.get_all_available_resource_types%}
-
-        <div>
-            <h2 class="text-xl sm:text-2xl font-bold mb-6">Available Resources</h2>
-            <div class="mb-4 flex">
-                <div class="px-4 py-1 font-bold">Filters:</div>
-                <div
-                    class="flex gap-2 overflow-x-auto whitespace-nowrap py-1 border-b border-gray-300 mb-4 custom-scroll select-none">
-                    <a href="?resource_type=all" rel="nofollow"
-                        class="select-none drag-none inline-block px-4 py-1 rounded-md text-sm {% if resource_type_filter == 'all' %}bg-white text-gray-800 font-bold {%else%} bg-gray-700 text-white hover:bg-gray-800 {% endif %}">
-                        All
-                    </a>
-                    {% for type in subject.get_all_available_resource_types %}
-                    <a href="?resource_type={{ type }}" rel="nofollow"
-                        class="select-none drag-none inline-block px-4 py-1 rounded-md text-sm {% if resource_type_filter == type %}bg-white text-gray-800 font-bold {%else%} bg-gray-700 text-white hover:bg-gray-800 {% endif %}">
-                        {{ type|upper }}
-                    </a>
+    <main style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+        <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+            <div>
+                <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{ subject.name }}</h2>
+                <p class="my-4 text-lg text-gray-400">{{ subject.description }}</p>
+            </div>
+            <div>{% include "_subscribe_button.html" with entity=subject entity_type='subject' %}</div>
+            {% if subject.get_all_available_resource_types %}
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold mb-6">Available Resources</h2>
+                    <div class="mb-4 flex">
+                        <div class="px-4 py-1 font-bold">Filters:</div>
+                        <div class="flex gap-2 overflow-x-auto whitespace-nowrap py-1 border-b border-gray-300 mb-4 custom-scroll select-none">
+                            <a href="?resource_type=all"
+                               rel="nofollow"
+                               class="select-none drag-none inline-block px-4 py-1 rounded-md text-sm {% if resource_type_filter == 'all' %}bg-white text-gray-800 font-bold {% else %} bg-gray-700 text-white hover:bg-gray-800 {% endif %}">
+                                All
+                            </a>
+                            {% for type in subject.get_all_available_resource_types %}
+                                <a href="?resource_type={{ type }}"
+                                   rel="nofollow"
+                                   class="select-none drag-none inline-block px-4 py-1 rounded-md text-sm {% if resource_type_filter == type %}bg-white text-gray-800 font-bold {% else %} bg-gray-700 text-white hover:bg-gray-800 {% endif %}">
+                                    {{ type|upper }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% for resource_type, resources in grouped_resources.items %}
+                        <h3 class="text-lg font-semibold mb-4">{{ resource_type | upper }}</h3>
+                        <div class="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mb-8">
+                            {% for resource in resources %}
+                                {% url 'resource_detail' resource.slug as url %}
+                                {% include 'courses/components/resource/resource_card.html' with slugs=slugs url=url item=resource %}
+                            {% endfor %}
+                        </div>
                     {% endfor %}
-
                 </div>
-            </div>
-            {% for resource_type, resources in grouped_resources.items %}
-            <h3 class="text-lg font-semibold mb-4">{{ resource_type | upper }}</h3>
-            <div class="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mb-8">
-                {% for resource in resources %}
-                {% url 'resource_detail' resource.slug as url %}
-
-                {% include 'courses/components/resource/resource_card.html' with slugs=slugs url=url item=resource%}
-                {% endfor %}
-            </div>
-            {% endfor %}
+            {% else %}
+                <p class="my-4 text-lg text-gray-400">
+                    Currenty there are no available resources for this subject! Thank you for
+                    visiting us.
+                </p>
+            {% endif %}
         </div>
-        {%else%}
-        <p class="my-4 text-lg text-gray-400">Currenty there are no available resources for this subject! Thank you for
-            visiting us.</p>
-        {%endif%}
-
-    </div>
-    <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
-    </div>
-</main>
-
-
-{%block script%}
-<script>
+        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
+    </main>
+    {% block script %}
+        <script>
     document.addEventListener('DOMContentLoaded', function () {
         const scrollContainer = document.querySelector('.custom-scroll');
 
@@ -105,7 +100,6 @@
             scrollContainer.scrollLeft = scrollLeft - walk;
         });
     });
-</script>
-{%endblock script%}
-
+        </script>
+    {% endblock script %}
 {% endblock %}

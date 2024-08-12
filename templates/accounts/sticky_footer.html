@@ -1,8 +1,9 @@
 {% if user.is_authenticated %}
+    {% load static %}
     <!-- Bottom Navbar -->
     <div class="fixed bottom-0 left-0 right-0 z-40 md:right-0 md:left-auto w-full max-w-lg md:max-w-sm mx-auto rounded-t-3xl bg-slate-800/80 backdrop-blur dark:border-gray-700">
         <div class="flex justify-between items-center px-4">
-            <a href="{% url 'home' %}"
+            <a href="{% url 'subscriptions' %}"
                name="Profile Page of {{ user.first_name }}"
                class="hover:text-blue-600 text-gray-400 dark:hover:text-white p-2">
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -27,6 +28,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
                 </svg>
                 <span class="sr-only">Saved</span>
+            </a>
+            <a href="{% url 'home' %}"
+               title="Gyan Aangan"
+               name="Gyan Aangan | Home"
+               class="hover:text-blue-600 text-gray-400 dark:hover:text-white p-2">
+                <img src="{% static 'images/logo white.png' %}"
+                     class="mr-2 h-6"
+                     alt="Gyan Aangan Logo">
             </a>
             <a href="{% url 'home' %}"
                name="Profile Page of {{ user.first_name }}"

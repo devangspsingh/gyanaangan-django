@@ -1,26 +1,23 @@
 {% extends 'base.html' %}
-{%load static%}
+{% load static %}
 {% block content %}
-
-<section id="stream"
-    style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
-    <div
-        class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
-        <div>
-            <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{course.name}} {{stream.name}} {{year.name}}</h1>
-            <p class="my-4 text-lg text-gray-400">{{special_page.description}}</p>
+    <section id="stream"
+             style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+        <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+            <div>
+                <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">
+                    {{ course.name }} {{ stream.name }} {{ year.name }}
+                </h1>
+                <p class="my-4 text-lg text-gray-400">{{ special_page.description }}</p>
+                {% include "_subscribe_button.html" with entity=special_page entity_type='special_page' %}
+            </div>
+            <div class="w-full sm:items-start sm:justify-start mx-auto flex flex-col items-center gap-6">
+                {% for subject in subjects %}
+                    {% url 'subject_all_detail' course.slug stream.slug year.slug subject.slug as url %}
+                    {% include "courses/components/subject_card.html" with subject=subject course=course year=year %}
+                {% endfor %}
+            </div>
         </div>
-        <div class="w-full sm:items-start sm:justify-start mx-auto flex flex-col items-center gap-6">
-            {% for subject in subjects %}
-            {% url 'subject_all_detail' course.slug stream.slug year.slug subject.slug as url %}
-            {% include "courses/components/subject_card.html" with subject=subject course=course year=year %}
-            {% endfor %}
-        </div>
-
-
-
-    </div>
-    <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
-    </div>
-</section>
+        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
+    </section>
 {% endblock %}

@@ -1,0 +1,22 @@
+{% load tags %}
+{% if user.is_authenticated %}
+    <form action="{% url 'toggle_subscription' entity_type entity.id %}"
+          method="post">
+        {% csrf_token %}
+        {% if entity|is_subscribed_to:user %}
+            <button type="submit"
+                    class="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700">
+                Unsubscribe
+            </button>
+        {% else %}
+            <button type="submit"
+                    class="px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700">
+                Subscribe
+            </button>
+        {% endif %}
+    </form>
+{% else %}
+    <button data-modal-target="login-modal"
+            data-modal-toggle="login-modal"
+            class="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Subscribe</button>
+{% endif %}

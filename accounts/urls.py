@@ -5,8 +5,10 @@ from .views import (
     google_callback,
     google_logout,
     profile,
+    subscriptions,
     toggle_save_resource,
     saved_resources,
+    toggle_subscription,
 )
 
 urlpatterns = [
@@ -22,4 +24,10 @@ urlpatterns = [
         name="toggle_save_resource",
     ),
     path("saved-resources/", saved_resources, name="saved_resources"),
+    path(
+        "toggle-subscription/<str:entity_type>/<int:entity_id>/",
+        toggle_subscription,
+        name="toggle_subscription",
+    ),
+    path("subscriptions/", subscriptions, name="subscriptions"),
 ]
