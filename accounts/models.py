@@ -109,7 +109,7 @@ class Subscription(models.Model):
                 else (
                     self.subject.name
                     if self.subject
-                    else (self.special_page.name if self.special_page else "Unknown")
+                    else (self.special_page if self.special_page else "Unknown")
                 )
             )
         )
