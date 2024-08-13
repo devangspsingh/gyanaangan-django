@@ -1,39 +1,38 @@
 <div class="w-full overflow-hidden items-stretch justify-between flex flex-col gap-2 h-full mx-auto border rounded-lg shadow-md bg-stone-800 border-gray-700 p-6 transition-transform transform">
     <div class="flex w-full justify-between items-start">
         <h2 class="text-xl font-bold text-white mb-4">
-            <a href="{{ url }}" class="hover:underline">{{ special_page.course.name }} {{ special_page.stream.name }} {{ special_page.year.name }}</a>
+            <a href="{% url 'year_detail' special_page.course.slug special_page.stream.slug special_page.year.slug %}"
+               class="hover:underline">{{ special_page.course.name }} {{ special_page.stream.name }} {{ special_page.year.name }}</a>
         </h2>
     </div>
-    {% if special_page.description %}
-        <div class="text-gray-300">{{ special_page.description }}</div>
-    {% endif %}
-        {% comment %} <div class="mt-4">
+    {% if special_page.description %}<div class="text-gray-300">{{ special_page.description }}</div>{% endif %}
+    {% comment %} <div class="mt-4">
         <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
             {% for notification in special_page.notifications.all %}
             <li class="bg-yellow-700 text-white rounded-2xl px-3 p-0.5">{{ notification.title|upper }}</li>
             {% endfor %}
         </ul>
-        </div> {% endcomment %}
-        <div class="flex flex-wrap items-center text-sm justify-end mt-2">
-            {% comment %} <time class="rounded-full text-gray-400 font-bold">
+    </div> {% endcomment %}
+    <div class="flex flex-wrap items-center text-sm justify-end mt-2">
+        {% comment %} <time class="rounded-full text-gray-400 font-bold">
             {{ special_page.updated_at|date:"F j, Y" }}
-            </time> {% endcomment %}
-            <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group">
-                <a href="{% url 'year_detail' special_page.course.slug special_page.stream.slug special_page.year.slug %}"
-                   title="{{ special_page.course.name }} Special Page"
-                   class="text-blue-400 hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
-                    Explore course
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 24 24"
-                         fill="currentColor"
-                         class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
-                        <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-        <div class="transition-all duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px] -z-10">
-            <div class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
-            </div>
+        </time> {% endcomment %}
+        <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group">
+            <a href="{% url 'year_detail' special_page.course.slug special_page.stream.slug special_page.year.slug %}"
+               title="{{ special_page.course.name }} Special Page"
+               class="text-blue-400 hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                Explore course
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 24 24"
+                     fill="currentColor"
+                     class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                    <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                </svg>
+            </a>
         </div>
     </div>
+    <div class="transition-all duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px] -z-10">
+        <div class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
+        </div>
+    </div>
+</div>

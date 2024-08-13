@@ -1,13 +1,18 @@
 from django.conf import settings
 from django.conf.urls.static import static
+from django.templatetags.static import static as STATIC
 from django.urls import path, include
 from django.contrib import admin
+from django.views.generic import RedirectView
+
+print(static('ads.txt'))
 
 urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
         path("accounts/", include("accounts.urls")),
         path("core/", include("core.urls")),
+        path("ads.txt", RedirectView.as_view(url=STATIC("ads.txt"), permanent=True)),
         # path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
         path("", include("courses.urls")),
         path("__reload__/", include("django_browser_reload.urls")),
