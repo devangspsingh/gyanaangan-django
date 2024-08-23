@@ -6,6 +6,7 @@ from .models import Notification, SpecialPage, Subject, Course, Resource, Stream
 from django.urls import reverse
 from django.db.models import Q
 from django.templatetags.static import static
+from urllib.parse import urlparse, parse_qs
 
 # default_og_image_url = static('images/default-og-image.jpg')
 
@@ -235,9 +236,27 @@ def resource_view(
             og_image=None,
             site_name="Gyan Aangan",
         )
+    video_id = None
+    if resource.type == "video":
+        def extract_video_id(url):
+            parsed_url = urlparse(url)
+            query_params = parse_qs(parsed_url.query)
+            video_id = query_params.get('v')
+            if video_id:
+                return video_id[0]
+            else:
+                return None
+
+        video_id = extract_video_id(resource.embed_link)
+        if video_id:
+            # Do something with the video ID
+            print(f"Video ID: {video_id}")
+        else:
+            print("Invalid YouTube watch URL")
 
     context = {
         "resource": resource,
+        "video_id":video_id if video_id else None,
         "title": seo_detail.title,
         "meta_description": seo_detail.meta_description,
         "og_image": (

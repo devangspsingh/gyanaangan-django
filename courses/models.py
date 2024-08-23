@@ -21,7 +21,7 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['-updated_at']
+        ordering = ["-updated_at"]
 
 
 class PublishedManager(models.Manager):
@@ -38,11 +38,13 @@ class SEOModel(BaseModel):
     description = models.TextField(blank=True)
     meta_description = models.CharField(max_length=160, blank=True)
     keywords = models.CharField(max_length=200, blank=True)
-    og_image = models.FileField(storage=PublicMediaStorage(), upload_to="og-image/", blank=True, null=True)
+    og_image = models.FileField(
+        storage=PublicMediaStorage(), upload_to="og-image/", blank=True, null=True
+    )
 
     class Meta:
         abstract = True
-        ordering =['-updated_at']
+        ordering = ["-updated_at"]
 
     def generate_og_image_svg(self) -> str:
         """Generate the SVG for the Open Graph image as a string"""
@@ -59,19 +61,22 @@ class SEOModel(BaseModel):
         if self.status == "published":
             # Delete previous image
             self.delete_previous_og_image()
-            
+
             # Generate new image
             png_filelike = io.BytesIO()
             cairosvg.svg2png(
-                bytestring=self.generate_og_image_svg().encode(), write_to=png_filelike, unsafe=True
+                bytestring=self.generate_og_image_svg().encode(),
+                write_to=png_filelike,
+                unsafe=True,
             )
             png_filelike.seek(0)
-            
+
             # Versioned filename
             version = int(datetime.timestamp(datetime.now()))
             filename = f"{self.slug}_v{version}.png"
-            
+
             self.og_image.save(filename, png_filelike, save=False)
+
 
 class Year(BaseModel):
     year = models.IntegerField()
@@ -161,8 +166,11 @@ class Subject(SEOModel):
         return self.name
 
     def get_all_available_resource_types(self):
-        return self.resources.order_by("resource_type").values_list("resource_type", flat=True).distinct()
-
+        return (
+            self.resources.order_by("resource_type")
+            .values_list("resource_type", flat=True)
+            .distinct()
+        )
 
     def update_last_resource_updated(self):
         last_updated = self.resources.aggregate(Max("updated_at"))["updated_at__max"]
@@ -177,15 +185,15 @@ class Subject(SEOModel):
             diff = now - last_updated
 
             if diff < timedelta(hours=1):
-                return {"status": "updated recently", "exact_time": last_updated}
+                return {"status": "recently", "exact_time": last_updated}
             elif diff < timedelta(days=1):
-                return {"status": "updated today", "exact_time": last_updated}
+                return {"status": "today", "exact_time": last_updated}
             elif diff < timedelta(days=7):
-                return {"status": "updated this week", "exact_time": last_updated}
+                return {"status": "week ago", "exact_time": last_updated}
             elif diff < timedelta(days=30):
-                return {"status": "updated this month", "exact_time": last_updated}
+                return {"status": "month ago", "exact_time": last_updated}
             elif diff < timedelta(days=365):
-                return {"status": "updated this year", "exact_time": last_updated}
+                return {"status": "this year", "exact_time": last_updated}
             else:
                 return {
                     "status": f"updated on {last_updated.strftime('%b %Y')}",
@@ -226,7 +234,7 @@ class Resource(SEOModel):
     resource_type = models.CharField(
         max_length=20, choices=RESOURCE_TYPE_CHOICES, db_index=True
     )
-    file = models.FileField(storage=PrivateMediaStorage, upload_to="resources/")
+    file = models.FileField(storage=PrivateMediaStorage, upload_to="resources/",blank=True,null=True)
 
     privacy = MultiSelectField(choices=RESOURCE_PRIVACY_CHOICES, default=["view"])
 
@@ -268,15 +276,15 @@ class Resource(SEOModel):
             now = timezone.now().astimezone()
             diff = now - last_updated
             if diff < timedelta(hours=1):
-                return {"status": "updated recently", "exact_time": last_updated}
+                return {"status": "recently", "exact_time": last_updated}
             elif diff < timedelta(days=1):
-                return {"status": "updated today", "exact_time": last_updated}
+                return {"status": "today", "exact_time": last_updated}
             elif diff < timedelta(days=7):
-                return {"status": "updated this week", "exact_time": last_updated}
+                return {"status": "week ago", "exact_time": last_updated}
             elif diff < timedelta(days=30):
-                return {"status": "updated this month", "exact_time": last_updated}
+                return {"status": "month ago", "exact_time": last_updated}
             elif diff < timedelta(days=365):
-                return {"status": "updated this year", "exact_time": last_updated}
+                return {"status": "this year", "exact_time": last_updated}
             else:
                 return {
                     "status": f"updated on {last_updated.strftime('%b %Y')}",

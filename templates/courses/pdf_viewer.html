@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{%load static%}
-{% block title %}{{resource.title}}Resource View{% endblock %}
-
+{% load static %}
+{% block title %}{{ resource.title }}Resource View{% endblock %}
 {% block meta %}
-<meta name="description" content="Welcome to our education platform. Browse courses, subjects, and resources.">
-<meta name="keywords" content="education, courses, subjects, resources">
-
-<script>
+    <meta name="description"
+          content="Welcome to our education platform. Browse courses, subjects, and resources.">
+    <meta name="keywords" content="education, courses, subjects, resources">
+    {% if resource.type  != "video" %}
+        <script>
     window.viewPdf = function (_this) {
         let element = document.getElementById(_this.dataset.pdf)
         pdfName = (element.id.replace(/ /g, '%20'));
@@ -30,49 +30,61 @@
         }
     }
 
-</script>
+        </script>
+    {% endif %}
 {% endblock %}
-
 {% block content %}
-
-    <main class="min-h-[100vh]" style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}');">
-        <div
-            class="flex min-h-[80vh] flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+    <main class="min-h-[100vh]"
+          style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+        <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
             <div>
                 <div>
-                    <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{resource.name}}</h1>
-                    <p class="my-4 text-lg text-gray-400">{{resource.description}}</p>
-                    <span>{{resource.type | upper}}</span>
+                    <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{ resource.name }}</h1>
+                    <p class="my-4 text-lg text-gray-400">{{ resource.description }}</p>
+                    <span>{{ resource.type | upper }}</span>
                 </div>
-
             </div>
-            <div class="flex-col gap-2">
-                <div class="relative"> <iframe id="pdfviewer" sandbox="allow-scripts allow-same-origin"
-                        src="https://docs.google.com/gview?url={{resource.file.url|urlencode}}&embedded=true"
-                        style="display: block;"
-                        class="w-full h-[90vh] relative z-10 mx-auto rounded-md overflow-hidden"></iframe>
-                    <div
-                        class="rounded-md w-full flex-col items-center justify-center -z-10 animate-pulse mx-auto left-0 right-0 h-[90vh] absolute top-0 bg-white/50">
-                        <div class="text-center text-black">Click on Close PDF if it takes too long to load pdf</div>
-                        <div class="w-80 rounded-full mx-auto absolute bottom-5 left-0 right-0 bg-white/40 h-10"></div>
+            {% if resource.type  != "video" %}
+                <div class="flex-col gap-2">
+                    <div class="relative">
+                        <iframe id="pdfviewer"
+                                sandbox="allow-scripts allow-same-origin"
+                                src="https://docs.google.com/gview?url={{ resource.file.url|urlencode }}&embedded=true"
+                                style="display: block"
+                                class="w-full h-[90vh] relative z-10 mx-auto rounded-md overflow-hidden"></iframe>
+                        <div class="rounded-md w-full flex-col items-center justify-center -z-10 animate-pulse mx-auto left-0 right-0 h-[90vh] absolute top-0 bg-white/50">
+                            <div class="text-center text-black">Click on Close PDF if it takes too long to load pdf</div>
+                            <div class="w-80 rounded-full mx-auto absolute bottom-5 left-0 right-0 bg-white/40 h-10"></div>
+                        </div>
+                    </div>
+                    <div class="space-x-1 mt-12">
+                        <button onclick="viewPdf(this)"
+                                data-pdf="pdfviewer"
+                                class="rounded-full bg-red-600 p-2 px-3">
+                            Close
+                            Pdf
+                        </button>
+                        {% if "download" in resource.privacy %}
+                            <a class="rounded-full bg-green-600 p-2 px-3"
+                               target="_blank"
+                               href="{{ resource.file.url }}">Download
+                                {{ resource.file.size|filesizeformat }}
+                            pdf</a>
+                        {% endif %}
                     </div>
                 </div>
-
-                <div class="space-x-1 mt-12">
-                    <button onclick="viewPdf(this)" data-pdf="pdfviewer" class="rounded-full bg-red-600 p-2 px-3">Close
-                        Pdf</button>
-
-                    {%if "download" in resource.privacy%}
-                    <a class="rounded-full bg-green-600 p-2 px-3" target="_blank" href="{{resource.file.url}}">Download
-                        {{resource.file.size|filesizeformat}}
-                        pdf</a>
-                    {%endif%}
+            {% else %}
+                <div class="flex w-full h-full">
+                    <iframe class="aspect-video w-full"
+                            src="https://www.youtube.com/embed/{{ video_id }}"
+                            title="{{ resource.name }} YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allowfullscreen></iframe>
                 </div>
-            </div>
+            {% endif %}
         </div>
-        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10">
-        </div>
+        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
     </main>
-
-
 {% endblock %}

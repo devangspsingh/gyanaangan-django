@@ -34,7 +34,7 @@
     </div>
     <div class="flex flex-wrap items-center text-sm justify-between mt-2">
         <div class="flex gap-2 text-gray-400 font-bold">
-            <time class="rounded-full">{{ item.get_last_updated_at.status }}</time>
+            <time class="rounded-full">{{ item.get_last_updated_at.status }}</time>·
             <p>{{ item.educational_year.name }}</p>
         </div>
         <div class="flex items-center gap-6">
@@ -141,7 +141,7 @@
         </div>
     </div>
     <div class="transition-all -z-10 duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px]">
-        <div class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-1 flex items-center rounded-full transition-transform">
+        <div class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-square flex items-center rounded-full transition-transform">
         </div>
     </div>
 </div>
