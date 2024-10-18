@@ -45,19 +45,28 @@ class Profile(models.Model):
                 temp_image.seek(0)
                 image = Image.open(temp_image)
 
-                # Resize the image if necessary (e.g., to 300x300)
-                if image.height > 300 or image.width > 300:
-                    output_size = (300, 300)
-                    image.thumbnail(output_size)
+                # Preserve GIFs, but resize other formats if needed
+                if image.format == "GIF":
+                    # If GIF, save it directly
+                    self.profile_pic.save(
+                        f"{self.user.username}_profile_pic.gif",
+                        ContentFile(response.content),
+                        save=False,
+                    )
+                else:
+                    # Resize the image if necessary (e.g., to 300x300)
+                    if image.height > 300 or image.width > 300:
+                        output_size = (300, 300)
+                        image.thumbnail(output_size)
 
-                # Save the processed image to the model
-                image_io = BytesIO()
-                image.save(image_io, format="JPEG")
-                self.profile_pic.save(
-                    f"{self.user.username}_profile_pic.jpg",
-                    ContentFile(image_io.getvalue()),
-                    save=False,
-                )
+                    # Convert non-GIF images to JPEG and save
+                    image_io = BytesIO()
+                    image.save(image_io, format="JPEG")
+                    self.profile_pic.save(
+                        f"{self.user.username}_profile_pic.jpg",
+                        ContentFile(image_io.getvalue()),
+                        save=False,
+                    )
 
         super().save(*args, **kwargs)
 
