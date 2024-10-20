@@ -38,53 +38,53 @@
         {% block meta %}
         {% endblock meta %}
         <style>
-		.printable {
-			display: none;
-		}
+        .printable {
+            display: none;
+        }
 
-		@media print {
-			.container {
-				display: none !important;
-			}
+        @media print {
+            .container {
+                display: none !important;
+            }
 
-			.printable {
-				display: block !important;
-				text-align: center;
-				font-size: 24px;
-				color: red;
-			}
-		}
+            .printable {
+                display: block !important;
+                text-align: center;
+                font-size: 24px;
+                color: red;
+            }
+        }
 
-		/* Custom scrollbar styles */
-		::-webkit-scrollbar {
-			width: 8px;
-			/* Adjust the width of the scrollbar */
-			height: 4px;
-			/* Adjust the height of the scrollbar for horizontal scrolling */
-		}
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            /* Adjust the width of the scrollbar */
+            height: 4px;
+            /* Adjust the height of the scrollbar for horizontal scrolling */
+        }
 
-		::-webkit-scrollbar-thumb {
-			background-color: #888;
-			/* Color of the scrollbar thumb */
-			border-radius: 10px;
-			/* Roundness of the scrollbar thumb */
-			border: 2px solid #555;
-			/* Border around the scrollbar thumb */
-		}
+        ::-webkit-scrollbar-thumb {
+            background-color: #888;
+            /* Color of the scrollbar thumb */
+            border-radius: 10px;
+            /* Roundness of the scrollbar thumb */
+            border: 2px solid #555;
+            /* Border around the scrollbar thumb */
+        }
 
-		::-webkit-scrollbar-thumb:hover {
-			background-color: #555;
-			/* Color of the scrollbar thumb when hovered */
-		}
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+            /* Color of the scrollbar thumb when hovered */
+        }
 
-		::-webkit-scrollbar-track {
-			background-color: #f1f1f1;
-			/* Color of the scrollbar track */
-			border-radius: 10px;
-			/* Roundness of the scrollbar track */
-			border: 2px solid #ccc;
-			/* Border around the scrollbar track */
-		}
+        ::-webkit-scrollbar-track {
+            background-color: #f1f1f1;
+            /* Color of the scrollbar track */
+            border-radius: 10px;
+            /* Roundness of the scrollbar track */
+            border: 2px solid #ccc;
+            /* Border around the scrollbar track */
+        }
         </style>
         {% with analytical_identity=request.user.uuid|default:None %}
             {% analytical_head_top %}
@@ -116,6 +116,54 @@
         {% include 'accounts/sticky_footer.html' %}
         {% block script %}
         {% endblock script %}
+        <script>
+// Select all buttons with the class 'shareButton'
+const shareButtons = document.querySelectorAll('.shareButton');
+
+// Add click event listener to each button
+shareButtons.forEach(button => {
+    button.addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent default link behavior
+
+        // Define the share content
+        const shareTitle = '{{ title }}';
+        const shareText = 'Gyan Aangan | {{ description }}'; 
+        const shareUrl = window.location.href; 
+        
+        // Check if the Web Share API is supported
+        if (navigator.share) {
+            navigator.share({
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl
+            })
+            .then(() => {
+                // console.log('Shared successfully!');
+            })
+            .catch((error) => {
+                // console.error('Error sharing:', error);
+            });
+        } else {
+            // Fallback if Web Share API is not supported
+            const fullText = `${shareTitle}\n\n${shareText}\n\n${shareUrl}`;
+            copyToClipboard(fullText); 
+        }
+    });
+});
+
+// Function to copy text to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            alert('Content copied to clipboard! You can now paste it anywhere.');
+        })
+        .catch((error) => {
+            console.error('Error copying to clipboard:', error);
+            alert('Failed to copy text. Please try manually.');
+        });
+}
+
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.js"></script>
         {% analytical_body_bottom %}
     </body>

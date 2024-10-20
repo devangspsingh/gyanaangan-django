@@ -51,7 +51,15 @@
     </div>
 
     <div>
-        {{subject.description}}
+        {% with 125 as limit %}
+        {% if subject.description|length > limit %}
+            {{ subject.description|slice:":125" }}...
+        {% else %}
+            {{ subject.description }}
+        {% endif %}
+    {% endwith %}
+    
+
     </div>
     <div>
         <ul class="flex justify-normal gap-2 flex-wrap text-sm py-2">
