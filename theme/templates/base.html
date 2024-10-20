@@ -126,14 +126,12 @@ shareButtons.forEach(button => {
         event.preventDefault(); // Prevent default link behavior
 
         // Define the share content
-        const shareTitle = '{{ title }}';
-        const shareText = 'Gyan Aangan | {{ description }}'; 
-        const shareUrl = window.location.href; 
+        const shareText = `{{ meta_description | default:default_meta_description }}`;  
+        const shareUrl = '{{ request.build_absolute_uri }}';  
         
         // Check if the Web Share API is supported
         if (navigator.share) {
             navigator.share({
-                title: shareTitle,
                 text: shareText,
                 url: shareUrl
             })
@@ -145,7 +143,7 @@ shareButtons.forEach(button => {
             });
         } else {
             // Fallback if Web Share API is not supported
-            const fullText = `${shareTitle}\n\n${shareText}\n\n${shareUrl}`;
+            const fullText = `${shareText}\n\n${shareUrl}`;
             copyToClipboard(fullText); 
         }
     });
