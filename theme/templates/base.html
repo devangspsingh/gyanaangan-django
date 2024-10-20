@@ -126,9 +126,9 @@ shareButtons.forEach(button => {
         event.preventDefault(); // Prevent default link behavior
 
         // Define the share content
-        const shareTitle = '{{ title }}';
-        const shareText = 'Gyan Aangan | {{ description }}'; 
-        const shareUrl = window.location.href; 
+        const shareTitle = `{{ title|default:default_full_title }}`;  // No escapejs needed here
+        const shareText = `{{ description|default:default_meta_description }}`;  // Use description safely
+        const shareUrl = '{{ request.build_absolute_uri|urlencode }}';  // Safely encoded URL for sharing
         
         // Check if the Web Share API is supported
         if (navigator.share) {
