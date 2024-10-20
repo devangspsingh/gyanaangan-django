@@ -126,7 +126,7 @@ shareButtons.forEach(button => {
         event.preventDefault(); // Prevent default link behavior
 
         // Define the share content
-        const shareText = `{{ meta_description | default:default_meta_description }}`;  
+        const shareText = `{{title}} \n\n {{ meta_description | default:default_meta_description }}`;  
         const shareUrl = '{{ request.build_absolute_uri }}';  
         
         // Check if the Web Share API is supported
