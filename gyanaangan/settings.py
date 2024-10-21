@@ -44,9 +44,13 @@ INSTALLED_APPS = [
     "tailwind",
     "theme",
     "django_browser_reload",
+    "ckeditor",
+    "ckeditor_uploader",
+    "taggit",
     "courses",
     "core",
     "accounts",
+    "blog",
 ]
 
 MIDDLEWARE = [
@@ -216,3 +220,14 @@ GOOGLE_REDIRECT_URI = (
     if DEBUG
     else "https://gyanaangan.dspsc.live/accounts/oauth/callback/"
 )
+
+
+CKEDITOR_UPLOAD_PATH = "public/uploads/"
+CKEDITOR_CONFIGS = {
+    "default": {
+        "toolbar": "full",
+        "height": 300,
+        "width": "100%",
+        "extraPlugins": ",".join(["image2"]),
+    },
+}

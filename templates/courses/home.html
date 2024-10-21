@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Home{% endblock title %}
+{% block title %}
+    Home
+{% endblock title %}
 {% block meta %}
     <meta name="description"
           content="Welcome to our education platform. Browse courses, subjects, and resources.">
@@ -24,7 +26,7 @@
                 {% endif %}
                 <div>
                     <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl">
-                        Welcome to <span class="underline text-blue-400">Gyan Aangan</span> 
+                        Welcome to <span class="underline text-blue-400">Gyan Aangan</span>
                     </h1>
                     <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 lg:px-48">
                         Browser a variety of courses subjects,
@@ -145,6 +147,72 @@
                     <a href="{% url 'resource_list' %}"
                        class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
                         Explore All Available Resources
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24"
+                             fill="currentColor"
+                             class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                            <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+        <section id="blogs"
+                 style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
+            <div class="flex min-h-[80vh] flex-col justify-center h-full gap-4 mt-8  px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+                <div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Blogs</h2>
+                    <p class="my-4 text-lg text-gray-400">Explore our blogs</p>
+                </div>
+                <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-center gap-6">
+           
+                        <div class="max-w-4xl">
+                            {% for blog in blogs %}
+                                <div class="w-full overflow-hidden items-stretch justify-between flex flex-col gap-2 h-full mx-auto border rounded-lg shadow-md bg-stone-800 border-gray-700 p-6 transition-transform transform">
+                                    <div class="flex w-full justify-between items-start">
+                                        <h2 class="text-xl font-bold text-white mb-4">
+                                            <a href="{{ blog.get_absolute_url }}" class="hover:underline">{{ blog.title }}</a>
+                                        </h2>
+                                    </div>
+                                    <div>
+                                        {% with 200 as limit %}
+                                            {% if blog.excerpt|length > limit %}
+                                                {{ blog.excerpt|slice:":200" }}...
+                                            {% else %}
+                                                {{ blog.excerpt }}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="flex flex-wrap items-center text-sm justify-between mt-2">
+                                        <time class="rounded-full text-gray-400 font-bold">
+                                        {{ blog.publish_date }}</time>
+                                        <div class="hover:underline text-blue-500 font-bold group">
+                                            <a href="{{ blog.get_absolute_url }}"
+                                               title="{{ blog.title }} blog"
+                                               class="text-blue-400 hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                                                Read More
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 24 24"
+                                                     fill="currentColor"
+                                                     class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                                                    <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="-z-10 transition-all duration-300 absolute h-full inset-y-0 right-0 md:w-[106px] flex items-center w-[106px]">
+                                        <div class="md:h-[135%] bg-gray-700 scale-100 group-hover:scale-[400%] h-[135%] aspect-square flex items-center rounded-full transition-transform">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+              
+                </div>
+                <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
+                    <a href="{% url 'blog_list' %}"
+                       class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                        Explore All Available Blogs
                         <svg xmlns="http://www.w3.org/2000/svg"
                              viewBox="0 0 24 24"
                              fill="currentColor"

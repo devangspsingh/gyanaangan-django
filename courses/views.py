@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
 
+from blog.models import BlogPost
 from core.models import SEODetail
 from .models import Notification, SpecialPage, Subject, Course, Resource, Stream
 from django.urls import reverse
@@ -49,6 +50,7 @@ def home(request):
         .order_by("-created_at")
         .first()
     )
+    blogs = BlogPost.published.all()[:5]
     
     seo_detail = SEODetail.objects.filter(page_name='home').first()
     if not seo_detail:
@@ -68,6 +70,7 @@ def home(request):
         'meta_description': seo_detail.meta_description,
         'og_image': seo_detail.og_image.url if seo_detail.og_image else static('images/default-og-image.jpg'),
         'site_name': seo_detail.site_name,
+        'blogs':blogs
     }
     
     return render(request, "courses/home.html", context)
