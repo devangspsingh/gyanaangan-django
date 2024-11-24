@@ -59,9 +59,9 @@
                             <div class="w-80 rounded-full mx-auto absolute bottom-5 left-0 right-0 bg-white/40 h-10"></div>
                         </div>
                     </div>
-                    <div class="space-x-1 flex items-center gap-4 mt-12">
+                    <div class="flex-wrap flex items-center gap-4 mt-12">
                         {% if slugs %}
-                            <a href="{% url 'year_detail' slugs.course_slug slugs.stream_slug slugs.year_slug %}"
+                            <a href="{% url 'subject_all_detail' slugs.course_slug slugs.stream_slug slugs.year_slug slugs.subject_slug %}"
                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
                                 <svg class="w-4 h-4 mr-2"
                                      fill="none"
@@ -70,7 +70,7 @@
                                      xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                                 </svg>
-                                {{ slugs.course_slug|title }} {{ slugs.stream_slug|title }} {{ slugs.year_slug|title }}
+                                {{ slugs.subject_slug|title }} {{ slugs.year_slug|title }}
                             </a>
                         {% endif %}
                         <button onclick="viewPdf(this)"
