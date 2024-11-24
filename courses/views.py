@@ -51,30 +51,33 @@ def home(request):
         .first()
     )
     blogs = BlogPost.published.all()[:5]
-    
-    seo_detail = SEODetail.objects.filter(page_name='home').first()
+
+    seo_detail = SEODetail.objects.filter(page_name="home").first()
     if not seo_detail:
         seo_detail = SEODetail(
-            title='Gyan Aangan | Explore a variety of courses, resources, and subjects....',
-            meta_description='Explore a variety of courses and resources to enhance your knowledge at Gyan Aangan.',
+            title="Gyan Aangan | Explore a variety of courses, resources, and subjects....",
+            meta_description="Explore a variety of courses and resources to enhance your knowledge at Gyan Aangan.",
             og_image=None,
-            site_name='Gyan Aangan',
+            site_name="Gyan Aangan",
         )
-    
-    context = {
-        'courses': courses,
-        'subjects': subjects,
-        'resources': resources,
-        'notification': latest_notification,
-        'title': seo_detail.title,
-        'meta_description': seo_detail.meta_description,
-        'og_image': seo_detail.og_image.url if seo_detail.og_image else static('images/default-og-image.jpg'),
-        'site_name': seo_detail.site_name,
-        'blogs':blogs
-    }
-    
-    return render(request, "courses/home.html", context)
 
+    context = {
+        "courses": courses,
+        "subjects": subjects,
+        "resources": resources,
+        "notification": latest_notification,
+        "title": seo_detail.title,
+        "meta_description": seo_detail.meta_description,
+        "og_image": (
+            seo_detail.og_image.url
+            if seo_detail.og_image
+            else static("images/default-og-image.jpg")
+        ),
+        "site_name": seo_detail.site_name,
+        "blogs": blogs,
+    }
+
+    return render(request, "courses/home.html", context)
 
 
 def subject_list(request):
@@ -96,34 +99,40 @@ def subject_list(request):
         "og_image": (
             seo_detail.og_image.url
             if seo_detail.og_image
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
 
     return render(request, "courses/subject_list.html", context)
 
+
 def course_list(request):
     courses = Course.published.all()
 
-    seo_detail = SEODetail.objects.filter(page_name='course_list').first()
+    seo_detail = SEODetail.objects.filter(page_name="course_list").first()
     if not seo_detail:
         seo_detail = SEODetail(
-            title='Available Courses - Gyan Aangan',
-            meta_description='Explore a variety of courses to enhance your knowledge and skills at Gyan Aangan.',
+            title="Available Courses - Gyan Aangan",
+            meta_description="Explore a variety of courses to enhance your knowledge and skills at Gyan Aangan.",
             og_image=None,
-            site_name='Gyan Aangan',
+            site_name="Gyan Aangan",
         )
-    
+
     context = {
-        'courses': courses,
-        'title': seo_detail.title,
-        'meta_description': seo_detail.meta_description,
-        'og_image': seo_detail.og_image.url if seo_detail.og_image else static('images/default-og-image.jpg'),
-        'site_name': seo_detail.site_name,
+        "courses": courses,
+        "title": seo_detail.title,
+        "meta_description": seo_detail.meta_description,
+        "og_image": (
+            seo_detail.og_image.url
+            if seo_detail.og_image
+            else static("images/default-og-image.jpg")
+        ),
+        "site_name": seo_detail.site_name,
     }
-    
+
     return render(request, "courses/course_list.html", context)
+
 
 def resource_list(request):
     resources = Resource.published.all()
@@ -144,7 +153,7 @@ def resource_list(request):
         "og_image": (
             seo_detail.og_image.url
             if seo_detail.og_image
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
@@ -199,7 +208,7 @@ def subject_detail(
         "og_image": (
             subject.og_image.url
             if subject.og_image
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
@@ -247,7 +256,7 @@ def resource_view(
         "og_image": (
             resource.og_image.url
             if resource.og_image
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
@@ -259,13 +268,17 @@ def resource_view(
             stream__slug=stream_slug,
             year__slug=year_slug,
         )
+
+
         context["slugs"] = {
             "year_slug": special_page.year.slug,
             "course_slug": special_page.course.slug,
             "stream_slug": special_page.stream.slug,
             "subject_slug": subject_slug,
         }
-
+    
+    courses = Course.published.all()[:5]
+    context["courses"]= courses
     return render(request, "courses/pdf_viewer.html", context)
 
 
@@ -288,7 +301,7 @@ def course_detail(request, course_slug):
         "og_image": (
             course.og_image.url
             if course.og_image.url
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
@@ -325,7 +338,7 @@ def stream_detail(request, course_slug, stream_slug):
         "og_image": (
             seo_detail.og_image.url
             if seo_detail.og_image
-            else static('images/default-og-image.jpg')
+            else static("images/default-og-image.jpg")
         ),
         "site_name": seo_detail.site_name,
     }
@@ -344,15 +357,6 @@ def year_detail(request, course_slug, stream_slug, year_slug):
     course = special_page.course
     stream = special_page.stream
 
-    seo_detail = SEODetail.objects.filter(page_name=year_slug).first()
-    if not seo_detail:
-        seo_detail = SEODetail(
-            title=f"{stream.name} {year.name} - Gyan Aangan",
-            meta_description=f"Learn more about the {course.name} {stream.name} {year.name} year at Gyan Aangan.",
-            og_image=None,
-            site_name="Gyan Aangan",
-        )
-
     subjects = Subject.published.filter(years=year, stream=stream).order_by(
         "-last_resource_updated_at"
     )
@@ -363,14 +367,18 @@ def year_detail(request, course_slug, stream_slug, year_slug):
         "course": course,
         "subjects": subjects,
         "special_page": special_page,
-        "title": seo_detail.title,
-        "meta_description": seo_detail.meta_description,
-        "og_image": (
-            seo_detail.og_image.url
-            if seo_detail.og_image
-            else static('images/default-og-image.jpg')
+        "title": f"{stream.name} {year.name} - Gyan Aangan",
+        "meta_description": (
+            special_page.meta_description
+            if special_page.meta_description
+            else f"Learn more about the {course.name} {stream.name} {year.name} year at Gyan Aangan."
         ),
-        "site_name": seo_detail.site_name,
+        "og_image": (
+            special_page.og_image.url
+            if special_page.og_image
+            else static("images/default-og-image.jpg")
+        ),
+        "site_name": "Gyan Aangan",
     }
 
     return render(request, "courses/year_detail.html", context)

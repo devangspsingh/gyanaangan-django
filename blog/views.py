@@ -46,7 +46,6 @@ def blog_detail(request, slug):
         og_image=None,
         site_name="Gyan Aangan",
     )
-    print(seo_detail)
     
     # Check if the logged-in user is a superuser/admin and provide edit link
     is_admin = request.user.is_authenticated and request.user.is_superuser

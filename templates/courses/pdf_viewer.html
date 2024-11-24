@@ -1,12 +1,14 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load tags %}
 {% load static %}
-{% block title %}{{ resource.title }}Resource View{% endblock %}
+{% block title %}
+    {{ resource.title }}Resource View
+{% endblock title %}
 {% block meta %}
     <meta name="description"
           content="Welcome to our education platform. Browse courses, subjects, and resources.">
     <meta name="keywords" content="education, courses, subjects, resources">
-    {% if resource.type  != "video" %}
+    {% if resource.type != "video" %}
         <script>
     window.viewPdf = function (_this) {
         let element = document.getElementById(_this.dataset.pdf)
@@ -33,7 +35,7 @@
 
         </script>
     {% endif %}
-{% endblock %}
+{% endblock meta %}
 {% block content %}
     <main class="min-h-[100vh]"
           style="background-image: url('{% static 'images/hero-pattern-dark.svg' %}')">
@@ -51,14 +53,26 @@
                         <iframe id="pdfviewer"
                                 sandbox="allow-scripts allow-same-origin"
                                 src="https://docs.google.com/gview?url={{ resource.file.url|urlencode }}&embedded=true"
-                                style="display: block"
-                                class="w-full h-[90vh] relative z-10 mx-auto rounded-md overflow-hidden"></iframe>
+                                class="w-full h-[90vh] relative z-10 mx-auto rounded-md overflow-hidden block"></iframe>
                         <div class="rounded-md w-full flex-col items-center justify-center -z-10 animate-pulse mx-auto left-0 right-0 h-[90vh] absolute top-0 bg-white/50">
                             <div class="text-center text-black">Click on Close PDF if it takes too long to load pdf</div>
                             <div class="w-80 rounded-full mx-auto absolute bottom-5 left-0 right-0 bg-white/40 h-10"></div>
                         </div>
                     </div>
                     <div class="space-x-1 flex items-center gap-4 mt-12">
+                        {% if slugs %}
+                            <a href="{% url 'year_detail' slugs.course_slug slugs.stream_slug slugs.year_slug %}"
+                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
+                                <svg class="w-4 h-4 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                </svg>
+                                {{ slugs.course_slug|title }} {{ slugs.stream_slug|title }} {{ slugs.year_slug|title }}
+                            </a>
+                        {% endif %}
                         <button onclick="viewPdf(this)"
                                 data-pdf="pdfviewer"
                                 class="rounded-full bg-red-600 p-2 px-3">
@@ -74,19 +88,50 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
-        {% else %}
-            <div class="rounded-md overflow-hidden flex w-full h-full">
-                <iframe class="aspect-video w-full"
-                        src="{{ resource.embed_link }}"
-                        title="{{ resource.name }} YouTube video player"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        referrerpolicy="strict-origin-when-cross-origin"
-                        allowfullscreen></iframe>
-            </div>
-        {% endif %}
+            {% else %}
+                <div class="rounded-md overflow-hidden flex w-full h-full">
+                    <iframe class="aspect-video w-full"
+                            src="{{ resource.embed_link }}"
+                            title="{{ resource.name }} YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allowfullscreen></iframe>
+                </div>
+            {% endif %}
+            <hr class="border-slate-500 mt-10">
+        </div>
+        <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
+    </main>
+    <section id="courses"
+             class="mt-14 flex flex-col justify-center h-full gap-4 px-4 mx-auto max-w-screen-xl lg:py-16 z-10 relative">
+        <div>
+            <h2 class="text-2xl md:text-4xl font-extrabold dark:text-white">Available Courses for Students</h2>
+            <p class="my-4 text-lg text-gray-400">
+                Explore a variety of courses to enhance your knowledge and skills.
+                Our offerings include Bachelor of Technology (B.Tech) with specializations in Computer Science,
+                Information Technology, and a common first-year stream for all disciplines, as well as Bachelor of
+                Science (B.Sc) programs covering fundamental scientific concepts.
+            </p>
+        </div>
+        <div class="w-full mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-6">
+            {% for course in courses %}
+                {% url 'course_detail' course.slug as url %}
+                {% include 'courses/components/course_card.html' with url=url item=course %}
+            {% endfor %}
+        </div>
+        <div class="hover:underline text-blue-500 dark:text-blue-400 font-bold group mt-4">
+            <a href="{% url 'course_list' %}"
+               class="text-blue-400 text-xl hover:underline-offset-2 hover:underline font-medium flex w-fit justify-end gap-2 items-center rounded-full transition-colors">
+                Explore All Available Courses
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 24 24"
+                     fill="currentColor"
+                     class="w-7 h-auto group-hover:text-white rounded-full group-hover:bg-blue-400 transition-colors">
+                    <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
     </div>
-    <div class="bg-gradient-to-b to-transparent from-slate-800 w-full h-full absolute top-0 left-0 -z-10"></div>
-</main>
+</section>
 {% endblock %}
