@@ -8,6 +8,8 @@ import io
 import cairosvg
 from django.template.loader import render_to_string
 from gyanaangan.settings import PrivateMediaStorage, PublicMediaStorage
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import GinIndex
 
 
 class BaseModel(models.Model):
@@ -102,15 +104,25 @@ class Course(SEOModel):
     common_name = models.CharField(max_length=100, blank=True, null=True)
     slug = models.SlugField(unique=True, blank=True)
     years = models.ManyToManyField(Year, related_name="courses")
+    search_vector = SearchVectorField(null=True, blank=True)
 
     published = PublishedManager()
     objects = models.Manager()  # Default manager
 
     drafts = DraftManager()
 
+    class Meta:
+        indexes = [GinIndex(fields=['search_vector'])]
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        from django.contrib.postgres.search import SearchVector
+        self.search_vector = (
+            SearchVector('name', weight='A') + 
+            SearchVector('description', weight='B') +
+            SearchVector('meta_description', weight='C')
+        )
         super(Course, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -149,17 +161,27 @@ class Subject(SEOModel):
     last_resource_updated_at = models.DateTimeField(
         null=True, blank=True
     )  # Add this field
+    search_vector = SearchVectorField(null=True, blank=True)
 
     published = PublishedManager()
     objects = models.Manager()  # Default manager
 
     drafts = DraftManager()
 
+    class Meta:
+        indexes = [GinIndex(fields=['search_vector'])]
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         super(Subject, self).save(*args, **kwargs)
         self.update_last_resource_updated()
+        from django.contrib.postgres.search import SearchVector
+        self.search_vector = (
+            SearchVector('name', weight='A') + 
+            SearchVector('description', weight='B') +
+            SearchVector('meta_description', weight='C')
+        )
         super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -249,11 +271,15 @@ class Resource(SEOModel):
     educational_year = models.ForeignKey(
         EducationalYear, on_delete=models.SET_NULL, null=True, blank=True
     )
+    search_vector = SearchVectorField(null=True, blank=True)
 
     published = PublishedManager()
     objects = models.Manager()  # Default manager
 
     drafts = DraftManager()
+
+    class Meta:
+        indexes = [GinIndex(fields=['search_vector'])]
 
     def __str__(self):
         return self.name
@@ -261,6 +287,11 @@ class Resource(SEOModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        from django.contrib.postgres.search import SearchVector
+        self.search_vector = (
+            SearchVector('name', weight='A') + 
+            SearchVector('description', weight='B')
+        )
         super(Resource, self).save(*args, **kwargs)
 
     def __str__(self):

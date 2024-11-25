@@ -1,5 +1,8 @@
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.db.models import Q, F
+from django.db.models.functions import Greatest
 
 from blog.models import BlogPost
 from core.models import SEODetail
@@ -14,29 +17,56 @@ from urllib.parse import urlparse, parse_qs
 
 def search(request):
     query = request.GET.get("q", "")
-    courses = Course.published.filter(
-        Q(name__icontains=query)
-        | Q(description__icontains=query)
-        | Q(meta_description__icontains=query)
-    )
-    subjects = Subject.published.filter(
-        Q(name__icontains=query)
-        | Q(description__icontains=query)
-        | Q(meta_description__icontains=query)
-    )
-    resources = Resource.published.filter(
-        Q(name__icontains=query)
-        | Q(description__icontains=query)
-        | Q(resource_type__icontains=query)
-    )
+    if not query:
+        return render(request, "courses/search_results.html", {"query": query})
+
+    # Create search query
+    search_query = SearchQuery(query, config='english')
+
+    # Search in courses
+    courses = Course.published.annotate(
+        similarity=Greatest(
+            SearchRank(F('search_vector'), search_query),
+            TrigramSimilarity('name', query),
+            TrigramSimilarity('description', query),
+        )
+    ).filter(
+        Q(search_vector=search_query) |
+        Q(similarity__gt=0.1)
+    ).order_by('-similarity')
+
+    # Search in subjects
+    subjects = Subject.published.annotate(
+        similarity=Greatest(
+            SearchRank(F('search_vector'), search_query),
+            TrigramSimilarity('name', query),
+            TrigramSimilarity('description', query),
+        )
+    ).filter(
+        Q(search_vector=search_query) |
+        Q(similarity__gt=0.1)
+    ).order_by('-similarity')
+
+    # Search in resources
+    resources = Resource.published.annotate(
+        similarity=Greatest(
+            SearchRank(F('search_vector'), search_query),
+            TrigramSimilarity('name', query),
+            TrigramSimilarity('description', query),
+        )
+    ).filter(
+        Q(search_vector=search_query) |
+        Q(similarity__gt=0.1)
+    ).order_by('-similarity')
+
     return render(
         request,
         "courses/search_results.html",
         {
             "query": query,
-            "courses": courses,
-            "subjects": subjects,
-            "resources": resources,
+            "courses": courses[:10],  # Limit results
+            "subjects": subjects[:10],
+            "resources": resources[:10],
         },
     )
 
