@@ -8,7 +8,8 @@ instantclient_23_4/
 # C extensions
 *.so
 /staticfiles
-dumpdata.json
+dump.json
+db.sqlite3-dev
 # Distribution / packaging
 .Python
 build/

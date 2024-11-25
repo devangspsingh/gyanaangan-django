@@ -100,7 +100,8 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     },
 }
-DATABASES["default"] = DATABASES["dev"]
+
+DATABASES["default"] = DATABASES["prod"]
 
 
 AUTH_PASSWORD_VALIDATORS = [
