@@ -39,10 +39,10 @@ make_draft.short_description = _("Mark selected items as draft")
 
 
 class BaseModelAdmin(admin.ModelAdmin):
-    list_display = ["id", "status", "created_at", "updated_at"]
-    list_filter = ["status", "created_at"]
-    search_fields = ["id"]
-    ordering = ["id"]
+    list_display = ["id", "name", "status", "created_at", "updated_at"]  # Added created_at and updated_at
+    list_filter = ["status", "created_at", "updated_at"]  # Added created_at and updated_at filters
+    search_fields = ["id", "name"]
+    ordering = ["-created_at"]  # Default sort by newest first
     date_hierarchy = "created_at"
     actions = [
         make_published,
@@ -75,9 +75,10 @@ class EducationalYearAdmin(admin.ModelAdmin):
 @admin.register(Course)
 class CourseAdmin(BaseModelAdmin):
     form = CourseForm
-    list_display = ["name", "abbreviation", "common_name", "slug", "status"]
+    list_display = ["name", "abbreviation", "common_name", "slug", "status", "created_at", "updated_at"]
+    list_filter = ["status", "years", "created_at", "updated_at"]
     search_fields = ["name", "abbreviation", "common_name", "slug"]
-    list_filter = ["status", "years"]
+    ordering = ["-created_at", "-updated_at"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "status", "years")}),
         (
@@ -103,9 +104,10 @@ class CourseAdmin(BaseModelAdmin):
 @admin.register(Stream)
 class StreamAdmin(BaseModelAdmin):
     form = StreamForm
-    list_display = ["name", "abbreviation", "common_name", "slug", "status"]
+    list_display = ["name", "abbreviation", "common_name", "slug", "status", "created_at", "updated_at"]
+    list_filter = ["status", "courses", "created_at", "updated_at"]
     search_fields = ["name", "abbreviation", "common_name", "slug"]
-    list_filter = ["status", "courses"]
+    ordering = ["-created_at", "-updated_at"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "status", "courses", "years")}),
         (
@@ -131,9 +133,10 @@ class StreamAdmin(BaseModelAdmin):
 @admin.register(Subject)
 class SubjectAdmin(BaseModelAdmin):
     form = SubjectForm
-    list_display = ["name", "abbreviation", "common_name", "slug", "status"]
+    list_display = ["name", "abbreviation", "common_name", "slug", "status", "created_at", "updated_at"]
+    list_filter = ["status", "stream", "created_at", "updated_at"]
     search_fields = ["name", "abbreviation", "common_name", "slug"]
-    list_filter = ["status", "stream"]
+    ordering = ["-created_at", "-updated_at"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "status", "stream", "years")}),
         (
@@ -159,9 +162,10 @@ class SubjectAdmin(BaseModelAdmin):
 @admin.register(Resource)
 class ResourceAdmin(BaseModelAdmin):
     form = ResourceForm
-    list_display = ["name", "resource_type", "slug", "status", "educational_year"]
+    list_display = ["name", "resource_type", "slug", "status", "educational_year", "created_at", "updated_at"]
+    list_filter = ["status", "resource_type", "subject", "educational_year", "created_at", "updated_at"]
     search_fields = ["name", "resource_type", "slug"]
-    list_filter = ["status", "resource_type", "subject", "educational_year"]
+    ordering = ["-created_at", "-updated_at"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "resource_type", "status")}),
         (

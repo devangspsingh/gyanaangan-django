@@ -8,7 +8,7 @@ from django.dispatch import receiver
 from io import BytesIO
 from django.core.files.base import ContentFile
 import requests
-
+from django.db.models import Max
 from courses.models import Course, Resource, Subject, Stream, SpecialPage
 
 
@@ -28,14 +28,12 @@ class Profile(models.Model):
     img_google_url = models.URLField(max_length=500, blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Check if the image URL has changed
+        if not self.pk:  # If this is a new profile
+            last_id = Profile.objects.aggregate(Max("id"))["id__max"]
+            self.id = (last_id or 0) + 1
+
         if self.img_google_url:
-            if (
-                not self.pk
-                or not Profile.objects.filter(
-                    pk=self.pk, img_google_url=self.img_google_url
-                ).exists()
-            ):
+            if (not self.pk or not Profile.objects.filter(pk=self.pk, img_google_url=self.img_google_url).exists()):
                 # Download the image from the new Google URL
                 response = requests.get(self.img_google_url)
                 img_temp = ContentFile(response.content)
@@ -45,23 +43,30 @@ class Profile(models.Model):
                 temp_image.seek(0)
                 image = Image.open(temp_image)
 
-                # Preserve GIFs, but resize other formats if needed
+                # Handle GIF separately
                 if image.format == "GIF":
-                    # If GIF, save it directly
                     self.profile_pic.save(
                         f"{self.user.username}_profile_pic.gif",
                         ContentFile(response.content),
                         save=False,
                     )
                 else:
-                    # Resize the image if necessary (e.g., to 300x300)
+                    # Convert RGBA to RGB if necessary
+                    if image.mode in ('RGBA', 'LA'):
+                        background = Image.new('RGB', image.size, (255, 255, 255))
+                        background.paste(image, mask=image.split()[-1])
+                        image = background
+                    elif image.mode != 'RGB':
+                        image = image.convert('RGB')
+
+                    # Resize if necessary
                     if image.height > 300 or image.width > 300:
                         output_size = (300, 300)
                         image.thumbnail(output_size)
 
-                    # Convert non-GIF images to JPEG and save
+                    # Save as JPEG
                     image_io = BytesIO()
-                    image.save(image_io, format="JPEG")
+                    image.save(image_io, format="JPEG", quality=85)
                     self.profile_pic.save(
                         f"{self.user.username}_profile_pic.jpg",
                         ContentFile(image_io.getvalue()),
@@ -69,9 +74,8 @@ class Profile(models.Model):
                     )
 
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.username} Profile"
+        def __str__(self):
+            return f"{self.user.username} Profile"
 
 
 class Subscription(models.Model):

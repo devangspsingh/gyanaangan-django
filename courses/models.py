@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from gyanaangan.settings import PrivateMediaStorage, PublicMediaStorage
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
-
+from django.contrib.postgres.search import SearchVector
 
 class BaseModel(models.Model):
     STATUS_CHOICES = [
@@ -117,13 +117,13 @@ class Course(SEOModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        from django.contrib.postgres.search import SearchVector
-        self.search_vector = (
-            SearchVector('name', weight='A') + 
-            SearchVector('description', weight='B') +
-            SearchVector('meta_description', weight='C')
-        )
         super(Course, self).save(*args, **kwargs)
+        if self.pk:
+            self.search_vector = (
+                SearchVector('name', weight='A') + 
+                SearchVector('description', weight='B') +
+                SearchVector('meta_description', weight='C')
+            )
 
     def __str__(self):
         return self.name
@@ -176,13 +176,14 @@ class Subject(SEOModel):
             self.slug = slugify(self.name)
         super(Subject, self).save(*args, **kwargs)
         self.update_last_resource_updated()
-        from django.contrib.postgres.search import SearchVector
-        self.search_vector = (
-            SearchVector('name', weight='A') + 
-            SearchVector('description', weight='B') +
-            SearchVector('meta_description', weight='C')
-        )
+
         super(Subject, self).save(*args, **kwargs)
+        if self.pk:
+            self.search_vector = (
+                SearchVector('name', weight='A') + 
+                SearchVector('description', weight='B') +
+                SearchVector('meta_description', weight='C')
+            )
 
     def __str__(self):
         return self.name
@@ -287,12 +288,14 @@ class Resource(SEOModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        from django.contrib.postgres.search import SearchVector
-        self.search_vector = (
-            SearchVector('name', weight='A') + 
-            SearchVector('description', weight='B')
-        )
+
         super(Resource, self).save(*args, **kwargs)
+        if self.pk:
+            self.search_vector = (
+                SearchVector('name', weight='A') + 
+                SearchVector('description', weight='B') +
+                SearchVector('meta_description', weight='C')
+            )
 
     def __str__(self):
         return f"{self.name} - {self.resource_type}"
