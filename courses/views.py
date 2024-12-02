@@ -215,16 +215,17 @@ def subject_detail(
     ):
         return redirect(reverse("subject_detail", args=[subject_slug]))
 
-    resources = subject.resources.all()
+    resources = subject.resources.all().order_by('-educational_year__name')
 
     # Apply resource type filter if provided and valid
     if resource_type_filter != "all":
         resources = resources.filter(resource_type=resource_type_filter)
 
-    # Group resources by resource_type
+    # Group resources by educational_year
     grouped_resources = {}
     for resource in resources:
-        grouped_resources.setdefault(resource.resource_type, []).append(resource)
+        year = resource.educational_year.name if resource.educational_year else 'Unknown Year'
+        grouped_resources.setdefault(year, []).append(resource)
 
     context = {
         "subject": subject,
