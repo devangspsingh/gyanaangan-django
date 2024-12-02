@@ -215,21 +215,35 @@ def subject_detail(
     ):
         return redirect(reverse("subject_detail", args=[subject_slug]))
 
-    resources = subject.resources.all().order_by('-educational_year__name')
+    resources = subject.resources.all().order_by('-educational_year__name', '-updated_at')
 
     # Apply resource type filter if provided and valid
     if resource_type_filter != "all":
         resources = resources.filter(resource_type=resource_type_filter)
 
-    # Group resources by educational_year
+    # Group resources by resource_type and collect latest updated_at per type
     grouped_resources = {}
+    resource_type_latest_update = {}
     for resource in resources:
-        year = resource.educational_year.name if resource.educational_year else 'Unknown Year'
-        grouped_resources.setdefault(year, []).append(resource)
+        resource_type = resource.get_resource_type_display()
+        grouped_resources.setdefault(resource_type, []).append(resource)
+        # Update latest updated_at per resource_type
+        if (resource_type not in resource_type_latest_update or
+                resource.updated_at > resource_type_latest_update[resource_type]):
+            resource_type_latest_update[resource_type] = resource.updated_at
+
+    # Sort grouped_resources by latest updated_at of each resource_type
+    sorted_grouped_resources = dict(
+        sorted(
+            grouped_resources.items(),
+            key=lambda x: resource_type_latest_update[x[0]],
+            reverse=True
+        )
+    )
 
     context = {
         "subject": subject,
-        "grouped_resources": grouped_resources,
+        "grouped_resources": sorted_grouped_resources,
         "resource_type_filter": resource_type_filter,
         "canonical_url": request.build_absolute_uri(
             reverse("subject_detail", args=[subject_slug])
