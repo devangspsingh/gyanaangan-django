@@ -9,31 +9,164 @@
           content="Welcome to our education platform. Browse courses, subjects, and resources.">
     <meta name="keywords" content="education, courses, subjects, resources">
     {% if resource.type != "video" %}
-        <script>
-    window.viewPdf = function (_this) {
-        let element = document.getElementById(_this.dataset.pdf)
-        pdfName = (element.id.replace(/ /g, '%20'));
+        <link rel="stylesheet" href="https://unpkg.com/pdfjs-dist@4.8.69/web/pdf_viewer.css">
+        <script type="module" src="https://unpkg.com/pdfjs-dist@4.8.69/build/pdf.mjs"></script>
+        <script type="module" src="https://unpkg.com/pdfjs-dist@4.8.69/build/pdf.worker.mjs"></script>
+        <script type="module">
+            import * as pdfjsLib from 'https://unpkg.com/pdfjs-dist@4.8.69/build/pdf.mjs';
+            import { PDFViewer, EventBus, PDFLinkService } from 'https://unpkg.com/pdfjs-dist@4.8.69/web/pdf_viewer.mjs';
 
-        if (_this.innerText === ("View Pdf")) {
-            _this.innerText = "Close Pdf";
-            _this.classList.replace("bg-yellow-600", "bg-red-600")
-        } else {
-            _this.innerText = "View Pdf";
-            _this.classList.replace("bg-red-600", "bg-yellow-600")
-        }
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.8.69/build/pdf.worker.mjs';
 
-        if (element.style.display === "none") {
-            element.style.display = "block";
-            element.nextElementSibling.style.display = "block"
-            element.src = `https://docs.google.com/gview?url={{resource.file.url|urlencode}}&embedded=true`
+            const encodedUrl = decodeURIComponent("{{ resource.file.url|escapejs }}");
+            const container = document.getElementById('viewerContainer');
+            const loadingIndicator = document.getElementById('loading-indicator');
 
-        } else {
-            element.style.display = "none";
-            element.nextElementSibling.style.display = "none"
-        }
-    }
+            let pdfDoc = null;
+            let pdfViewer = null;
+            let currentPage = 1;
+            let scale = 1.0;
+            let eventBus = null;
+            let pdfLinkService = null;
 
+            function setupViewer() {
+                eventBus = new EventBus();
+                pdfLinkService = new PDFLinkService({
+                    eventBus: eventBus,
+                });
+
+                pdfViewer = new PDFViewer({
+                    container: container,
+                    eventBus: eventBus,
+                    linkService: pdfLinkService,
+                    textLayerMode: 2,
+                    enableWebGL: true,
+                    removePageBorders: true,
+                });
+
+                pdfLinkService.setViewer(pdfViewer);
+
+                eventBus.on('pagesinit', () => {
+                    pdfViewer.currentScaleValue = 'auto';
+                });
+            }
+
+            async function loadPDF() {
+                try {
+                    const url = encodedUrl.replace(/&amp;/g, '&');
+                    setupViewer();
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    pdfDoc = await loadingTask.promise;
+                    pdfViewer.setDocument(pdfDoc);
+                    pdfLinkService.setDocument(pdfDoc, null);
+
+                    // Update UI and setup event listeners
+                    document.getElementById('total-pages').textContent = pdfDoc.numPages;
+                    loadingIndicator.style.display = 'none';
+
+                    eventBus.on('pagechanging', (evt) => {
+                        currentPage = evt.pageNumber;
+                        document.getElementById('current-page').textContent = currentPage;
+                    });
+
+                } catch (error) {
+                    console.error('Error loading PDF:', error);
+                    loadingIndicator.innerHTML = '<p class="text-red-500">Failed to load PDF. Please try again later.</p>';
+                }
+            }
+
+            function updateZoom(newScale) {
+                if (newScale < 0.25 || newScale > 3) return;
+                scale = newScale;
+                document.getElementById('zoom-level').textContent = `${Math.round(scale * 100)}%`;
+                pdfViewer.currentScale = scale;
+            }
+
+            function fitToWidth() {
+                if (!pdfViewer) return;
+                const currentPage = pdfViewer.getPageView(0);
+                if (!currentPage) return;
+                
+                const containerWidth = container.clientWidth;
+                const pageWidth = currentPage.viewport.width;
+                const newScale = (containerWidth - 30) / pageWidth;
+                updateZoom(newScale);
+            }
+
+            // Event Listeners
+            document.getElementById('zoom-in').onclick = () => updateZoom(scale * 1.2);
+            document.getElementById('zoom-out').onclick = () => updateZoom(scale / 1.2);
+            document.getElementById('fit-width').onclick = fitToWidth;
+            document.getElementById('prev-page').onclick = () => {
+                if (currentPage > 1) pdfViewer.currentPageNumber = currentPage - 1;
+            };
+            document.getElementById('next-page').onclick = () => {
+                if (currentPage < pdfDoc?.numPages) pdfViewer.currentPageNumber = currentPage + 1;
+            };
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') document.getElementById('prev-page').click();
+                if (e.key === 'ArrowRight') document.getElementById('next-page').click();
+            });
+
+            // Handle window resizing
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(fitToWidth, 100);
+            });
+
+            // Initialize
+            loadPDF();
         </script>
+        <style>
+            .pdfViewer {
+                background: transparent;
+            }
+            .pdfViewer .page {
+                border: none;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                background: rgba(0, 0, 0, 0.1);
+            }
+            #viewerContainer {
+                position: absolute;
+                top: 3rem; /* Height of the controls bar */
+                bottom: 0;
+                left: 0;
+                right: 0;
+                overflow: auto;
+                width: 100%;
+                background: #1f2937;
+            }
+            .viewer-wrapper {
+                position: relative;
+                height: 100vh;
+                width: 100%;
+                overflow: hidden;
+            }
+            .controls-bar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 20;
+                background-color: #1f2937;
+            }
+            .textLayer {
+                opacity: 1;
+            }
+            .textLayer ::selection {
+                background: rgba(0, 0, 255, 0.2);
+            }
+            #pdf-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+        </style>
     {% endif %}
 {% endblock meta %}
 {% block content %}
@@ -44,50 +177,74 @@
                 <div>
                     <h1 class="text-2xl md:text-4xl font-extrabold dark:text-white">{{ resource.name }}</h1>
                     <p class="my-4 text-lg text-gray-400">{{ resource.description }}</p>
+                    {{ resource.file.url }}
                     <span>{{ resource.type | upper }}</span>
                 </div>
             </div>
             {% if resource.type  != "video" %}
-                <div class="rounded-md overflow-hidden flex-col gap-2">
-                    <div class="relative">
-                        <iframe id="pdfviewer"
-                                sandbox="allow-scripts allow-same-origin"
-                                src="https://docs.google.com/gview?url={{ resource.file.url|urlencode }}&embedded=true"
-                                class="w-full h-[90vh] relative z-10 mx-auto rounded-md overflow-hidden block"></iframe>
-                        <div class="rounded-md w-full flex-col items-center justify-center -z-10 animate-pulse mx-auto left-0 right-0 h-[90vh] absolute top-0 bg-white/50">
-                            <div class="text-center text-black">Click on Close PDF if it takes too long to load pdf</div>
-                            <div class="w-80 rounded-full mx-auto absolute bottom-5 left-0 right-0 bg-white/40 h-10"></div>
+                
+                <div class="flex items-center space-x-2 mb-2">
+                    <button id="btn-pdfjs" class="p-2 bg-gray-700 text-white rounded">
+                        PDF.js Viewer
+                    </button>
+                    <button id="btn-gdocs" class="p-2 bg-gray-700 text-white rounded">
+                        Google Docs Viewer
+                    </button>
+                </div>
+                <div id="pdf-viewer-tab" style="display: block;">
+                    <div class="viewer-wrapper">
+                        <div class="controls-bar p-2 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button id="prev-page" class="p-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                                    </svg>
+                                </button>
+                                <span class="text-white"><span id="current-page">1</span> / <span id="total-pages">?</span></span>
+                                <button id="next-page" class="p-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="fit-width" class="p-2 bg-gray-700 text-white rounded hover:bg-gray-600">Fit Width</button>
+                                <button id="zoom-out" class="p-2 bg-gray-700 text-white rounded hover:bg-gray-600">-</button>
+                                <span id="zoom-level" class="text-white">100%</span>
+                                <button id="zoom-in" class="p-2 bg-gray-700 text-white rounded hover:bg-gray-600">+</button>
+                            </div>
+                        </div>
+                        <div id="viewerContainer">
+                            <div id="viewer" class="pdfViewer"></div>
+                        </div>
+                        <div id="loading-indicator" class="text-white text-center p-4 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
+                            Loading PDF...
                         </div>
                     </div>
-                    <div class="flex-wrap flex items-center gap-4 mt-12">
-                        {% if slugs %}
-                            <a href="{% url 'subject_all_detail' slugs.course_slug slugs.stream_slug slugs.year_slug slugs.subject_slug %}"
-                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">
-                                <svg class="w-4 h-4 mr-2"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     viewBox="0 0 24 24"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                                </svg>
-                                {{ slugs.subject_slug|title }} {{ slugs.year_slug|title }}
-                            </a>
-                        {% endif %}
-                        <button onclick="viewPdf(this)"
-                                data-pdf="pdfviewer"
-                                class="rounded-full bg-red-600 p-2 px-3">
-                            Close
-                            Pdf
-                        </button>
-                        {% if "download" in resource.privacy %}
-                            <a class="rounded-full bg-green-600 p-2 px-3"
-                               target="_blank"
-                               href="{{ resource.file.url }}">Download
-                                {{ resource.file.size|filesizeformat }}
-                            pdf</a>
-                        {% endif %}
-                    </div>
                 </div>
+                <div id="gdocs-viewer-tab" style="display: none;">
+                    <iframe class="w-full h-[80vh]" 
+                            src="https://docs.google.com/gview?embedded=true&url={{ resource.file.url }}" 
+                            frameborder="0">
+                    </iframe>
+                </div>
+                <script>
+                    const btnPDFJS = document.getElementById('btn-pdfjs');
+                    const btnGDocs = document.getElementById('btn-gdocs');
+                    const pdfTab = document.getElementById('pdf-viewer-tab');
+                    const gdocsTab = document.getElementById('gdocs-viewer-tab');
+
+                    btnPDFJS.onclick = () => {
+                        pdfTab.style.display = 'block';
+                        gdocsTab.style.display = 'none';
+                    };
+                    btnGDocs.onclick = () => {
+                        pdfTab.style.display = 'none';
+                        gdocsTab.style.display = 'block';
+                    };
+                </script>
+                
             {% else %}
                 <div class="rounded-md overflow-hidden flex w-full h-full">
                     <iframe class="aspect-video w-full"
@@ -135,3 +292,4 @@
     </div>
 </section>
 {% endblock %}
+
