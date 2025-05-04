@@ -49,7 +49,17 @@ module.exports = {
               'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
               'gradient-conic':
                 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-            }}
+            },
+            animation: {
+                'marquee': 'marquee 20s linear infinite', // Faster animation: 30s → 20s
+            },
+            keyframes: {
+                marquee: {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-33.33%)' }, // Adjusted for 3 sets
+                },
+            },
+        }
     },
     plugins: [
         plugin(function ({ addUtilities }) {

@@ -88,6 +88,34 @@
             border: 2px solid #ccc;
             /* Border around the scrollbar track */
         }
+
+        /* Notification marquee styles */
+        .marquee-container {
+            width: 100%;
+            height: 34px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .marquee-content {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            white-space: nowrap;
+            will-change: transform;
+        }
+
+        .fixed-notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background-color: rgba(17, 24, 39, 0.85); /* Darker gray-900 with transparency */
+            box-shadow: 0 4px 16px -1px rgba(0, 0, 0, 0.2);
+        }
         </style>
         {% with analytical_identity=request.user.uuid|default:None %}
             {% analytical_head_top %}
@@ -98,6 +126,7 @@
         {% analytical_body_top %}
         <div>
             <div class="p-2">{% include 'courses/header.html' %}</div>
+            {% include 'components/notification_marquee.html' %}
             {% if not is_error_page %}
                 <div class="p-2 py-0">{% show_breadcrumbs %}</div>
             {% endif %}
@@ -164,6 +193,76 @@ function copyToClipboard(text) {
         });
 }
 
+// Fix notification marquee to top on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationMarquee = document.getElementById('notification-marquee');
+    if (notificationMarquee) {
+        const marqueeTop = notificationMarquee.offsetTop;
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY >= marqueeTop) {
+                notificationMarquee.classList.add('fixed-notification');
+                document.body.style.paddingTop = notificationMarquee.offsetHeight + 'px';
+            } else {
+                notificationMarquee.classList.remove('fixed-notification');
+                document.body.style.paddingTop = '0';
+            }
+        });
+        
+        // Smooth continuous marquee animation
+        const marqueeContent = notificationMarquee.querySelector('.marquee-content');
+        if (marqueeContent) {
+            const notificationItems = marqueeContent.querySelectorAll('.notification-item');
+            if (notificationItems.length > 0) {
+                // Clone all notification items to ensure continuous scrolling
+                const itemsHTML = marqueeContent.innerHTML;
+                marqueeContent.innerHTML = itemsHTML + itemsHTML;
+                
+                // Calculate total width
+                let totalWidth = 0;
+                const allItems = marqueeContent.querySelectorAll('.notification-item');
+                allItems.forEach(item => {
+                    totalWidth += item.offsetWidth;
+                });
+                
+                // Set initial position
+                marqueeContent.style.transform = 'translateX(0)';
+                
+                // Create smooth animation
+                const originalItemsCount = notificationItems.length;
+                const speed = 50; // pixels per second - adjust for faster/slower movement
+                
+                let animationId;
+                let position = 0;
+                
+                function animate() {
+                    position -= 1;
+                    
+                    // Reset position when first set of items has scrolled past
+                    if (Math.abs(position) >= totalWidth / 2) {
+                        position = 0;
+                    }
+                    
+                    marqueeContent.style.transform = `translateX(${position}px)`;
+                    animationId = requestAnimationFrame(animate);
+                }
+                
+                // Start animation
+                animate();
+                
+                // Pause on hover
+                marqueeContent.addEventListener('mouseenter', () => {
+                    cancelAnimationFrame(animationId);
+                });
+                
+                // Resume on mouse leave
+                marqueeContent.addEventListener('mouseleave', () => {
+                    animate();
+                });
+            }
+        }
+    }
+});
         </script>
         <script src="https://cdn.jsdelivr.net/npm/flowbite@2.4.1/dist/flowbite.min.js"></script>
         {% analytical_body_bottom %}
