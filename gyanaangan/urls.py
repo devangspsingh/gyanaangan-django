@@ -11,6 +11,7 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
         path("blog/", include("blog.urls")),
+        path("api/", include("api.urls")),
         path("accounts/", include("accounts.urls")),
         path("core/", include("core.urls")),
         path("ads.txt", RedirectView.as_view(url=STATIC("ads.txt"), permanent=True)),
