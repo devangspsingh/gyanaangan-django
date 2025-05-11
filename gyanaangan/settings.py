@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-from datetime import timedelta
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -48,10 +47,6 @@ INSTALLED_APPS = [
     "ckeditor",
     "ckeditor_uploader",
     "taggit",
-    "rest_framework",
-    "djoser",
-    "corsheaders",
-    "api",
     "courses",
     "core",
     "accounts",
@@ -59,13 +54,13 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
@@ -236,39 +231,4 @@ CKEDITOR_CONFIGS = {
         "width": "100%",
         "extraPlugins": ",".join(["image2"]),
     },
-}
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
-}
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://app.gyanaangan.in",
-    # "*",
-]
-# if not DEBUG:
-CORS_ALLOW_ALL_ORIGINS = True 
-CORS_ORIGIN_ALLOW_ALL = True
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=60),
-}
-
-
-DJOSER = {
-    "SERIALIZERS": {
-        "user": "api.serializers.UserSerializer",
-        "current_user": "api.serializers.UserSerializer",
-    },
-    "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
-        "http://localhost:3000/login",
-    ],
 }
