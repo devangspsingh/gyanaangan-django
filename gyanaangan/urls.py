@@ -10,6 +10,7 @@ print(static("ads.txt"))
 urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
+        path("api/", include("api.urls")),
         path("blog/", include("blog.urls")),
         path("accounts/", include("accounts.urls")),
         path("core/", include("core.urls")),
