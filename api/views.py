@@ -35,7 +35,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.core.signing import TimestampSigner
 from urllib.parse import quote
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity, SearchVector
 from django.db.models import Q, F
 from django.db.models.functions import Greatest
 from rest_framework.pagination import PageNumberPagination
@@ -65,6 +65,34 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
     pagination_class = StandardResultsSetPagination
 
+    def get_queryset(self):
+        queryset = Subject.published.all()
+        search_term = self.request.query_params.get("search", None)
+
+        if search_term:
+            # Assuming Subject model has a 'search_vector' field (SearchVectorField)
+            # and fields like 'name', 'description', 'common_name', 'abbreviation'
+            search_query = SearchQuery(search_term, config='english', search_type='websearch')
+            
+            # Annotate with similarity scores for ranking
+            # Adjust weights as needed
+            queryset = queryset.annotate(
+                similarity=Greatest(
+                    SearchRank(F('search_vector'), search_query, cover_density=True, normalization=2),
+                    TrigramSimilarity('name', search_term) * 0.4,
+                    TrigramSimilarity('description', search_term) * 0.2,
+                    TrigramSimilarity('common_name', search_term) * 0.15,
+                    TrigramSimilarity('abbreviation', search_term) * 0.1,
+                    # Add other relevant text fields if any
+                )
+            ).filter(
+                Q(search_vector=search_query) | Q(similarity__gt=0.05) # Adjust threshold as needed
+            ).order_by('-similarity', '-last_resource_updated_at', 'name') # Primary sort by similarity
+        else:
+            queryset = queryset.order_by('-last_resource_updated_at', 'name') # Default ordering
+
+        return queryset
+
     def get_serializer_context(self):  # Add context for serializers
         return {'request': self.request}
 
@@ -78,14 +106,33 @@ class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = Resource.published.all()
         subject_slug = self.request.query_params.get("subject_slug", None)
         resource_type = self.request.query_params.get("resource_type", None)
-
+        search_term = self.request.query_params.get("search", None)
+        
         if subject_slug:
             queryset = queryset.filter(subject__slug=subject_slug)
-
-        if resource_type:
+        if resource_type and resource_type != 'all': # Handle 'all' if passed from client
             queryset = queryset.filter(resource_type=resource_type)
 
-        return queryset.order_by('-updated_at', 'name')  # Ensure ordering
+        if search_term:
+            # Assuming Resource model has a 'search_vector' field
+            # and fields like 'name', 'description', 'tags' (if tags are searchable text)
+            search_query = SearchQuery(search_term, config='english', search_type='websearch')
+
+            queryset = queryset.annotate(
+                similarity=Greatest(
+                    SearchRank(F('search_vector'), search_query, cover_density=True, normalization=2),
+                    TrigramSimilarity('name', search_term) * 0.5,
+                    TrigramSimilarity('description', search_term) * 0.3,
+                    # If tags are stored as simple text or in a way TrigramSimilarity can be applied:
+                    # TrigramSimilarity('tags_string_representation', search_term) * 0.2, 
+                )
+            ).filter(
+                Q(search_vector=search_query) | Q(similarity__gt=0.05) # Adjust threshold
+            ).order_by('-similarity', '-updated_at', 'name') # Primary sort by similarity
+        else:
+            queryset = queryset.order_by('-updated_at', 'name') # Default ordering
+
+        return queryset
 
     def get_serializer_context(self):  # Add context for serializers
         return {'request': self.request}

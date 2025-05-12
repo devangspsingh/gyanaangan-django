@@ -194,7 +194,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     updated_at = serializers.CharField(source='get_last_updated_at.status', read_only=True)
     # view_url will now be the direct file URL
     view_url = serializers.SerializerMethodField() 
-    download_url = serializers.HyperlinkedIdentityField(view_name='resource-download', lookup_field='slug')
+    download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
     og_image_url = serializers.SerializerMethodField()
 
@@ -242,6 +242,14 @@ class ResourceSerializer(serializers.ModelSerializer):
         elif obj.resource_type == Resource.VIDEO and obj.embed_link:
              # For videos, the embed_link can serve as the view_url if it's directly viewable
             return obj.embed_link
+        return None
+
+    def get_download_url(self, obj):
+        request = self.context.get('request')
+        # Download URL is only provided if user is authenticated AND resource allows download
+        if request and request.user.is_authenticated and obj.file and 'download' in obj.privacy:
+            # This uses the 'download' action URL from the ResourceViewSet
+            return obj.file.url
         return None
 
 class StreamNameSerializer(serializers.ModelSerializer):
@@ -298,7 +306,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ('id', 'title', 'content', 'url', 'importance', 'tags', 'show_until')
+        fields = ('id', 'title', 'content', 'url', 'importance', 'tags', 'created_at')
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
