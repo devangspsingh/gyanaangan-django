@@ -20,7 +20,7 @@ jobs:
 
     - name: Run deployment commands on server
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@gyanaangan.dspsc.live << 'EOF'
+        ssh -o StrictHostKeyChecking=no ubuntu@gyanaangan.in << 'EOF'
           cd /home/ubuntu/gyanaangan-django
           git pull origin main  # Pull the latest changes from the repository
           source /home/ubuntu/gyanaangan-django/venv/bin/activate  # Activate virtual environment if needed
