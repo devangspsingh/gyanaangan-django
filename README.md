@@ -2,7 +2,7 @@
 
 ## Live Site
 
-Explore the live application at [gyanaangan.dspsc.live](http://gyanaangan.dspsc.live).
+Explore the live application at [app.gyanaangan.in](http://app.gyanaangan.in).
 
 ## Overview
 
