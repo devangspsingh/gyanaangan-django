@@ -225,7 +225,7 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = (
     "http://localhost:8000/accounts/oauth/callback/"
     if DEBUG
-    else "https://gyanaangan.dspsc.live/accounts/oauth/callback/"
+    else "https://gyanaangan.in/accounts/oauth/callback/"
 )
 
 
@@ -254,7 +254,7 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    # "http://localhost:3000",
+    "http://localhost:3000",
     # "localhost:3000",
     "https://app.gyanaangan.in",
     # "*",
