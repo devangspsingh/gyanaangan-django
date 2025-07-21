@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load result_extras %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="{{ meta_description }}">
+{% endblock %}
+
+{% block content %}
+{% load mathfilters%}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-4">Search Result by Roll Number</h1>
+        <p class="text-gray-300">Enter your roll number to check your 6th semester CSE result</p>
+    </div>
+
+    <!-- Search Form (Show at top when no result, at bottom when result found) -->
+    {% if not result %}
+        <div class="max-w-md mx-auto mb-8">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="{{ form.roll_number.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-2">
+                            {{ form.roll_number.label }}
+                        </label>
+                        {{ form.roll_number }}
+                        {% if form.roll_number.errors %}
+                            <p class="mt-1 text-sm text-red-500">{{ form.roll_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-start">
+                        {{ form.terms_accepted }}
+                        <label for="{{ form.terms_accepted.id_for_label }}" class="ml-2 text-sm text-gray-300">
+                            I agree that by entering my roll number, I consent to displaying my result with convenient features. 
+                            I understand this is based on publicly available AKTU data.
+                        </label>
+                    </div>
+                    {% if form.terms_accepted.errors %}
+                        <p class="text-sm text-red-500">{{ form.terms_accepted.errors.0 }}</p>
+                    {% endif %}
+
+                    <button type="submit" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Search Result
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Result Display -->
+    {% if result %}
+        <div class="max-w-5xl mx-auto mb-8">
+            <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                <!-- Student Info -->
+                <div class="border-b border-gray-700 pb-4 mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-2xl font-bold text-green-400">✅ Result Found!</h2>
+                        <div class="flex space-x-2">
+                            {% if not show_preview %}
+                                <button onclick="downloadImage()" 
+                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    📸 Download as Image
+                                </button>
+                            {% endif %}
+                            <button onclick="toggleSearchForm()" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                🔍 Search Again
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <span class="text-gray-400 text-sm">Roll Number:</span>
+                            <p class="text-white font-semibold">{{ result.roll_number }}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 text-sm">Name:</span>
+                            <p class="text-white font-semibold">
+                                {% if show_preview %}
+                                    {{ result.name|slice:":10" }}***
+                                {% else %}
+                                    {{ result.name }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 text-sm">Father's Name:</span>
+                            <p class="text-white font-semibold">
+                                {% if show_preview %}
+                                    {{ result.father_name|slice:":10" }}***
+                                {% else %}
+                                    {{ result.father_name }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SGPA Summary (Show at top for quick view) -->
+                {% if not show_preview %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-700 rounded-lg">
+                        <div class="text-center">
+                            <span class="text-gray-400 text-sm">Total Marks Obtained:</span>
+                            <p class="text-2xl font-bold text-green-400">{{ total_marks|default:"N/A" }}</p>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-gray-400 text-sm">SGPA (10-Point Scale):</span>
+                            <p class="text-2xl font-bold text-blue-400">{{ sgpa|default:"N/A" }}</p>
+                        </div>
+                        
+                    </div>
+                {% endif %}
+
+                <!-- Marks Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Subject</th>
+                                <th scope="col" class="px-6 py-3">Code</th>
+                                <th scope="col" class="px-6 py-3">Credit</th>
+                                {% if not show_preview %}
+                                    <th scope="col" class="px-6 py-3">Theory/ External</th>
+                                    <th scope="col" class="px-6 py-3">Internal/ Practical</th>
+                                {% endif %}
+                                <th scope="col" class="px-6 py-3">Total</th>
+                                {% if not show_preview %}
+                                    <th scope="col" class="px-6 py-3">Grade Point</th>
+                                    <th scope="col" class="px-6 py-3">Credit×GP</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject in subjects %}
+                                {% with marks=result.marks_data|get_subject_marks:subject.code %}
+                                    <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-750">
+                                        <td class="px-6 py-4 font-medium text-white">{{ subject.name }}</td>
+                                        <td class="px-6 py-4">{{ subject.code }}</td>
+                                        <td class="px-6 py-4">
+                                            {% if subject.credit == 0 %}
+                                                <span class="text-gray-400">Non-Credit</span>
+                                            {% else %}
+                                                {{ subject.credit }}
+                                            {% endif %}
+                                        </td>
+                                        {% if not show_preview %}
+                                            <td class="px-6 py-4">{{ marks.theory|default:"-" }}</td>
+                                            <td class="px-6 py-4">{{ marks.internal|default:"-" }}</td>
+                                        {% endif %}
+                                        <td class="px-6 py-4 font-bold">
+                                            {% if show_preview %}
+                                                <span class="text-yellow-400">***</span>
+                                            {% else %}
+                                                {% if marks.theory and marks.internal %}
+                                                    {% with total=marks.theory|add:marks.internal %}
+                                                        <span class="{% if total >= 60 %}text-green-400{% elif total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                            {{ total }}
+                                                        </span>
+                                                    {% endwith %}
+                                                {% elif marks.theory %}
+                                                    {{ marks.theory }}
+                                                {% elif marks.internal %}
+                                                    {{ marks.internal }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        {% if not show_preview %}
+                                            <td class="px-6 py-4">
+                                                {% if marks.theory and marks.internal %}
+                                                    {% with total=marks.theory|add:marks.internal %}
+                                                        <span class="font-bold {% if total >= 60 %}text-green-400{% elif total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                            {% if total >= 90 %}10
+                                                            {% elif total >= 80 %}9
+                                                            {% elif total >= 70 %}8
+                                                            {% elif total >= 60 %}7
+                                                            {% elif total >= 50 %}6
+                                                            {% elif total >= 40 %}5
+                                                            {% else %}0
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                {% if marks.theory and marks.internal and subject.credit > 0 %}
+                                                    {% with total=marks.theory|add:marks.internal %}
+                                                        <span class="font-bold {% if total >= 60 %}text-green-400{% elif total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                            {% if total >= 90 %}{{ subject.credit|mul:10 }}
+                                                            {% elif total >= 80 %}{{ subject.credit|mul:9 }}
+                                                            {% elif total >= 70 %}{{ subject.credit|mul:8 }}
+                                                            {% elif total >= 60 %}{{ subject.credit|mul:7 }}
+                                                            {% elif total >= 50 %}{{ subject.credit|mul:6 }}
+                                                            {% elif total >= 40 %}{{ subject.credit|mul:5 }}
+                                                            {% else %}0
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Login Prompt for Preview -->
+                {% if show_preview %}
+                    <div class="mt-6 pt-4 border-t border-gray-700 text-center">
+                        <div class="bg-blue-900 border border-blue-700 rounded-lg p-4 mb-4">
+                            <h3 class="text-lg font-semibold text-white mb-2">🔒 Complete Result Available</h3>
+                            <p class="text-blue-200 text-sm mb-4">
+                                Login to view complete marks breakdown, total marks, SGPA, and download options.
+                            </p>
+                            <div class="space-y-2">
+                                <button data-modal-target="login-modal" data-modal-toggle="login-modal"
+                                   class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors mr-2">
+                                    Login to View Full Result
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Search Again Form (Collapsible) -->
+        <div id="search-again-form" class="hidden max-w-md mx-auto mb-8">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold text-white mb-4">Search Another Roll Number</h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="{{ form.roll_number.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-2">
+                            {{ form.roll_number.label }}
+                        </label>
+                        {{ form.roll_number }}
+                        {% if form.roll_number.errors %}
+                            <p class="mt-1 text-sm text-red-500">{{ form.roll_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-start">
+                        {{ form.terms_accepted }}
+                        <label for="{{ form.terms_accepted.id_for_label }}" class="ml-2 text-sm text-gray-300">
+                            I agree that by entering my roll number, I consent to displaying my result with convenient features. 
+                            I understand this is based on publicly available AKTU data.
+                        </label>
+                    </div>
+                    {% if form.terms_accepted.errors %}
+                        <p class="text-sm text-red-500">{{ form.terms_accepted.errors.0 }}</p>
+                    {% endif %}
+
+                    <div class="flex space-x-2">
+                        <button type="submit" 
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Search Result
+                        </button>
+                        <button type="button" onclick="toggleSearchForm()"
+                                class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Navigation -->
+    <div class="text-center mt-8">
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'results:home' %}" 
+               class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                ← Back to Home
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Helper Notice -->
+    <div class="max-w-2xl mx-auto mt-8">
+        <div class="bg-yellow-900 border border-yellow-700 rounded-lg p-4">
+            <h3 class="text-yellow-200 font-semibold mb-2">Need Help?</h3>
+            <ul class="text-yellow-100 text-sm space-y-1">
+                <li>• Roll numbers should be in format: 100220101</li>
+                <li>• If your result is not found, try manual entry</li>
+                <li>• Results are based on AKTU publicly available data</li>
+                <li>• Login for complete access to all features</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+{% if result and not show_preview %}
+<script type="application/json" id="subjects-data">{{ subjects_json|safe }}</script>
+<script type="application/json" id="marks-data">{{ marks_json|safe }}</script>
+<script type="application/json" id="result-data">{{ result_json|safe }}</script>
+<script type="application/json" id="sgpa-data">{{ sgpa|default:"0"|floatformat:2 }}</script>
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+// Store result data for downloads
+window.resultInfo = null;
+
+// Toggle search form visibility with smooth scrolling
+function toggleSearchForm() {
+    const form = document.getElementById('search-again-form');
+    if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        // Smooth scroll to the form after it becomes visible
+        setTimeout(() => {
+            form.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }, 100);
+    } else {
+        form.classList.add('hidden');
+        // Smooth scroll back to top
+        window.scrollTo({ 
+            top: 0, 
+            behavior: 'smooth' 
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Only load data for downloads if we have result data
+    const subjectsElement = document.getElementById('subjects-data');
+    const marksElement = document.getElementById('marks-data');
+    const resultElement = document.getElementById('result-data');
+    const sgpaElement = document.getElementById('sgpa-data');
+    
+    console.log('Elements found:', {
+        subjects: !!subjectsElement,
+        marks: !!marksElement,
+        result: !!resultElement,
+        sgpa: !!sgpaElement
+    });
+    
+    if (subjectsElement && marksElement && resultElement) {
+        try {
+            console.log('Parsing subjects data...');
+            const subjects = JSON.parse(subjectsElement.textContent);
+            
+            console.log('Parsing marks data...');
+            const marksData = JSON.parse(marksElement.textContent);
+            
+            console.log('Parsing result data...');
+            const resultData = JSON.parse(resultElement.textContent);
+            
+            console.log('Parsing SGPA data...');
+            let sgpaValue = 0;
+            if (sgpaElement) {
+                sgpaValue = parseFloat(sgpaElement.textContent) || 0;
+                console.log('SGPA from element:', sgpaValue);
+            } else {
+                // Fallback: try to get SGPA from result data
+                if (resultData.sgpa && resultData.sgpa !== 'N/A') {
+                    sgpaValue = parseFloat(resultData.sgpa) || 0;
+                    console.log('SGPA from result data:', sgpaValue);
+                }
+            }
+            
+            // Store for download functions
+            window.resultInfo = {
+                subjects: subjects,
+                marksData: marksData,
+                resultData: resultData,
+                sgpa: sgpaValue
+            };
+           
+            console.log('Successfully loaded result data:', window.resultInfo);
+            console.log('SGPA value to be used:', sgpaValue);
+            
+        } catch (error) {
+            console.error('Error parsing JSON data:', error);
+            console.log('Subjects element content:', subjectsElement ? subjectsElement.textContent : 'null');
+            console.log('Marks element content:', marksElement ? marksElement.textContent : 'null');
+            console.log('Result element content:', resultElement ? resultElement.textContent : 'null');
+            console.log('SGPA element content:', sgpaElement ? sgpaElement.textContent : 'null');
+        }
+    } else {
+        console.log('Data elements not found - this is normal if no result is displayed');
+    }
+});
+
+function downloadImage() {
+    if (!window.resultInfo) {
+        alert('Please wait for data to load before downloading.');
+        return;
+    }
+    
+    const { subjects, marksData, resultData, sgpa } = window.resultInfo;
+    
+    // Debug SGPA value
+    console.log('Download function - SGPA value:', sgpa);
+    console.log('Download function - SGPA type:', typeof sgpa);
+    console.log('Download function - SGPA fixed:', sgpa.toFixed(2));
+    
+    // Show loading indicator
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '⏳ Generating...';
+    button.disabled = true;
+    
+    // Create a temporary div for image generation
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '-9999px';
+    
+    const sgpaDisplay = sgpa && sgpa > 0 ? sgpa.toFixed(2) : 'N/A';
+    console.log('SGPA display value:', sgpaDisplay);
+    
+    tempDiv.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; font-family: Arial, sans-serif; color: white; width: 1000px; box-sizing: border-box;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h1 style="color: white; font-size: 36px; margin: 0; font-weight: bold;">GyanAangan</h1>
+                <h2 style="color: #e5e7eb; font-size: 22px; margin: 15px 0;">6th Semester CSE Result - AKTU</h2>
+                <p style="color: #d1d5db; font-size: 16px; margin: 0;">Generated on: ${new Date().toLocaleDateString()}</p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: #fbbf24; font-size: 20px; margin-bottom: 15px;">Student Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; font-size: 16px;">
+                    <div><strong>Roll Number:</strong><br>${resultData.roll_number}</div>
+                    <div><strong>Name:</strong><br>${resultData.name}</div>
+                    <div><strong>Father's Name:</strong><br>${resultData.father_name}</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: #fbbf24; font-size: 20px; margin-bottom: 15px;">Subject-wise Marks</h3>
+                <table style="width: 100%; border-collapse: collapse; color: white; font-size: 14px;">
+                    <thead>
+                        <tr style="background: rgba(0,0,0,0.4);">
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Subject</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Code</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Credit</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Theory</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Internal</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Total</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Grade Point</th>
+                            <th style="padding: 12px 8px; text-align: left; border: 1px solid rgba(255,255,255,0.3); font-weight: bold;">Credit×GP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${subjects.map(subject => {
+                            const marks = marksData[subject.code] || {};
+                            const theory = parseInt(marks.theory) || 0;
+                            const internal = parseInt(marks.internal) || 0;
+                            const total = theory + internal;
+                            let gradePoint = 0;
+                            if (total >= 90) gradePoint = 10;
+                            else if (total >= 80) gradePoint = 9;
+                            else if (total >= 70) gradePoint = 8;
+                            else if (total >= 60) gradePoint = 7;
+                            else if (total >= 50) gradePoint = 6;
+                            else if (total >= 40) gradePoint = 5;
+                            
+                            const creditGP = subject.credit > 0 ? gradePoint * subject.credit : '-';
+                            
+                            return `
+                                <tr style="background: rgba(255,255,255,0.05);">
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; max-width: 180px; word-wrap: break-word;">${subject.name}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px;">${subject.code}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; text-align: center;">${subject.credit || 'Non-Credit'}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; text-align: center;">${theory || '-'}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; text-align: center;">${internal || '-'}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-weight: bold; font-size: 12px; text-align: center;">${total || '-'}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; text-align: center;">${gradePoint || '-'}</td>
+                                    <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; text-align: center;">${creditGP}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 30px; text-align: center; display: flex; justify-content: space-around; gap: 20px;">
+                    <div style="background: rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 10px; border: 2px solid #10b981; flex: 1;">
+                        <strong style="color: #10b981; font-size: 18px;">SGPA: ${sgpaDisplay}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px; font-size: 14px; color: #9ca3af; padding: 15px 0;">
+                Generated by GyanAangan - Based on AKTU publicly available data
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    html2canvas(tempDiv.firstElementChild, {
+        backgroundColor: '#1e3a8a',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = resultData.roll_number + '_result_gyanaangan.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        document.body.removeChild(tempDiv);
+    }).catch(error => {
+        console.error('Error generating image:', error);
+        alert('Error generating image. Please try again.');
+        
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        document.body.removeChild(tempDiv);
+    });
+}
+</script>
+
+<!-- Include Login Modal -->
+{% if result and show_preview %}
+    {% include '_login_modal.html' with login_redirect_url="results:search_result" roll_number=result.roll_number %}
+{% else %}
+    {% include '_login_modal.html' %}
+{% endif %}
+
+{% endblock %}

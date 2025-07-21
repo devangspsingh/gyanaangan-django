@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     "core",
     "accounts",
     "blog",
+    "results",
+    'mathfilters'
 ]
 
 MIDDLEWARE = [

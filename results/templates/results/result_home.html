@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="{{ meta_description }}">
+    <meta name="keywords" content="AKTU results, 6th semester, CSE, result checker, marks">
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="text-center mb-16">
+        <div class="mb-8">
+            <h1 class="text-5xl font-bold text-white mb-6 leading-tight">
+                Result Checker - {{ semester }} Semester {{ branch }}
+            </h1>
+            <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Check your {{ semester }} semester {{ branch }} results from {{ college }}, AKTU with detailed analysis and download options
+            </p>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="flex justify-center space-x-8 text-center">
+            <div class="text-blue-400">
+                <div class="text-3xl font-bold">{{ subjects|length }}</div>
+                <div class="text-sm text-gray-400">Subjects</div>
+            </div>
+            <div class="text-green-400">
+                <div class="text-3xl font-bold">24</div>
+                <div class="text-sm text-gray-400">Total Credits</div>
+            </div>
+            <div class="text-purple-400">
+                <div class="text-3xl font-bold">10</div>
+                <div class="text-sm text-gray-400">Point Scale</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Action Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto mb-16">
+        <!-- Manual CGPA Calculator -->
+      
+
+        <!-- Search by Roll Number -->
+        <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-10 text-center hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 shadow-2xl hover:shadow-3xl border border-blue-500/20">
+            <div class="mb-8">
+                <div class="bg-white/10 rounded-full w-28 h-28 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                    <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-3xl font-bold text-white mb-4">Search Your Roll Number</h3>
+                <p class="text-blue-100 mb-8 text-lg leading-relaxed">
+                    Enter your roll number to find your result from our comprehensive AKTU database instantly.
+                </p>
+                <div class="grid grid-cols-1 gap-3 text-sm text-blue-200 mb-6">
+                    <div class="flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        Lightning-fast result lookup
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        Preview available for all
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="text-yellow-300">Login for full details</span>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'results:search_result' %}" 
+               class="inline-flex items-center justify-center bg-white text-blue-700 font-bold py-5 px-10 rounded-xl transition-all duration-300 hover:bg-blue-50 hover:shadow-lg text-lg min-w-[200px] group">
+                <span>Search Result Now</span>
+                <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="mt-20 max-w-7xl mx-auto mb-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-white mb-4">Why Choose Our Result Checker?</h2>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto">Experience the most comprehensive and user-friendly result checking platform</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl text-center hover:from-gray-750 hover:to-gray-850 transition-all duration-300 transform hover:scale-105 shadow-xl border border-gray-700/50">
+                <div class="bg-blue-500/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-3">Detailed Analysis</h3>
+                <p class="text-gray-300 leading-relaxed">Get comprehensive subject-wise marks breakdown, grade points, and SGPA calculations with beautiful visual reports and insights.</p>
+            </div>
+            
+            <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl text-center hover:from-gray-750 hover:to-gray-850 transition-all duration-300 transform hover:scale-105 shadow-xl border border-gray-700/50">
+                <div class="bg-green-500/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-3">Secure & Private</h3>
+                <p class="text-gray-300 leading-relaxed">Your data is handled with military-grade security, complete privacy protection, and zero third-party sharing or tracking.</p>
+            </div>
+            
+            <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl text-center hover:from-gray-750 hover:to-gray-850 transition-all duration-300 transform hover:scale-105 shadow-xl border border-gray-700/50">
+                <div class="bg-purple-500/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-3">Download & Share</h3>
+                <p class="text-gray-300 leading-relaxed">Download professional-quality result images in high resolution and share them seamlessly across all platforms.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Important Notice -->
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-8 rounded-lg max-w-4xl mx-auto">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium">Important Notice</h3>
+                <div class="mt-2 text-sm">
+                    <p><strong>Disclaimer:</strong> This result checker is based on AKTU syllabus and publicly available data. Results shown here are for reference only.</p>
+                    <p class="mt-2"><strong>Privacy:</strong> By using this service, you agree to our terms. We respect your privacy and data security.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Information (Collapsible) -->
+    <div class="max-w-6xl mx-auto mb-8">
+        <div class="bg-gray-800 rounded-lg overflow-hidden">
+            <button onclick="toggleSubjects()" class="w-full p-4 text-left bg-gray-700 hover:bg-gray-600 transition-colors flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-white">{{ semester }} Semester Subjects Information</h2>
+                    <p class="text-gray-300 text-sm">Click to view detailed subject list and credit information</p>
+                </div>
+                <svg id="subjects-arrow" class="w-6 h-6 text-white transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="subjects-content" class="hidden p-6 bg-gray-800">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for subject in subjects %}
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-white text-sm">{{ subject.code }}</h3>
+                                <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                                    {% if subject.credit == 0 %}
+                                        Non-Credit
+                                    {% else %}
+                                        {{ subject.credit }} Credit{{ subject.credit|pluralize }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <p class="text-gray-300 text-sm">{{ subject.name }}</p>
+                            <div class="mt-2 text-xs text-gray-400">
+                                {% if subject.credit == 1 %}
+                                    Lab Subject (50-50 distribution)
+                                {% elif subject.credit == 0 %}
+                                    Non-Credit Subject
+                                {% else %}
+                                    Theory Subject (Internal: 30, External: 70)
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Section -->
+    <div class="mt-16 max-w-4xl mx-auto">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Terms & Conditions</h3>
+            <div class="text-sm text-gray-300 space-y-2">
+                <p>• This service is provided for educational and informational purposes only.</p>
+                <p>• Results displayed are based on publicly available AKTU data and may contain errors.</p>
+                <p>• We do not guarantee the accuracy or completeness of the results shown.</p>
+                <p>• For official results, please refer to the official AKTU website.</p>
+                <p>• By using this service, you acknowledge these terms and conditions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSubjects() {
+    const content = document.getElementById('subjects-content');
+    const arrow = document.getElementById('subjects-arrow');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+</script>
+{% endblock %}

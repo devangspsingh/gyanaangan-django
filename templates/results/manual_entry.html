@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manual Result Entry - AKTU 6th Semester CSE{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-950 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-400 mb-4">Manual Result Entry</h1>
+            <p class="text-gray-300 text-lg">6th Semester CSE - AKTU Syllabus</p>
+            <div class="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4 mt-4 max-w-4xl mx-auto">
+                <p class="text-yellow-300 text-sm">
+                    <strong>Notice:</strong> This tool is based on AKTU syllabus and publicly available data. 
+                    By entering your marks here, you agree to use our convenient features for result calculation.
+                </p>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="max-w-6xl mx-auto bg-gray-900 rounded-lg shadow-xl p-6">
+            <form method="post" id="manualEntryForm">
+                {% csrf_token %}
+                
+                <!-- Student Information -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Student Name *</label>
+                        <input type="text" name="student_name" required 
+                               class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Roll Number *</label>
+                        <input type="text" name="roll_number" required 
+                               class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Father's Name</label>
+                        <input type="text" name="father_name" 
+                               class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Subjects Section -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-blue-400">Subject Marks</h3>
+                        <button type="button" id="addSubjectBtn" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm">
+                            + Add Subject
+                        </button>
+                    </div>
+                    
+                    <div id="subjectsContainer">
+                        <!-- Default subjects will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-md transition-colors">
+                        Calculate Result & CGPA
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Grading System Info -->
+        <div class="max-w-4xl mx-auto mt-8 bg-gray-900 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-blue-400 mb-4">Grading System (10-Point Scale)</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-green-400 font-medium">90-100: Grade 10</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-green-400 font-medium">80-89: Grade 9</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-yellow-400 font-medium">70-79: Grade 8</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-yellow-400 font-medium">60-69: Grade 7</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-orange-400 font-medium">50-59: Grade 6</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-red-400 font-medium">40-49: Grade 5</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-red-500 font-medium">&lt;40: Fail (0)</div>
+                </div>
+                <div class="bg-gray-800 p-3 rounded">
+                    <div class="text-gray-400 text-xs">Theory: 70 marks<br>Internal: 30 marks<br>Lab: 50-50</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let subjectCounter = 0;
+
+// Default subjects
+const defaultSubjects = [
+    {"code": "BT-609", "name": "Non Credit Subject", "credit": 0, "isLab": false},
+    {"code": "BT-612", "name": "Software Engineering", "credit": 4, "isLab": false},
+    {"code": "BT-613", "name": "Computer Networks", "credit": 4, "isLab": false},
+    {"code": "BT-614", "name": "Compiler Design", "credit": 4, "isLab": false},
+    {"code": "BT-615", "name": "Software Project Management", "credit": 3, "isLab": false},
+    {"code": "BT-616", "name": "Big Data", "credit": 3, "isLab": false},
+    {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1, "isLab": true},
+    {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1, "isLab": true},
+    {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1, "isLab": true}
+];
+
+function createSubjectRow(subject = null, index = null) {
+    const id = index !== null ? index : subjectCounter++;
+    const isLab = subject ? subject.isLab : false;
+    
+    return `
+        <div class="subject-row bg-gray-800 p-4 rounded-lg mb-4" data-subject-id="${id}">
+            <div class="grid grid-cols-1 md:grid-cols-8 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Subject Code</label>
+                    <input type="text" name="subjects[${id}][code]" value="${subject ? subject.code : ''}" required 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Subject Name</label>
+                    <input type="text" name="subjects[${id}][name]" value="${subject ? subject.name : ''}" required 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Credits</label>
+                    <input type="number" name="subjects[${id}][credit]" value="${subject ? subject.credit : 3}" min="0" max="10" required 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">${isLab ? 'Practical' : 'Theory'} (${isLab ? '50' : '70'})</label>
+                    <input type="number" name="subjects[${id}][theory]" min="0" max="${isLab ? '50' : '70'}" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                           placeholder="${isLab ? '0-50' : '0-70'}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">${isLab ? 'Viva/Report' : 'Internal'} (${isLab ? '50' : '30'})</label>
+                    <input type="number" name="subjects[${id}][internal]" min="0" max="${isLab ? '50' : '30'}" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                           placeholder="${isLab ? '0-50' : '0-30'}">
+                </div>
+                <div>
+                    <button type="button" onclick="removeSubject(${id})" 
+                            class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm">
+                        Remove
+                    </button>
+                </div>
+            </div>
+            <div class="mt-2">
+                <label class="flex items-center text-sm text-gray-300">
+                    <input type="checkbox" name="subjects[${id}][is_lab]" value="1" ${isLab ? 'checked' : ''} 
+                           onchange="toggleLabMode(${id})" class="mr-2">
+                    This is a Lab subject (50-50 distribution)
+                </label>
+            </div>
+        </div>
+    `;
+}
+
+function initializeSubjects() {
+    const container = document.getElementById('subjectsContainer');
+    defaultSubjects.forEach((subject, index) => {
+        container.insertAdjacentHTML('beforeend', createSubjectRow(subject, index));
+        subjectCounter = Math.max(subjectCounter, index + 1);
+    });
+}
+
+function addSubject() {
+    const container = document.getElementById('subjectsContainer');
+    container.insertAdjacentHTML('beforeend', createSubjectRow());
+}
+
+function removeSubject(id) {
+    const row = document.querySelector(`[data-subject-id="${id}"]`);
+    if (row) {
+        row.remove();
+    }
+}
+
+function toggleLabMode(id) {
+    const row = document.querySelector(`[data-subject-id="${id}"]`);
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    const theoryInput = row.querySelector('input[name$="[theory]"]');
+    const internalInput = row.querySelector('input[name$="[internal]"]');
+    const theoryLabel = row.querySelector('label:nth-of-type(1)');
+    const internalLabel = row.querySelector('label:nth-of-type(2)');
+    
+    if (checkbox.checked) {
+        // Lab mode
+        theoryInput.max = "50";
+        theoryInput.placeholder = "0-50";
+        internalInput.max = "50";
+        internalInput.placeholder = "0-50";
+        theoryLabel.textContent = "Practical (50)";
+        internalLabel.textContent = "Viva/Report (50)";
+    } else {
+        // Theory mode
+        theoryInput.max = "70";
+        theoryInput.placeholder = "0-70";
+        internalInput.max = "30";
+        internalInput.placeholder = "0-30";
+        theoryLabel.textContent = "Theory (70)";
+        internalLabel.textContent = "Internal (30)";
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSubjects();
+    
+    document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
+    
+    // Form validation
+    document.getElementById('manualEntryForm').addEventListener('submit', function(e) {
+        const subjects = document.querySelectorAll('.subject-row');
+        if (subjects.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one subject.');
+            return false;
+        }
+        
+        // Validate that at least one subject has marks
+        let hasMarks = false;
+        subjects.forEach(row => {
+            const theory = row.querySelector('input[name$="[theory]"]').value;
+            const internal = row.querySelector('input[name$="[internal]"]').value;
+            if (theory || internal) {
+                hasMarks = true;
+            }
+        });
+        
+        if (!hasMarks) {
+            e.preventDefault();
+            alert('Please enter marks for at least one subject.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

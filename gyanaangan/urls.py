@@ -5,11 +5,10 @@ from django.urls import path, include
 from django.contrib import admin
 from django.views.generic import RedirectView
 
-print(static("ads.txt"))
-
 urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
+        path("results/", include("results.urls")),
         path("api/", include("api.urls")),
         path("blog/", include("blog.urls")),
         path("accounts/", include("accounts.urls")),

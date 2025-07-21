@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load result_extras %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="{{ meta_description }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-4">Result Details</h1>
+        {% if result.name %}
+            <p class="text-gray-300">Result for {{ result.name }} ({{ result.roll_number }})</p>
+        {% else %}
+            <p class="text-gray-300">Result for {{ result.roll_number }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Result Card -->
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <!-- Student Information -->
+            <div class="border-b border-gray-700 pb-6 mb-6">
+                <h2 class="text-2xl font-bold text-white mb-4">Student Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="text-gray-400 text-sm">Roll Number:</span>
+                        <p class="text-white font-semibold text-lg">{{ result.roll_number }}</p>
+                    </div>
+                    {% if result.name %}
+                        <div>
+                            <span class="text-gray-400 text-sm">Name:</span>
+                            <p class="text-white font-semibold text-lg">{{ result.name }}</p>
+                        </div>
+                    {% endif %}
+                    {% if result.father_name %}
+                        <div>
+                            <span class="text-gray-400 text-sm">Father's Name:</span>
+                            <p class="text-white font-semibold text-lg">{{ result.father_name }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subject-wise Marks -->
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white mb-4">Subject-wise Marks</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Subject</th>
+                                <th scope="col" class="px-6 py-3">Code</th>
+                                <th scope="col" class="px-6 py-3">Credit</th>
+                                <th scope="col" class="px-6 py-3">Theory/External</th>
+                                <th scope="col" class="px-6 py-3">Internal/Practical</th>
+                                <th scope="col" class="px-6 py-3">Total</th>
+                                <th scope="col" class="px-6 py-3">Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject in subjects %}
+                                {% with marks=result.marks_data|get_subject_marks:subject.code %}
+                                    <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-750">
+                                        <td class="px-6 py-4 font-medium text-white">{{ subject.name }}</td>
+                                        <td class="px-6 py-4">{{ subject.code }}</td>
+                                        <td class="px-6 py-4">
+                                            {% if subject.credit == 0 %}
+                                                <span class="bg-yellow-600 text-white px-2 py-1 rounded text-xs">Non-Credit</span>
+                                            {% else %}
+                                                <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs">{{ subject.credit }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="{% if marks.theory >= 35 %}text-green-400{% elif marks.theory >= 25 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                {{ marks.theory|default:"-" }}
+                                            </span>
+                                            {% if subject.credit == 1 %}
+                                                <span class="text-xs text-gray-500">/50</span>
+                                            {% elif subject.credit == 0 %}
+                                                <span class="text-xs text-gray-500">/50</span>
+                                            {% else %}
+                                                <span class="text-xs text-gray-500">/70</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="{% if marks.internal >= 20 %}text-green-400{% elif marks.internal >= 15 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                {{ marks.internal|default:"-" }}
+                                            </span>
+                                            {% if subject.credit == 1 %}
+                                                <span class="text-xs text-gray-500">/50</span>
+                                            {% elif subject.credit == 0 %}
+                                                <span class="text-xs text-gray-500">/50</span>
+                                            {% else %}
+                                                <span class="text-xs text-gray-500">/30</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 font-bold">
+                                            <span class="{% if marks.total >= 55 %}text-green-400{% elif marks.total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                {{ marks.total|default:"-" }}
+                                            </span>
+                                            {% if subject.credit == 1 or subject.credit == 0 %}
+                                                <span class="text-xs text-gray-500">/100</span>
+                                            {% else %}
+                                                <span class="text-xs text-gray-500">/100</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {% if marks.total >= 80 %}
+                                                <span class="bg-green-600 text-white px-2 py-1 rounded text-xs">A+</span>
+                                            {% elif marks.total >= 70 %}
+                                                <span class="bg-green-500 text-white px-2 py-1 rounded text-xs">A</span>
+                                            {% elif marks.total >= 60 %}
+                                                <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs">B+</span>
+                                            {% elif marks.total >= 50 %}
+                                                <span class="bg-blue-400 text-white px-2 py-1 rounded text-xs">B</span>
+                                            {% elif marks.total >= 40 %}
+                                                <span class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">C</span>
+                                            {% else %}
+                                                <span class="bg-red-500 text-white px-2 py-1 rounded text-xs">F</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-xl font-bold text-white mb-4">Result Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center bg-gray-700 rounded-lg p-4">
+                        <span class="text-gray-400 text-sm">Total Marks</span>
+                        <p class="text-2xl font-bold text-green-400">{{ result.total_marks|default:"N/A" }}</p>
+                    </div>
+                    <div class="text-center bg-gray-700 rounded-lg p-4">
+                        <span class="text-gray-400 text-sm">Percentage</span>
+                        <p class="text-2xl font-bold text-blue-400">{{ result.percentage|floatformat:2|default:"N/A" }}%</p>
+                    </div>
+                    <div class="text-center bg-gray-700 rounded-lg p-4">
+                        <span class="text-gray-400 text-sm">Overall Grade</span>
+                        <p class="text-2xl font-bold text-purple-400">
+                            {% if result.percentage >= 80 %}
+                                A+
+                            {% elif result.percentage >= 70 %}
+                                A
+                            {% elif result.percentage >= 60 %}
+                                B+
+                            {% elif result.percentage >= 50 %}
+                                B
+                            {% elif result.percentage >= 40 %}
+                                C
+                            {% else %}
+                                F
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-center bg-gray-700 rounded-lg p-4">
+                        <span class="text-gray-400 text-sm">Status</span>
+                        <p class="text-lg font-bold {% if result.percentage >= 40 %}text-green-400{% else %}text-red-400{% endif %}">
+                            {% if result.percentage >= 40 %}
+                                PASS
+                            {% else %}
+                                FAIL
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Analysis -->
+            <div class="border-t border-gray-700 pt-6 mt-6">
+                <h3 class="text-xl font-bold text-white mb-4">Performance Analysis</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-white mb-2">Strong Subjects</h4>
+                        <div class="space-y-2">
+                            {% for subject in subjects %}
+                                {% with marks=result.marks_data|get_subject_marks:subject.code %}
+                                    {% if marks.total >= 70 %}
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-green-300">{{ subject.name }}</span>
+                                            <span class="text-green-400 font-bold">{{ marks.total }}%</span>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <h4 class="text-lg font-semibold text-white mb-2">Needs Improvement</h4>
+                        <div class="space-y-2">
+                            {% for subject in subjects %}
+                                {% with marks=result.marks_data|get_subject_marks:subject.code %}
+                                    {% if marks.total < 50 and marks.total > 0 %}
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-yellow-300">{{ subject.name }}</span>
+                                            <span class="text-yellow-400 font-bold">{{ marks.total }}%</span>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center space-x-4">
+            <button onclick="window.print()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                🖨️ Print Result
+            </button>
+            <a href="{% url 'results:home' %}" 
+               class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                ← Back to Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="max-w-4xl mx-auto mt-8">
+        <div class="bg-yellow-900 border border-yellow-700 rounded-lg p-4">
+            <h3 class="text-yellow-200 font-semibold mb-2">⚠️ Important Disclaimer</h3>
+            <div class="text-yellow-100 text-sm space-y-1">
+                <p>• This result is for reference only and may not be the official result.</p>
+                <p>• Grades and calculations are based on general AKTU marking scheme.</p>
+                <p>• For official results and transcripts, please refer to the official AKTU website.</p>
+                <p>• We are not responsible for any discrepancies in the result shown here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .bg-gray-800, .bg-gray-700 {
+        background: white !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .text-white {
+        color: black !important;
+    }
+}
+</style>
+{% endblock %}
