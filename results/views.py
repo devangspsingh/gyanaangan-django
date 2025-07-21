@@ -112,17 +112,10 @@ def search_result(request):
             try:
                 result = StudentResult.objects.get(roll_number=roll_number)
                 
-                # Check if roll number contains a number greater than 500 (Anubhav Singh's special request)
-                try:
-                    roll_int = int(roll_number)
-                    if roll_int > 500:
-                        # Add 10-second delay for Anubhav Singh's request
-                        import time
-                        time.sleep(10)
-                        messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
-                except ValueError:
-                    # If roll number can't be converted to int, continue normally
-                    pass
+                # Anubhav Singh's special request - 10 second delay for everyone
+                import time
+                time.sleep(10)
+                messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
                 
                 # Get appropriate subject data for this roll number
                 subjects_data = StudentResult.get_subjects_data(result.roll_number)
@@ -149,17 +142,19 @@ def search_result(request):
         try:
             result = StudentResult.objects.get(roll_number=roll_number)
             
-            # Check if roll number contains a number greater than 500 (Anubhav Singh's special request)
-            try:
-                roll_int = int(roll_number)
-                if roll_int > 500:
-                    # Add 10-second delay for Anubhav Singh's request
-                    import time
-                    time.sleep(10)
-                    messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
-            except ValueError:
-                # If roll number can't be converted to int, continue normally
-                pass
+            # Log the query for authenticated user redirect
+            ResultQuery.objects.create(
+                roll_number=roll_number,
+                user=request.user,
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                result_found=True
+            )
+            
+            # Anubhav Singh's special request - 10 second delay for everyone
+            import time
+            time.sleep(10)
+            messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
             
             # Get appropriate subject data for this roll number
             subjects_data = StudentResult.get_subjects_data(result.roll_number)
@@ -171,6 +166,14 @@ def search_result(request):
             messages.success(request, 'Login successful! Here is your complete result.')
             
         except StudentResult.DoesNotExist:
+            # Log the query even if result is not found
+            ResultQuery.objects.create(
+                roll_number=roll_number,
+                user=request.user,
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                result_found=False
+            )
             messages.error(request, f'No result found for roll number: {roll_number}')
     
     # Get appropriate subject data based on result (if found) or default to CSE
