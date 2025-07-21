@@ -112,6 +112,18 @@ def search_result(request):
             try:
                 result = StudentResult.objects.get(roll_number=roll_number)
                 
+                # Check if roll number contains a number greater than 500 (Anubhav Singh's special request)
+                try:
+                    roll_int = int(roll_number)
+                    if roll_int > 500:
+                        # Add 10-second delay for Anubhav Singh's request
+                        import time
+                        time.sleep(10)
+                        messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
+                except ValueError:
+                    # If roll number can't be converted to int, continue normally
+                    pass
+                
                 # Get appropriate subject data for this roll number
                 subjects_data = StudentResult.get_subjects_data(result.roll_number)
                 
@@ -136,6 +148,18 @@ def search_result(request):
         roll_number = redirect_roll_number.upper().strip()
         try:
             result = StudentResult.objects.get(roll_number=roll_number)
+            
+            # Check if roll number contains a number greater than 500 (Anubhav Singh's special request)
+            try:
+                roll_int = int(roll_number)
+                if roll_int > 500:
+                    # Add 10-second delay for Anubhav Singh's request
+                    import time
+                    time.sleep(10)
+                    messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
+            except ValueError:
+                # If roll number can't be converted to int, continue normally
+                pass
             
             # Get appropriate subject data for this roll number
             subjects_data = StudentResult.get_subjects_data(result.roll_number)
