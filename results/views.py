@@ -70,11 +70,14 @@ def get_client_ip(request):
 
 def result_home(request):
     """Main result page with options to search or manually enter marks"""
+    # Get default subjects (CSE) for the home page
+    default_subjects = StudentResult.SUBJECTS_DATA
+    
     context = {
-        'subjects': StudentResult.SUBJECTS_DATA['subjects'],
-        'semester': StudentResult.SUBJECTS_DATA['semester'],
-        'branch': StudentResult.SUBJECTS_DATA['branch'],
-        'college': StudentResult.SUBJECTS_DATA['college'],
+        'subjects': default_subjects['subjects'],
+        'semester': default_subjects['semester'],
+        'branch': default_subjects['branch'],
+        'college': default_subjects['college'],
         'title': 'Result Checker - 6th Semester CSE',
         'meta_description': 'Check your 6th semester CSE results from AKTU. Enter roll number or manually add marks.',
     }
@@ -109,8 +112,11 @@ def search_result(request):
             try:
                 result = StudentResult.objects.get(roll_number=roll_number)
                 
+                # Get appropriate subject data for this roll number
+                subjects_data = StudentResult.get_subjects_data(result.roll_number)
+                
                 # Calculate SGPA and total marks
-                sgpa, total_marks = calculate_sgpa(result, StudentResult.SUBJECTS_DATA['subjects'])
+                sgpa, total_marks = calculate_sgpa(result, subjects_data['subjects'])
                 
                 # Update query log
                 ResultQuery.objects.filter(
@@ -130,7 +136,10 @@ def search_result(request):
         roll_number = redirect_roll_number.upper().strip()
         try:
             result = StudentResult.objects.get(roll_number=roll_number)
-            sgpa, total_marks = calculate_sgpa(result, StudentResult.SUBJECTS_DATA['subjects'])
+            
+            # Get appropriate subject data for this roll number
+            subjects_data = StudentResult.get_subjects_data(result.roll_number)
+            sgpa, total_marks = calculate_sgpa(result, subjects_data['subjects'])
             
             # Pre-populate the form with the roll number
             form = RollNumberSearchForm(initial={'roll_number': roll_number, 'terms_accepted': True})
@@ -140,14 +149,20 @@ def search_result(request):
         except StudentResult.DoesNotExist:
             messages.error(request, f'No result found for roll number: {roll_number}')
     
+    # Get appropriate subject data based on result (if found) or default to CSE
+    if result:
+        subjects_data = StudentResult.get_subjects_data(result.roll_number)
+    else:
+        subjects_data = StudentResult.SUBJECTS_DATA  # Default to CSE
+    
     context = {
         'form': form,
         'result': result,
         'show_preview': show_preview,
-        'subjects': StudentResult.SUBJECTS_DATA['subjects'],
+        'subjects': subjects_data['subjects'],
         'sgpa': sgpa,
         'total_marks': total_marks,
-        'subjects_json': json.dumps(StudentResult.SUBJECTS_DATA['subjects']),
+        'subjects_json': json.dumps(subjects_data['subjects']),
         'marks_json': json.dumps(result.marks_data) if result else '{}',
         'result_json': json.dumps({
             'roll_number': result.roll_number,

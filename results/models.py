@@ -83,6 +83,75 @@ class StudentResult(models.Model):
         ]
     }
     
+    # IT Branch subject data
+    IT_SUBJECTS_DATA = {
+        "semester": "6th",
+        "branch": "IT", 
+        "college": "SCRIET Meerut",
+        "subjects": [
+            {
+                "code": "BT-609",
+                "name": "Essence of Indian Traditional Knowledge",
+                "credit": 0
+            },
+            {
+                "code": "BT-612", 
+                "name": "Software Engineering",
+                "credit": 4
+            },
+            {
+                "code": "BT-613",
+                "name": "Computer Networks", 
+                "credit": 4
+            },
+            {
+                "code": "BT-617",
+                "name": "Data Analytics",
+                "credit": 4
+            },
+            {
+                "code": "BT-615",
+                "name": "Software Project Management",
+                "credit": 3
+            },
+            {
+                "code": "BT-618",
+                "name": "Augmented & Virtual Reality",
+                "credit": 3
+            },
+            {
+                "code": "BT-662",
+                "name": "Software Engineering Lab",
+                "credit": 1
+            },
+            {
+                "code": "BT-663", 
+                "name": "Computer Networks Lab",
+                "credit": 1
+            },
+            {
+                "code": "BT-667",
+                "name": "Data Analytics Lab", 
+                "credit": 1
+            }
+        ]
+    }
+    
+    @classmethod
+    def get_subjects_data(cls, roll_number):
+        """Get appropriate subject data based on roll number"""
+        try:
+            roll_int = int(roll_number)
+            # IT Branch (100220500-600)
+            if 100220500 <= roll_int <= 100220600:
+                return cls.IT_SUBJECTS_DATA
+            # CSE Branch (default)
+            else:
+                return cls.SUBJECTS_DATA
+        except (ValueError, TypeError):
+            # Default to CSE if roll number parsing fails
+            return cls.SUBJECTS_DATA
+    
     roll_number = models.CharField(max_length=20, unique=True, db_index=True)
     name = models.CharField(max_length=100)
     father_name = models.CharField(max_length=100)

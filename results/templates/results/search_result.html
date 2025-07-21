@@ -14,7 +14,7 @@
     <!-- Header -->
     <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-white mb-4">Search Result by Roll Number</h1>
-        <p class="text-gray-300">Enter your roll number to check your 6th semester CSE result</p>
+        <p class="text-gray-300">Enter your roll number to check your 6th semester CS/IT result</p>
     </div>
 
     <!-- Search Form (Show at top when no result, at bottom when result found) -->
@@ -297,8 +297,8 @@
         <div class="bg-yellow-900 border border-yellow-700 rounded-lg p-4">
             <h3 class="text-yellow-200 font-semibold mb-2">Need Help?</h3>
             <ul class="text-yellow-100 text-sm space-y-1">
-                <li>• Roll numbers should be in format: 100220101</li>
-                <li>• If your result is not found, try manual entry</li>
+                <li>• Roll numbers should be in format: xxxxxxxx</li>
+                <!-- <li>• If your result is not found, try manual entry</li> -->
                 <li>• Results are based on AKTU publicly available data</li>
                 <li>• Login for complete access to all features</li>
             </ul>
@@ -317,6 +317,96 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
+// Loading overlay functionality for Anubhav Singh's special request
+let loadingOverlay = null;
+
+function showAnubhavLoading() {
+    // Create loading overlay
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'anubhav-loading';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+        font-family: Arial, sans-serif;
+    `;
+    
+    loadingOverlay.innerHTML = `
+        <div style="text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <div class="spinner" style="
+                    width: 50px;
+                    height: 50px;
+                    border: 5px solid #333;
+                    border-top: 5px solid #fff;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto;
+                "></div>
+            </div>
+            <h3 style="color: #fbbf24; margin-bottom: 10px;">Loading Result...</h3>
+            <p style="font-size: 16px; margin-bottom: 10px;">Anubhav Singh Demanded a extra 10 second load time, please wait till then</p>
+            <div id="countdown" style="font-size: 18px; color: #10b981;">10</div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+    
+    // Start countdown
+    let seconds = 10;
+    const countdownElement = document.getElementById('countdown');
+    const countdownInterval = setInterval(() => {
+        seconds--;
+        countdownElement.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+}
+
+function hideAnubhavLoading() {
+    if (loadingOverlay) {
+        document.body.removeChild(loadingOverlay);
+        loadingOverlay = null;
+    }
+}
+
+// Check form submission for special roll numbers
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('form[method="post"]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const rollNumberInput = form.querySelector('input[name="roll_number"]');
+            if (rollNumberInput) {
+                const rollNumber = rollNumberInput.value.trim();
+                try {
+                    const rollInt = parseInt(rollNumber);
+                    if (rollInt > 500) {
+                        showAnubhavLoading();
+                    }
+                } catch (error) {
+                    // Continue with normal submission if roll number can't be parsed
+                }
+            }
+        });
+    });
+});
+
 // Store result data for downloads
 window.resultInfo = null;
 
@@ -435,7 +525,7 @@ function downloadImage() {
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; font-family: Arial, sans-serif; color: white; width: 1000px; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 25px;">
                 <h1 style="color: white; font-size: 36px; margin: 0; font-weight: bold;">GyanAangan</h1>
-                <h2 style="color: #e5e7eb; font-size: 22px; margin: 15px 0;">6th Semester CSE Result - AKTU</h2>
+                <h2 style="color: #e5e7eb; font-size: 22px; margin: 15px 0;">6th Semester CS/IT Result - AKTU</h2>
                 <p style="color: #d1d5db; font-size: 16px; margin: 0;">Generated on: ${new Date().toLocaleDateString()}</p>
             </div>
             

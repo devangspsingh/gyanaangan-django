@@ -19,18 +19,53 @@ class Command(BaseCommand):
             # Read Excel file
             df = pd.read_excel(excel_file, sheet_name=sheet)
             
-            # Subject mapping based on the provided JSON structure
-            subjects = [
-                {"code": "BT-609", "name": "Non Credit Subject", "credit": 0},
-                {"code": "BT-612", "name": "Software Engineering", "credit": 4},
-                {"code": "BT-613", "name": "Computer Networks", "credit": 4},
-                {"code": "BT-614", "name": "Compiler Design", "credit": 4},
-                {"code": "BT-615", "name": "Software Project Management", "credit": 3},
-                {"code": "BT-616", "name": "Big Data", "credit": 3},
-                {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
-                {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
-                {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1}
-            ]
+            # Subject mapping based on roll number ranges
+            def get_subjects_for_roll_number(roll_number):
+                """Return subject list based on roll number range"""
+                try:
+                    roll_int = int(roll_number)
+                    
+                    # IT Branch (100220500-600) - Different subjects
+                    if 100220500 <= roll_int <= 100220600:
+                        return [
+                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
+                            {"code": "BT-612", "name": "Software Engineering", "credit": 4},
+                            {"code": "BT-613", "name": "Computer Networks", "credit": 4},
+                            {"code": "BT-617", "name": "Data Analytics", "credit": 4},
+                            {"code": "BT-615", "name": "Software Project Management", "credit": 3},
+                            {"code": "BT-618", "name": "Augmented & Virtual Reality", "credit": 3},
+                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
+                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
+                            {"code": "BT-667", "name": "Data Analytics Lab", "credit": 1}
+                        ], "IT"
+                    
+                    # CSE Branch (100220101 onwards) - Original subjects  
+                    else:
+                        return [
+                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
+                            {"code": "BT-612", "name": "Software Engineering", "credit": 4},
+                            {"code": "BT-613", "name": "Computer Networks", "credit": 4},
+                            {"code": "BT-614", "name": "Compiler Design", "credit": 4},
+                            {"code": "BT-615", "name": "Software Project Management", "credit": 3},
+                            {"code": "BT-616", "name": "Big Data", "credit": 3},
+                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
+                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
+                            {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1}
+                        ], "CSE"
+                        
+                except ValueError:
+                    # Default to CSE if roll number parsing fails
+                    return [
+                        {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
+                        {"code": "BT-612", "name": "Software Engineering", "credit": 4},
+                        {"code": "BT-613", "name": "Computer Networks", "credit": 4},
+                        {"code": "BT-614", "name": "Compiler Design", "credit": 4},
+                        {"code": "BT-615", "name": "Software Project Management", "credit": 3},
+                        {"code": "BT-616", "name": "Big Data", "credit": 3},
+                        {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
+                        {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
+                        {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1}
+                    ], "CSE"
             
             imported_count = 0
             skipped_count = 0
@@ -57,6 +92,9 @@ class Command(BaseCommand):
                             roll_number = str(int(float(roll_number)))
                         except:
                             pass
+                    
+                    # Get subjects for this roll number
+                    subjects, branch = get_subjects_for_roll_number(roll_number)
                     
                     # Skip if roll number already exists
                     if StudentResult.objects.filter(roll_number=roll_number).exists():
@@ -183,7 +221,7 @@ class Command(BaseCommand):
                     )
                     
                     imported_count += 1
-                    self.stdout.write(f"Imported {roll_number} - {student_name} (CGPA: {cgpa})")
+                    self.stdout.write(f"Imported {roll_number} - {student_name} ({branch} Branch, CGPA: {cgpa})")
                     
                 except Exception as e:
                     self.stdout.write(f"Error processing row {index} (Roll: {roll_number if 'roll_number' in locals() else 'unknown'}): {str(e)}")
