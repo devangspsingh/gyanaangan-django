@@ -120,7 +120,8 @@
 
                 <!-- ===== ADVERTISEMENT PLACEMENT #1 ===== -->
                 <div class="my-8 text-center bg-gray-900 p-4 rounded-lg">
-                    <ins class="adsbygoogle"
+                   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3792754105959046"
+     crossorigin="anonymous"></script> <ins class="adsbygoogle"
                          style="display:block"
                          data-ad-client="ca-pub-3792754105959046"
                          data-ad-slot="2939491041"
@@ -349,6 +350,7 @@ function showLoadingOverlay() {
         align-items: center;
         z-index: 9999;
         color: white;
+		min-width: 300px; /* Ensure it has a minimum width */
         font-family: Arial, sans-serif;
         padding: 20px;
         box-sizing: border-box;
@@ -368,7 +370,7 @@ function showLoadingOverlay() {
 
             <!-- Ad Container -->
             <div id="loader-ad-container" style="min-height: 100px; display: flex; justify-content: center; align-items: center;">
-                <span class="text-gray-500">Advertisement</span> <!-- Placeholder text when ad isn't loaded -->
+                <span id="loader-ad-placeholder" class="text-gray-500">Advertisement</span> <!-- Placeholder text when ad isn't loaded -->
             </div>
         </div>
     `;
@@ -378,7 +380,7 @@ function showLoadingOverlay() {
     // Inject and initialize the ad
     const adContainer = document.getElementById('loader-ad-container');
     if (adContainer) {
-        adContainer.innerHTML = `
+        const adContent = `
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="ca-pub-3792754105959046"
@@ -386,9 +388,12 @@ function showLoadingOverlay() {
                  data-ad-format="auto"
                  data-full-width-responsive="true"></ins>
         `;
+		adContainer.innerHTML = adContent;
         (adsbygoogle = window.adsbygoogle || []).push({});
+		// Hide the placeholder after injecting the ad
+		document.getElementById('loader-ad-placeholder').style.display = 'none';
     }
-
+}
     // Animate progress bar over 15 seconds
     const totalDuration = 15000; // 15 seconds
     const intervalTime = 100; // update every 100ms
@@ -398,12 +403,11 @@ function showLoadingOverlay() {
     const progressInterval = setInterval(() => {
         progress += (intervalTime / totalDuration) * 100;
         if (progressBar && progress <= 100) {
-            progressBar.style.width = progress + '%';
+           progressBar.style.width = progress + '%';
         } else {
             clearInterval(progressInterval);
         }
     }, intervalTime);
-}
 
 function hideLoadingOverlay() {
     if (loadingOverlay) {
@@ -427,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
 // ===== END OF LOADING OVERLAY FUNCTIONALITY =====
 
 
