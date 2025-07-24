@@ -118,6 +118,19 @@
                     </div>
                 {% endif %}
 
+                <!-- ===== ADVERTISEMENT PLACEMENT #1 ===== -->
+                <div class="my-8 text-center bg-gray-900 p-4 rounded-lg">
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-3792754105959046"
+                         data-ad-slot="2939491041"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+
                 <!-- Marks Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-300">
@@ -298,7 +311,6 @@
             <h3 class="text-yellow-200 font-semibold mb-2">Need Help?</h3>
             <ul class="text-yellow-100 text-sm space-y-1">
                 <li>• Roll numbers should be in format: xxxxxxxx</li>
-                <!-- <li>• If your result is not found, try manual entry</li> -->
                 <li>• Results are based on AKTU publicly available data</li>
                 <li>• Login for complete access to all features</li>
             </ul>
@@ -317,20 +329,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
-// Loading overlay functionality for Anubhav Singh's special request
+// ===== REVAMPED LOADING OVERLAY FUNCTIONALITY =====
 let loadingOverlay = null;
 
-function showAnubhavLoading() {
+function showLoadingOverlay() {
     // Create loading overlay
     loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'anubhav-loading';
+    loadingOverlay.id = 'loading-overlay';
     loadingOverlay.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(17, 24, 39, 0.95); /* bg-gray-900 with opacity */
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -338,74 +350,85 @@ function showAnubhavLoading() {
         z-index: 9999;
         color: white;
         font-family: Arial, sans-serif;
+        padding: 20px;
+        box-sizing: border-box;
     `;
     
     loadingOverlay.innerHTML = `
-        <div style="text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <div class="spinner" style="
-                    width: 50px;
-                    height: 50px;
-                    border: 5px solid #333;
-                    border-top: 5px solid #fff;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin: 0 auto;
-                "></div>
+        <div style="text-align: center; max-width: 400px; width: 100%;">
+            <h3 style="color: #60a5fa; margin-bottom: 10px; font-size: 24px;">Loading Your Result...</h3>
+            <p style="font-size: 16px; color: #d1d5db; margin-bottom: 25px;">
+                Please wait while we prepare your personalized result card.
+            </p>
+            
+            <!-- Progress Bar -->
+            <div id="progress-container" style="width: 100%; background-color: #374151; border-radius: 8px; overflow: hidden; margin-bottom: 30px;">
+                <div id="progress-bar" style="width: 0%; height: 10px; background-color: #3b82f6; transition: width 0.1s linear;"></div>
             </div>
-            <h3 style="color: #fbbf24; margin-bottom: 10px;">Loading Result...</h3>
-            <p style="font-size: 16px; margin-bottom: 10px;">Anubhav Singh Demanded a extra 10 second load time, please wait till then</p>
-            <div id="countdown" style="font-size: 18px; color: #10b981;">10</div>
+
+            <!-- Ad Container -->
+            <div id="loader-ad-container" style="min-height: 100px; display: flex; justify-content: center; align-items: center;">
+                <span class="text-gray-500">Advertisement</span> <!-- Placeholder text when ad isn't loaded -->
+            </div>
         </div>
-        <style>
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
     `;
     
     document.body.appendChild(loadingOverlay);
-    
-    // Start countdown
-    let seconds = 10;
-    const countdownElement = document.getElementById('countdown');
-    const countdownInterval = setInterval(() => {
-        seconds--;
-        countdownElement.textContent = seconds;
-        if (seconds <= 0) {
-            clearInterval(countdownInterval);
+
+    // Inject and initialize the ad
+    const adContainer = document.getElementById('loader-ad-container');
+    if (adContainer) {
+        adContainer.innerHTML = `
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-3792754105959046"
+                 data-ad-slot="2939491041"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+        `;
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    }
+
+    // Animate progress bar over 15 seconds
+    const totalDuration = 15000; // 15 seconds
+    const intervalTime = 100; // update every 100ms
+    let progress = 0;
+    const progressBar = document.getElementById('progress-bar');
+
+    const progressInterval = setInterval(() => {
+        progress += (intervalTime / totalDuration) * 100;
+        if (progressBar && progress <= 100) {
+            progressBar.style.width = progress + '%';
+        } else {
+            clearInterval(progressInterval);
         }
-    }, 1000);
+    }, intervalTime);
 }
 
-function hideAnubhavLoading() {
+function hideLoadingOverlay() {
     if (loadingOverlay) {
         document.body.removeChild(loadingOverlay);
         loadingOverlay = null;
     }
 }
 
-// Check form submission for special roll numbers
+// Show loader on any form submission
 document.addEventListener('DOMContentLoaded', function() {
     const forms = document.querySelectorAll('form[method="post"]');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
-            const rollNumberInput = form.querySelector('input[name="roll_number"]');
-            if (rollNumberInput) {
-                const rollNumber = rollNumberInput.value.trim();
-                try {
-                    const rollInt = parseInt(rollNumber);
-                    if (rollInt > 500) {
-                        showAnubhavLoading();
-                    }
-                } catch (error) {
-                    // Continue with normal submission if roll number can't be parsed
-                }
+            // Check if form is valid before showing loader
+            if (form.checkValidity()) {
+                showLoadingOverlay();
+                // Note: The form will submit and the page will reload. 
+                // The loader will be visible until the new page loads.
+                // We don't need to manually hide it here.
             }
         });
     });
 });
+// ===== END OF LOADING OVERLAY FUNCTIONALITY =====
+
 
 // Store result data for downloads
 window.resultInfo = null;
@@ -415,22 +438,15 @@ function toggleSearchForm() {
     const form = document.getElementById('search-again-form');
     if (form.classList.contains('hidden')) {
         form.classList.remove('hidden');
-        // Smooth scroll to the form after it becomes visible
         setTimeout(() => {
-            form.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-            });
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
     } else {
         form.classList.add('hidden');
-        // Smooth scroll back to top
-        window.scrollTo({ 
-            top: 0, 
-            behavior: 'smooth' 
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Only load data for downloads if we have result data
@@ -439,38 +455,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultElement = document.getElementById('result-data');
     const sgpaElement = document.getElementById('sgpa-data');
     
-    console.log('Elements found:', {
-        subjects: !!subjectsElement,
-        marks: !!marksElement,
-        result: !!resultElement,
-        sgpa: !!sgpaElement
-    });
-    
     if (subjectsElement && marksElement && resultElement) {
         try {
-            console.log('Parsing subjects data...');
             const subjects = JSON.parse(subjectsElement.textContent);
-            
-            console.log('Parsing marks data...');
             const marksData = JSON.parse(marksElement.textContent);
-            
-            console.log('Parsing result data...');
             const resultData = JSON.parse(resultElement.textContent);
-            
-            console.log('Parsing SGPA data...');
             let sgpaValue = 0;
             if (sgpaElement) {
                 sgpaValue = parseFloat(sgpaElement.textContent) || 0;
-                console.log('SGPA from element:', sgpaValue);
-            } else {
-                // Fallback: try to get SGPA from result data
-                if (resultData.sgpa && resultData.sgpa !== 'N/A') {
-                    sgpaValue = parseFloat(resultData.sgpa) || 0;
-                    console.log('SGPA from result data:', sgpaValue);
-                }
             }
             
-            // Store for download functions
             window.resultInfo = {
                 subjects: subjects,
                 marksData: marksData,
@@ -478,18 +472,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 sgpa: sgpaValue
             };
            
-            console.log('Successfully loaded result data:', window.resultInfo);
-            console.log('SGPA value to be used:', sgpaValue);
-            
         } catch (error) {
-            console.error('Error parsing JSON data:', error);
-            console.log('Subjects element content:', subjectsElement ? subjectsElement.textContent : 'null');
-            console.log('Marks element content:', marksElement ? marksElement.textContent : 'null');
-            console.log('Result element content:', resultElement ? resultElement.textContent : 'null');
-            console.log('SGPA element content:', sgpaElement ? sgpaElement.textContent : 'null');
+            console.error('Error parsing JSON data for download:', error);
         }
-    } else {
-        console.log('Data elements not found - this is normal if no result is displayed');
     }
 });
 
@@ -500,26 +485,17 @@ function downloadImage() {
     }
     
     const { subjects, marksData, resultData, sgpa } = window.resultInfo;
-    
-    // Debug SGPA value
-    console.log('Download function - SGPA value:', sgpa);
-    console.log('Download function - SGPA type:', typeof sgpa);
-    console.log('Download function - SGPA fixed:', sgpa.toFixed(2));
-    
-    // Show loading indicator
     const button = event.target;
     const originalText = button.innerHTML;
     button.innerHTML = '⏳ Generating...';
     button.disabled = true;
     
-    // Create a temporary div for image generation
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '-9999px';
     
     const sgpaDisplay = sgpa && sgpa > 0 ? sgpa.toFixed(2) : 'N/A';
-    console.log('SGPA display value:', sgpaDisplay);
     
     tempDiv.innerHTML = `
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; font-family: Arial, sans-serif; color: white; width: 1000px; box-sizing: border-box;">
@@ -560,7 +536,9 @@ function downloadImage() {
                             const internal = parseInt(marks.internal) || 0;
                             const total = theory + internal;
                             let gradePoint = 0;
-                            if (total >= 90) gradePoint = 10;
+
+                            // Grade point calculation (10-point scale)
+                            if (total >= 90)    gradePoint = 10;
                             else if (total >= 80) gradePoint = 9;
                             else if (total >= 70) gradePoint = 8;
                             else if (total >= 60) gradePoint = 7;
@@ -604,7 +582,7 @@ function downloadImage() {
         backgroundColor: '#1e3a8a',
         scale: 2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         logging: false
     }).then(canvas => {
         const link = document.createElement('a');
@@ -612,19 +590,15 @@ function downloadImage() {
         link.href = canvas.toDataURL('image/png');
         link.click();
         
-        // Reset button
         button.innerHTML = originalText;
         button.disabled = false;
-        
         document.body.removeChild(tempDiv);
     }).catch(error => {
         console.error('Error generating image:', error);
         alert('Error generating image. Please try again.');
         
-        // Reset button
         button.innerHTML = originalText;
         button.disabled = false;
-        
         document.body.removeChild(tempDiv);
     });
 }

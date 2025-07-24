@@ -112,10 +112,9 @@ def search_result(request):
             try:
                 result = StudentResult.objects.get(roll_number=roll_number)
                 
-                # Anubhav Singh's special request - 10 second delay for everyone
+                # 15 second delay for loading experience
                 import time
-                time.sleep(10)
-                messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
+                time.sleep(15)
                 
                 # Get appropriate subject data for this roll number
                 subjects_data = StudentResult.get_subjects_data(result.roll_number)
@@ -151,10 +150,9 @@ def search_result(request):
                 result_found=True
             )
             
-            # Anubhav Singh's special request - 10 second delay for everyone
+            # 15 second delay for loading experience
             import time
-            time.sleep(10)
-            messages.info(request, 'Anubhav Singh Demanded a extra 10 second load time, please wait till then')
+            time.sleep(15)
             
             # Get appropriate subject data for this roll number
             subjects_data = StudentResult.get_subjects_data(result.roll_number)
