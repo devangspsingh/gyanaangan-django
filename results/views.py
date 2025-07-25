@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.core.paginator import Paginator
+from django.forms import formset_factory, Form, CharField, IntegerField, FloatField, BooleanField
 import json
 import csv
 import io
@@ -410,3 +411,128 @@ def result_statistics(request):
         'meta_description': 'Statistics and analytics for result queries.',
     }
     return render(request, 'results/statistics.html', context)
+
+
+class ManualSubjectForm(Form):
+    subject_name = CharField(max_length=100, label="Subject Name")
+    marks_obtained = IntegerField(label="Marks Obtained", required=False)
+    theory_marks = IntegerField(label="Theory Marks", required=False)
+    internal_marks = IntegerField(label="Internal Marks", required=False)
+    use_theory_internal = BooleanField(label="Enter Theory & Internal Separately?", required=False)
+    total_marks = IntegerField(label="Total Marks")
+    credit = FloatField(label="Credit")
+
+def manual_calculator(request):
+    ManualSubjectFormSet = formset_factory(ManualSubjectForm, extra=1, min_num=1, validate_min=True)
+    result = None
+    sgpa = None
+    total_marks = None
+    subjects_data = []
+    show_result = False
+    show_full = request.user.is_authenticated
+    error = None
+
+    if request.method == 'POST':
+        formset = ManualSubjectFormSet(request.POST)
+        if formset.is_valid():
+            subjects = []
+            total_points = 0
+            total_credits = 0
+            total_marks = 0
+            max_total_marks = 0
+            for form in formset:
+                name = form.cleaned_data['subject_name']
+                credit = form.cleaned_data['credit']
+                use_theory_internal = form.cleaned_data.get('use_theory_internal', False)
+                if use_theory_internal:
+                    theory = form.cleaned_data.get('theory_marks') or 0
+                    internal = form.cleaned_data.get('internal_marks') or 0
+                    marks = theory + internal
+                else:
+                    marks = form.cleaned_data.get('marks_obtained') or 0
+                    theory = None
+                    internal = None
+                max_marks = form.cleaned_data['total_marks']
+                percent = (marks / max_marks) * 100 if max_marks else 0
+                # AKTU 10-point scale
+                if percent >= 90:
+                    grade_point = 10
+                elif percent >= 80:
+                    grade_point = 9
+                elif percent >= 70:
+                    grade_point = 8
+                elif percent >= 60:
+                    grade_point = 7
+                elif percent >= 50:
+                    grade_point = 6
+                elif percent >= 40:
+                    grade_point = 5
+                else:
+                    grade_point = 0
+                total_points += grade_point * credit
+                total_credits += credit
+                total_marks += marks
+                max_total_marks += max_marks
+                subjects.append({
+                    'name': name,
+                    'marks': marks,
+                    'theory': theory,
+                    'internal': internal,
+                    'total_marks': max_marks,
+                    'credit': credit,
+                    'percent': percent,
+                    'grade_point': grade_point,
+                })
+            sgpa = round(total_points / total_credits, 2) if total_credits > 0 else None
+            show_result = True
+            subjects_data = subjects
+
+            # Save manual entry for user only if logged in
+            if request.user.is_authenticated:
+                from .models import ManualResultEntry
+                entry = ManualResultEntry.objects.create(
+                    user=request.user,
+                    roll_number=f"manual-{request.user.id}-{ManualResultEntry.objects.filter(user=request.user).count()+1}",
+                    name=request.user.get_full_name() or request.user.username,
+                    marks_data={s['name']: {
+                        'total': s['marks'],
+                        'credit': s['credit'],
+                        'max_marks': s['total_marks'],
+                        'percent': s['percent'],
+                        'grade_point': s['grade_point'],
+                    } for s in subjects}
+                )
+                entry.total_marks = total_marks
+                entry.percentage = (total_marks / max_total_marks) * 100 if max_total_marks else 0
+                entry.save()
+
+            # Log query for all
+            from .models import ResultQuery
+            ResultQuery.objects.create(
+                roll_number=f"manual-{request.user.id if request.user.is_authenticated else 'anon'}",
+                user=request.user if request.user.is_authenticated else None,
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                result_found=True,
+                semester="manual",
+                branch="manual"
+            )
+        else:
+            show_result = False
+            error = "Please fill all required fields correctly."
+    else:
+        formset = ManualSubjectFormSet()
+
+    context = {
+        'formset': formset,
+        'show_result': show_result,
+        'subjects_data': subjects_data,
+        'sgpa': sgpa,
+        'total_marks': total_marks,
+        'show_full': show_full,
+        'error': error,
+        'title': 'Manual SGPA Calculator',
+        'meta_description': 'Manually calculate your SGPA by entering your own subjects and marks.',
+        'allow_image_download': show_result,  # for template to show download option
+    }
+    return render(request, 'results/manual_calculator.html', context)
