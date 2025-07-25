@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-{% load mathfilters%}
+{% load mathfilters %}
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="text-center mb-8">
@@ -119,7 +119,7 @@
                 {% endif %}
 
                 <!-- ===== ADVERTISEMENT PLACEMENT #1 ===== -->
-                <div class="my-8 text-center bg-gray-900 p-4 rounded-lg">
+                <div class="my-8 text-center bg-gray-900 rounded-lg">
                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3792754105959046"
      crossorigin="anonymous"></script> <ins class="adsbygoogle"
                          style="display:block"
@@ -333,110 +333,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+<!-- Include the loading overlay component -->
+{% include "components/loading_overlay.html" %}
+
 <script>
-// ===== REVAMPED LOADING OVERLAY FUNCTIONALITY =====
-let loadingOverlay = null;
 
-function showLoadingOverlay() {
-    // Create loading overlay
-    loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'loading-overlay';
-    loadingOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(17, 24, 39, 0.95); /* bg-gray-900 with opacity */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        color: white;
-		min-width: 300px; /* Ensure it has a minimum width */
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        box-sizing: border-box;
-    `;
-    
-    loadingOverlay.innerHTML = `
-        <div style="text-align: center; max-width: 400px; width: 100%;">
-            <h3 style="color: #60a5fa; margin-bottom: 10px; font-size: 24px;">Loading Your Result...</h3>
-            <p style="font-size: 16px; color: #d1d5db; margin-bottom: 25px;">
-                Please wait while we prepare your personalized result card.
-            </p>
-            
-            <!-- Progress Bar -->
-            <div id="progress-container" style="width: 100%; background-color: #374151; border-radius: 8px; overflow: hidden; margin-bottom: 30px;">
-                <div id="progress-bar" style="width: 0%; height: 10px; background-color: #3b82f6; transition: width 0.1s linear;"></div>
-            </div>
-
-            <!-- Ad Container -->
-            <div id="loader-ad-container" style="min-height: 100px; display: flex; justify-content: center; align-items: center;">
-                <span id="loader-ad-placeholder" class="text-gray-500">Advertisement</span> <!-- Placeholder text when ad isn't loaded -->
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(loadingOverlay);
-
-    // Inject and initialize the ad
-    const adContainer = document.getElementById('loader-ad-container');
-    if (adContainer) {
-        const adContent = `
-            <ins class="adsbygoogle"
-                 style="display:block"
-                 data-ad-client="ca-pub-3792754105959046"
-                 data-ad-slot="2939491041"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-        `;
-		adContainer.innerHTML = adContent;
-        (adsbygoogle = window.adsbygoogle || []).push({});
-		// Hide the placeholder after injecting the ad
-		document.getElementById('loader-ad-placeholder').style.display = 'none';
-    }
-}
-    // Animate progress bar over 15 seconds
-    const totalDuration = 10000; // 15 seconds
-    const intervalTime = 100; // update every 100ms
-    let progress = 0;
-    const progressBar = document.getElementById('progress-bar');
-
-    const progressInterval = setInterval(() => {
-        progress += (intervalTime / totalDuration) * 100;
-        if (progressBar && progress <= 100) {
-           progressBar.style.width = progress + '%';
-        } else {
-            clearInterval(progressInterval);
-        }
-    }, intervalTime);
-
-function hideLoadingOverlay() {
-    if (loadingOverlay) {
-        document.body.removeChild(loadingOverlay);
-        loadingOverlay = null;
-    }
-}
-
-// Show loader on any form submission
-document.addEventListener('DOMContentLoaded', function() {
-    const forms = document.querySelectorAll('form[method="post"]');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            // Check if form is valid before showing loader
-            if (form.checkValidity()) {
-                showLoadingOverlay();
-                // Note: The form will submit and the page will reload. 
-                // The loader will be visible until the new page loads.
-                // We don't need to manually hide it here.
-            }
-        });
-    });
-});
-
-// ===== END OF LOADING OVERLAY FUNCTIONALITY =====
 
 
 // Store result data for downloads

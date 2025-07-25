@@ -1,0 +1,124 @@
+<!-- loading_overlay.html -->
+<div id="loading-overlay" class="hidden fixed top-0 left-0 bottom-0 right-0 z-[9999] flex flex-col justify-center items-center"
+    style="background: rgba(17, 24, 39, 0.95); min-width: 300px; color: white; font-family: Arial, sans-serif;">
+    <div style="text-align: center; max-width: 400px; width: 90%; padding: 0 15px;">
+        <h3 style="color: #60a5fa; margin-bottom: 10px; font-size: 24px;">Loading Your Result...</h3>
+        <p style="font-size: 16px; color: #d1d5db; margin-bottom: 25px;">
+            Please wait while we prepare your personalized result card.
+        </p>
+        <!-- Progress Bar & Fun Messages -->
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; width: 100%;">
+            <div style="width: 100%; background: #374151; border-radius: 8px; overflow: hidden; height: 14px; margin-bottom: 10px;">
+                <div id="loading-progress-bar"
+                     style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4); transition: width 0.2s;"></div>
+            </div>
+            <div id="loading-progress-text" style="font-size: 16px; color: #fbbf24; margin-bottom: 8px;">0% completed</div>
+            <div id="loading-fun-message" style="font-size: 15px; color: #a5b4fc; min-height: 22px;">
+                <!-- Fun message will appear here -->
+            </div>
+        </div>
+        <!-- Ad Container (No right/bottom margin) -->
+        <div class="mt-6 text-center bg-gray-900 rounded-lg" id="loading-ad-container"></div>
+    </div>
+</div>
+<script>
+(function() {
+    // List of random fun messages
+    const funMessages = [
+        "Started GyanAangan in 2022 🚀", "Began with static HTML & CSS...", "Grew into Django, Python & more!",
+        "Now with Next.js frontend & Django backend", "Soon migrating fully to Next.js",
+         "Calculating SGPA magic ✨", "Fetching data from the cloud ☁️", "Almost there, hang tight!"
+    ];
+    const finalMessage = "Result is ready! 🎉";
+
+    let progress = 0;
+    let interval = null;
+    let currentFunMessage = '';
+
+    function getRandomMessage() {
+        let newMessage;
+        if (funMessages.length === 1) return funMessages[0];
+        do {
+            newMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
+        } while (newMessage === currentFunMessage);
+        return newMessage;
+    }
+
+    window.showLoadingOverlay = function() {
+        const overlay = document.getElementById('loading-overlay');
+        if (!overlay) return;
+
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        progress = 0;
+        if (interval) clearInterval(interval);
+
+        currentFunMessage = getRandomMessage();
+        updateUI(0);
+
+        // Ad logic
+        const adContainer = document.getElementById('loading-ad-container');
+        if (adContainer && !adContainer.hasChildNodes()) {
+            adContainer.innerHTML = `<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3792754105959046" data-ad-slot="2939491041" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
+            if (!document.querySelector('script[src*="adsbygoogle.js"]')) {
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3792754105959046";
+                script.crossOrigin = "anonymous";
+                document.body.appendChild(script);
+            }
+            setTimeout(() => {
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){ console.error(e); }
+            }, 500);
+        }
+
+        // Start animation
+        interval = setInterval(() => {
+            progress += 1;
+            if (progress % 20 === 0 && progress > 0 && progress < 100) {
+                currentFunMessage = getRandomMessage();
+            }
+            if (progress >= 100) {
+                progress = 100;
+                currentFunMessage = finalMessage;
+                clearInterval(interval);
+            }
+            updateUI(progress);
+        }, 100);
+    };
+
+    window.hideLoadingOverlay = function() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        if (interval) clearInterval(interval);
+    };
+
+    function updateUI(percent) {
+        window.requestAnimationFrame(() => {
+            const bar = document.getElementById('loading-progress-bar');
+            const text = document.getElementById('loading-progress-text');
+            const msg = document.getElementById('loading-fun-message');
+            if (bar) bar.style.width = percent + "%";
+            if (text) text.textContent = percent + "% completed";
+            if (msg) msg.textContent = currentFunMessage;
+        });
+    }
+
+    // Attach to forms
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form[method="post"]');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+                    return;
+                }
+                showLoadingOverlay();
+            });
+        });
+    });
+})();
+</script>
