@@ -203,7 +203,7 @@ def search_result(request):
             
             # 15 second delay for loading experience
             import time
-            time.sleep(15)
+            time.sleep(8)
             
             # Get appropriate subject data for this roll number
             subjects_data = get_subjects_data_by_roll(result.roll_number)
