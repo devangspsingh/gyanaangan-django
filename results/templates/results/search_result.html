@@ -14,7 +14,7 @@
     <!-- Header -->
     <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-white mb-4">Search Result by Roll Number</h1>
-        <p class="text-gray-300">Enter your roll number to check your 6th semester CS/IT result</p>
+        <p class="text-gray-300">Enter your roll number to check your 2024-25 CS/IT result</p>
     </div>
 
     <!-- Search Form (Show at top when no result, at bottom when result found) -->
@@ -190,17 +190,19 @@
                                         {% if not show_preview %}
                                             <td class="px-6 py-4">
                                                 {% if marks.theory and marks.internal %}
-                                                    {% with total=marks.theory|add:marks.internal %}
-                                                        <span class="font-bold {% if total >= 60 %}text-green-400{% elif total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
-                                                            {% if total >= 90 %}10
-                                                            {% elif total >= 80 %}9
-                                                            {% elif total >= 70 %}8
-                                                            {% elif total >= 60 %}7
-                                                            {% elif total >= 50 %}6
-                                                            {% elif total >= 40 %}5
-                                                            {% else %}0
-                                                            {% endif %}
-                                                        </span>
+                                                    {% with total=marks.theory|add:marks.internal max_marks=subject.max_marks|default:100 %}
+                                                        {% with percent=total|div:max_marks|mul:100 %}
+                                                            <span class="font-bold {% if percent >= 60 %}text-green-400{% elif percent >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                                {% if percent >= 90 %}10
+                                                                {% elif percent >= 80 %}9
+                                                                {% elif percent >= 70 %}8
+                                                                {% elif percent >= 60 %}7
+                                                                {% elif percent >= 50 %}6
+                                                                {% elif percent >= 40 %}5
+                                                                {% else %}0
+                                                                {% endif %}
+                                                            </span>
+                                                        {% endwith %}
                                                     {% endwith %}
                                                 {% else %}
                                                     -
@@ -208,17 +210,19 @@
                                             </td>
                                             <td class="px-6 py-4">
                                                 {% if marks.theory and marks.internal and subject.credit > 0 %}
-                                                    {% with total=marks.theory|add:marks.internal %}
-                                                        <span class="font-bold {% if total >= 60 %}text-green-400{% elif total >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
-                                                            {% if total >= 90 %}{{ subject.credit|mul:10 }}
-                                                            {% elif total >= 80 %}{{ subject.credit|mul:9 }}
-                                                            {% elif total >= 70 %}{{ subject.credit|mul:8 }}
-                                                            {% elif total >= 60 %}{{ subject.credit|mul:7 }}
-                                                            {% elif total >= 50 %}{{ subject.credit|mul:6 }}
-                                                            {% elif total >= 40 %}{{ subject.credit|mul:5 }}
-                                                            {% else %}0
-                                                            {% endif %}
-                                                        </span>
+                                                    {% with total=marks.theory|add:marks.internal max_marks=subject.max_marks|default:100 %}
+                                                        {% with percent=total|div:max_marks|mul:100 %}
+                                                            <span class="font-bold {% if percent >= 60 %}text-green-400{% elif percent >= 40 %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                                                {% if percent >= 90 %}{{ subject.credit|mul:10 }}
+                                                                {% elif percent >= 80 %}{{ subject.credit|mul:9 }}
+                                                                {% elif percent >= 70 %}{{ subject.credit|mul:8 }}
+                                                                {% elif percent >= 60 %}{{ subject.credit|mul:7 }}
+                                                                {% elif percent >= 50 %}{{ subject.credit|mul:6 }}
+                                                                {% elif percent >= 40 %}{{ subject.credit|mul:5 }}
+                                                                {% else %}0
+                                                                {% endif %}
+                                                            </span>
+                                                        {% endwith %}
                                                     {% endwith %}
                                                 {% else %}
                                                     -
@@ -506,7 +510,7 @@ function downloadImage() {
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; font-family: Arial, sans-serif; color: white; width: 1000px; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 25px;">
                 <h1 style="color: white; font-size: 36px; margin: 0; font-weight: bold;">GyanAangan</h1>
-                <h2 style="color: #e5e7eb; font-size: 22px; margin: 15px 0;">6th Semester CS/IT Result - AKTU</h2>
+                <h2 style="color: #e5e7eb; font-size: 22px; margin: 15px 0;">2024-25 CS/IT Result - AKTU</h2>
                 <p style="color: #d1d5db; font-size: 16px; margin: 0;">Generated on: ${new Date().toLocaleDateString()}</p>
             </div>
             
@@ -540,18 +544,17 @@ function downloadImage() {
                             const theory = parseInt(marks.theory) || 0;
                             const internal = parseInt(marks.internal) || 0;
                             const total = theory + internal;
+                            const maxMarks = subject.max_marks || 100;
+                            let percent = maxMarks ? (total / maxMarks) * 100 : 0;
                             let gradePoint = 0;
-
-                            // Grade point calculation (10-point scale)
-                            if (total >= 90)    gradePoint = 10;
-                            else if (total >= 80) gradePoint = 9;
-                            else if (total >= 70) gradePoint = 8;
-                            else if (total >= 60) gradePoint = 7;
-                            else if (total >= 50) gradePoint = 6;
-                            else if (total >= 40) gradePoint = 5;
-                            
+                            if (percent >= 90) gradePoint = 10;
+                            else if (percent >= 80) gradePoint = 9;
+                            else if (percent >= 70) gradePoint = 8;
+                            else if (percent >= 60) gradePoint = 7;
+                            else if (percent >= 50) gradePoint = 6;
+                            else if (percent >= 40) gradePoint = 5;
+                            else gradePoint = 0;
                             const creditGP = subject.credit > 0 ? gradePoint * subject.credit : '-';
-                            
                             return `
                                 <tr style="background: rgba(255,255,255,0.05);">
                                     <td style="padding: 10px 8px; border: 1px solid rgba(255,255,255,0.3); font-size: 12px; max-width: 180px; word-wrap: break-word;">${subject.name}</td>

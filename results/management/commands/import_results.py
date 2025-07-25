@@ -4,6 +4,30 @@ import ast
 from django.core.management.base import BaseCommand
 from results.models import StudentResult
 
+def get_8th_sem_subjects_v2():
+    return [
+        {"code": "BT-801", "name": "Rural Development: Administration and Planning", "credit": 3, "max_marks": 150},
+        {"code": "BT-816", "name": "Cloud Computing", "credit": 3, "max_marks": 150},
+        {"code": "BT-817", "name": "Data Warehousing & Data Mining", "credit": 3, "max_marks": 150},
+        {"code": "BT-866", "name": "Project", "credit": 9, "max_marks": 400}
+    ]
+
+def get_grade_point_by_percentage(percent):
+    if percent >= 90:
+        return 10
+    elif percent >= 80:
+        return 9
+    elif percent >= 70:
+        return 8
+    elif percent >= 60:
+        return 7
+    elif percent >= 50:
+        return 6
+    elif percent >= 40:
+        return 5
+    else:
+        return 0
+
 class Command(BaseCommand):
     help = 'Import student results from Excel file'
 
@@ -24,47 +48,47 @@ class Command(BaseCommand):
                 """Return subject list based on roll number range"""
                 try:
                     roll_int = int(roll_number)
-                    
+                    # 8th sem IT (100210500-100210600)
+                    if 100210500 <= roll_int <= 100210600:
+                        return get_8th_sem_subjects_v2(), "IT-8TH"
                     # IT Branch (100220500-600) - Different subjects
-                    if 100220500 <= roll_int <= 100220600:
+                    elif 100220500 <= roll_int <= 100220600:
                         return [
-                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
-                            {"code": "BT-612", "name": "Software Engineering", "credit": 4},
-                            {"code": "BT-613", "name": "Computer Networks", "credit": 4},
-                            {"code": "BT-617", "name": "Data Analytics", "credit": 4},
-                            {"code": "BT-615", "name": "Software Project Management", "credit": 3},
-                            {"code": "BT-618", "name": "Augmented & Virtual Reality", "credit": 3},
-                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
-                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
-                            {"code": "BT-667", "name": "Data Analytics Lab", "credit": 1}
+                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0, "max_marks": 100},
+                            {"code": "BT-612", "name": "Software Engineering", "credit": 4, "max_marks": 100},
+                            {"code": "BT-613", "name": "Computer Networks", "credit": 4, "max_marks": 100},
+                            {"code": "BT-617", "name": "Data Analytics", "credit": 4, "max_marks": 100},
+                            {"code": "BT-615", "name": "Software Project Management", "credit": 3, "max_marks": 100},
+                            {"code": "BT-618", "name": "Augmented & Virtual Reality", "credit": 3, "max_marks": 100},
+                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1, "max_marks": 100},
+                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1, "max_marks": 100},
+                            {"code": "BT-667", "name": "Data Analytics Lab", "credit": 1, "max_marks": 100}
                         ], "IT"
-                    
                     # CSE Branch (100220101 onwards) - Original subjects  
                     else:
                         return [
-                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
-                            {"code": "BT-612", "name": "Software Engineering", "credit": 4},
-                            {"code": "BT-613", "name": "Computer Networks", "credit": 4},
-                            {"code": "BT-614", "name": "Compiler Design", "credit": 4},
-                            {"code": "BT-615", "name": "Software Project Management", "credit": 3},
-                            {"code": "BT-616", "name": "Big Data", "credit": 3},
-                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
-                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
-                            {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1}
+                            {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0, "max_marks": 100},
+                            {"code": "BT-612", "name": "Software Engineering", "credit": 4, "max_marks": 100},
+                            {"code": "BT-613", "name": "Computer Networks", "credit": 4, "max_marks": 100},
+                            {"code": "BT-614", "name": "Compiler Design", "credit": 4, "max_marks": 100},
+                            {"code": "BT-615", "name": "Software Project Management", "credit": 3, "max_marks": 100},
+                            {"code": "BT-616", "name": "Big Data", "credit": 3, "max_marks": 100},
+                            {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1, "max_marks": 100},
+                            {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1, "max_marks": 100},
+                            {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1, "max_marks": 100}
                         ], "CSE"
-                        
                 except ValueError:
                     # Default to CSE if roll number parsing fails
                     return [
-                        {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0},
-                        {"code": "BT-612", "name": "Software Engineering", "credit": 4},
-                        {"code": "BT-613", "name": "Computer Networks", "credit": 4},
-                        {"code": "BT-614", "name": "Compiler Design", "credit": 4},
-                        {"code": "BT-615", "name": "Software Project Management", "credit": 3},
-                        {"code": "BT-616", "name": "Big Data", "credit": 3},
-                        {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1},
-                        {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1},
-                        {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1}
+                        {"code": "BT-609", "name": "Essence of Indian Traditional Knowledge", "credit": 0, "max_marks": 100},
+                        {"code": "BT-612", "name": "Software Engineering", "credit": 4, "max_marks": 100},
+                        {"code": "BT-613", "name": "Computer Networks", "credit": 4, "max_marks": 100},
+                        {"code": "BT-614", "name": "Compiler Design", "credit": 4, "max_marks": 100},
+                        {"code": "BT-615", "name": "Software Project Management", "credit": 3, "max_marks": 100},
+                        {"code": "BT-616", "name": "Big Data", "credit": 3, "max_marks": 100},
+                        {"code": "BT-662", "name": "Software Engineering Lab", "credit": 1, "max_marks": 100},
+                        {"code": "BT-663", "name": "Computer Networks Lab", "credit": 1, "max_marks": 100},
+                        {"code": "BT-664", "name": "Compiler Design Lab", "credit": 1, "max_marks": 100}
                     ], "CSE"
             
             imported_count = 0
@@ -142,6 +166,7 @@ class Command(BaseCommand):
                     subject_marks = {}
                     for i, subject in enumerate(subjects):
                         subject_code = subject['code']
+                        max_marks = subject.get('max_marks', 100)
                         
                         # Find the actual data starting index (skip empty strings at beginning)
                         data_start_index = 0
@@ -149,13 +174,9 @@ class Command(BaseCommand):
                             if val and val != '':
                                 data_start_index = idx
                                 break
-                        
-                        # Get marks index (subject index + data start offset)
                         marks_idx = data_start_index + i
-                        
                         theory = None
                         internal = None
-                        
                         # Extract theory marks
                         if marks_idx < len(theory_marks):
                             theory_val = theory_marks[marks_idx]
@@ -164,7 +185,6 @@ class Command(BaseCommand):
                                     theory = int(float(str(theory_val)))
                                 except (ValueError, TypeError):
                                     theory = None
-                        
                         # Extract internal marks
                         if marks_idx < len(internal_marks):
                             internal_val = internal_marks[marks_idx]
@@ -173,44 +193,48 @@ class Command(BaseCommand):
                                     internal = int(float(str(internal_val)))
                                 except (ValueError, TypeError):
                                     internal = None
-                        
+                        total = (theory or 0) + (internal or 0)
                         subject_marks[subject_code] = {
                             'theory': theory,
                             'internal': internal,
                             'viva': '',  # Add viva field
-                            'total': (theory or 0) + (internal or 0),
+                            'total': total,
                             'credit': subject['credit'],
-                            'name': subject['name']
+                            'name': subject['name'],
+                            'max_marks': max_marks
                         }
                     
                     # Calculate CGPA
                     total_points = 0
                     total_credits = 0
-                    
                     for subject_code, marks in subject_marks.items():
-                        if marks['credit'] > 0 and marks['theory'] is not None and marks['internal'] is not None:
+                        credit = marks['credit']
+                        if credit > 0 and marks['theory'] is not None and marks['internal'] is not None:
                             total_marks = marks['theory'] + marks['internal']
-                            
-                            # Grade point calculation (10-point scale)
-                            if total_marks >= 90:
-                                grade_point = 10
-                            elif total_marks >= 80:
-                                grade_point = 9
-                            elif total_marks >= 70:
-                                grade_point = 8
-                            elif total_marks >= 60:
-                                grade_point = 7
-                            elif total_marks >= 50:
-                                grade_point = 6
-                            elif total_marks >= 40:
-                                grade_point = 5
+                            max_marks = marks.get('max_marks', 100)
+                            # 8th sem IT: grade point by percentage
+                            if branch == "IT-8TH":
+                                percent = (total_marks / max_marks) * 100 if max_marks else 0
+                                grade_point = get_grade_point_by_percentage(percent)
                             else:
-                                grade_point = 0
-                            
-                            total_points += grade_point * marks['credit']
-                            total_credits += marks['credit']
-                    
-                    cgpa = round(total_points / total_credits, 2) if total_credits > 0 else 0.0
+                                # Grade point calculation (10-point scale)
+                                if total_marks >= 90:
+                                    grade_point = 10
+                                elif total_marks >= 80:
+                                    grade_point = 9
+                                elif total_marks >= 70:
+                                    grade_point = 8
+                                elif total_marks >= 60:
+                                    grade_point = 7
+                                elif total_marks >= 50:
+                                    grade_point = 6
+                                elif total_marks >= 40:
+                                    grade_point = 5
+                                else:
+                                    grade_point = 0
+                            total_points += grade_point * credit
+                            total_credits += credit
+                    cgpa = round(total_points / total_credits, 2) if total_credits > 0 else 0
                     
                     # Create StudentResult object
                     student_result = StudentResult.objects.create(

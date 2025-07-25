@@ -13,47 +13,98 @@ from .models import StudentResult, ManualResultEntry, ResultQuery
 from .forms import RollNumberSearchForm, ManualMarksEntryForm
 
 
+def get_8th_sem_subjects_v2():
+    return [
+        {"code": "BT-801", "name": "Rural Development: Administration and Planning", "credit": 3, "max_marks": 150},
+        {"code": "BT-816", "name": "Cloud Computing", "credit": 3, "max_marks": 150},
+        {"code": "BT-817", "name": "Data Warehousing & Data Mining", "credit": 3, "max_marks": 150},
+        {"code": "BT-866", "name": "Project", "credit": 9, "max_marks": 400}
+    ]
+
+
+def get_grade_point_by_percentage(percent):
+    if percent >= 90:
+        return 10
+    elif percent >= 80:
+        return 9
+    elif percent >= 70:
+        return 8
+    elif percent >= 60:
+        return 7
+    elif percent >= 50:
+        return 6
+    elif percent >= 40:
+        return 5
+    else:
+        return 0
+
+
+def get_subjects_data_by_roll(roll_number):
+    try:
+        roll_int = int(roll_number)
+        if 100210500 <= roll_int <= 100210600:
+            return {
+                "semester": "8th",
+                "branch": "IT",
+                "college": "SCRIET",
+                "subjects": get_8th_sem_subjects_v2()
+            }
+        elif 100220500 <= roll_int <= 100220600:
+            # IT 6th sem
+            return StudentResult.IT_SUBJECTS_DATA
+        else:
+            return StudentResult.SUBJECTS_DATA
+    except Exception:
+        return StudentResult.SUBJECTS_DATA
+
+
 def calculate_sgpa(result, subjects):
-    """Calculate SGPA based on marks and credits"""
+    """Calculate SGPA based on marks and credits, with 8th sem IT support"""
     total_points = 0
     total_credits = 0
     total_marks = 0
-    
+    roll_number = getattr(result, 'roll_number', None)
+    is_8th_it = False
+    try:
+        roll_int = int(roll_number)
+        if 100210500 <= roll_int <= 100210600:
+            is_8th_it = True
+    except Exception:
+        pass
+
     for subject in subjects:
         code = subject['code']
         credit = subject['credit']
-        
-        # Skip non-credit subjects
+        max_marks = subject.get('max_marks', 100)
         if credit == 0:
             continue
-            
         marks = result.marks_data.get(code, {})
         theory = marks.get('theory')
         internal = marks.get('internal')
-        
         if theory is not None and internal is not None:
             subject_total = theory + internal
             total_marks += subject_total
-            
-            # AKTU grade point mapping (10-point scale)
-            if subject_total >= 90:
-                grade_point = 10
-            elif subject_total >= 80:
-                grade_point = 9
-            elif subject_total >= 70:
-                grade_point = 8
-            elif subject_total >= 60:
-                grade_point = 7
-            elif subject_total >= 50:
-                grade_point = 6
-            elif subject_total >= 40:
-                grade_point = 5
+            if is_8th_it:
+                percent = (subject_total / max_marks) * 100 if max_marks else 0
+                grade_point = get_grade_point_by_percentage(percent)
             else:
-                grade_point = 0
-                
+                # AKTU grade point mapping (10-point scale)
+                if subject_total >= 90:
+                    grade_point = 10
+                elif subject_total >= 80:
+                    grade_point = 9
+                elif subject_total >= 70:
+                    grade_point = 8
+                elif subject_total >= 60:
+                    grade_point = 7
+                elif subject_total >= 50:
+                    grade_point = 6
+                elif subject_total >= 40:
+                    grade_point = 5
+                else:
+                    grade_point = 0
             total_points += grade_point * credit
             total_credits += credit
-    
     sgpa = round(total_points / total_credits, 2) if total_credits > 0 else None
     return sgpa, total_marks
 
@@ -117,7 +168,7 @@ def search_result(request):
                 time.sleep(15)
                 
                 # Get appropriate subject data for this roll number
-                subjects_data = StudentResult.get_subjects_data(result.roll_number)
+                subjects_data = get_subjects_data_by_roll(result.roll_number)
                 
                 # Calculate SGPA and total marks
                 sgpa, total_marks = calculate_sgpa(result, subjects_data['subjects'])
@@ -155,7 +206,7 @@ def search_result(request):
             time.sleep(15)
             
             # Get appropriate subject data for this roll number
-            subjects_data = StudentResult.get_subjects_data(result.roll_number)
+            subjects_data = get_subjects_data_by_roll(result.roll_number)
             sgpa, total_marks = calculate_sgpa(result, subjects_data['subjects'])
             
             # Pre-populate the form with the roll number
@@ -176,7 +227,7 @@ def search_result(request):
     
     # Get appropriate subject data based on result (if found) or default to CSE
     if result:
-        subjects_data = StudentResult.get_subjects_data(result.roll_number)
+        subjects_data = get_subjects_data_by_roll(result.roll_number)
     else:
         subjects_data = StudentResult.SUBJECTS_DATA  # Default to CSE
     
