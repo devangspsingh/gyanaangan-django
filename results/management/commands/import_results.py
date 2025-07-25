@@ -12,6 +12,14 @@ def get_8th_sem_subjects_v2():
         {"code": "BT-866", "name": "Project", "credit": 9, "max_marks": 400}
     ]
 
+def get_8th_sem_cse_subjects_v2():
+    return [
+        {"code": "BT-801", "name": "Rural Development: Administration and Planning", "credit": 3, "max_marks": 150},
+        {"code": "BT-811", "name": "Natural Language Processing", "credit": 3, "max_marks": 150},
+        {"code": "BT-812", "name": "Big Data", "credit": 3, "max_marks": 150},
+        {"code": "BT-861", "name": "Project", "credit": 9, "max_marks": 400}
+    ]
+
 def get_grade_point_by_percentage(percent):
     if percent >= 90:
         return 10
@@ -48,6 +56,9 @@ class Command(BaseCommand):
                 """Return subject list based on roll number range"""
                 try:
                     roll_int = int(roll_number)
+                    # 8th sem CSE (100210100-100210200)
+                    if 100210100 <= roll_int <= 100210200:
+                        return get_8th_sem_cse_subjects_v2(), "CSE-8TH"
                     # 8th sem IT (100210500-100210600)
                     if 100210500 <= roll_int <= 100210600:
                         return get_8th_sem_subjects_v2(), "IT-8TH"
@@ -212,8 +223,8 @@ class Command(BaseCommand):
                         if credit > 0 and marks['theory'] is not None and marks['internal'] is not None:
                             total_marks = marks['theory'] + marks['internal']
                             max_marks = marks.get('max_marks', 100)
-                            # 8th sem IT: grade point by percentage
-                            if branch == "IT-8TH":
+                            # 8th sem IT or 8th sem CSE: grade point by percentage
+                            if branch in ("IT-8TH", "CSE-8TH"):
                                 percent = (total_marks / max_marks) * 100 if max_marks else 0
                                 grade_point = get_grade_point_by_percentage(percent)
                             else:

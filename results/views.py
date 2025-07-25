@@ -22,6 +22,13 @@ def get_8th_sem_subjects_v2():
     ]
 
 
+def get_8th_sem_cse_subjects_v2():
+    return [
+        {"code": "BT-801", "name": "Rural Development: Administration and Planning", "credit": 3, "max_marks": 150},
+        {"code": "BT-811", "name": "Natural Language Processing", "credit": 3, "max_marks": 150},
+        {"code": "BT-812", "name": "Big Data", "credit": 3, "max_marks": 150},
+        {"code": "BT-861", "name": "Project", "credit": 9, "max_marks": 400}
+    ]
 def get_grade_point_by_percentage(percent):
     if percent >= 90:
         return 10
@@ -49,6 +56,13 @@ def get_subjects_data_by_roll(roll_number):
                 "college": "SCRIET",
                 "subjects": get_8th_sem_subjects_v2()
             }
+        elif 100210100 <= roll_int <= 100210200:
+            return {
+                "semester": "8th",
+                "branch": "CS",
+                "college": "SCRIET",
+                "subjects": get_8th_sem_cse_subjects_v2()
+            }
         elif 100220500 <= roll_int <= 100220600:
             # IT 6th sem
             return StudentResult.IT_SUBJECTS_DATA
@@ -68,6 +82,8 @@ def calculate_sgpa(result, subjects):
     try:
         roll_int = int(roll_number)
         if 100210500 <= roll_int <= 100210600:
+            is_8th_it = True
+        if 100210100 <= roll_int <= 100210200:
             is_8th_it = True
     except Exception:
         pass
