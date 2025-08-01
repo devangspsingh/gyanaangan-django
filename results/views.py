@@ -10,6 +10,8 @@ from django.forms import formset_factory, Form, CharField, IntegerField, FloatFi
 import json
 import csv
 import io
+from django.templatetags.static import static
+from core.models import SEODetail
 from .models import StudentResult, ManualResultEntry, ResultQuery
 from .forms import RollNumberSearchForm, ManualMarksEntryForm
 
@@ -30,6 +32,22 @@ def get_8th_sem_cse_subjects_v2():
         {"code": "BT-812", "name": "Big Data", "credit": 3, "max_marks": 150},
         {"code": "BT-861", "name": "Project", "credit": 9, "max_marks": 400}
     ]
+
+
+def get_4th_sem_csit_subjects_v2():
+    return [
+        {"code": "BT-405", "name": "Mathematics - IV", "credit": 4, "max_marks": 100},
+        {"code": "BT-414", "name": "Universal Human Values", "credit": 3, "max_marks": 100},
+        {"code": "BT-406", "name": "Operating Systems", "credit": 4, "max_marks": 100},
+        {"code": "BT-407", "name": "Theory of Automata and Formal Languages", "credit": 4, "max_marks": 100},
+        {"code": "BT-408", "name": "Object Oriented Programming with Java", "credit": 3, "max_marks": 100},
+        {"code": "BT-456", "name": "Operating Systems Lab", "credit": 1, "max_marks": 100},
+        {"code": "BT-458", "name": "Object Oriented Programming with Java Lab", "credit": 1, "max_marks": 100},
+        {"code": "BT-459", "name": "Cyber Security Workshop", "credit": 1, "max_marks": 100},
+        {"code": "BT-410", "name": "Python Programming", "credit": 2, "max_marks": 100},
+        {"code": "BT-454", "name": "Sports and Yoga - II", "credit": 0, "max_marks": 100},
+    ]
+
 def get_grade_point_by_percentage(percent):
     if percent >= 90:
         return 10
@@ -63,6 +81,20 @@ def get_subjects_data_by_roll(roll_number):
                 "branch": "CS",
                 "college": "SCRIET",
                 "subjects": get_8th_sem_cse_subjects_v2()
+            }
+        elif 100230500 <= roll_int <= 100230600:
+            return {
+                "semester": "4th",
+                "branch": "IT",
+                "college": "SCRIET",
+                "subjects": get_4th_sem_csit_subjects_v2()
+            }
+        elif 100230100 <= roll_int <= 100230200:
+            return {
+                "semester": "4th",
+                "branch": "CS",
+                "college": "SCRIET",
+                "subjects": get_4th_sem_csit_subjects_v2()
             }
         elif 100220500 <= roll_int <= 100220600:
             # IT 6th sem
@@ -154,6 +186,14 @@ def result_home(request):
 
 def search_result(request):
     """Search for result by roll number"""
+    seo_detail = SEODetail.objects.filter(page_name="search_result").first()
+    if not seo_detail:
+        seo_detail = SEODetail(
+            title="Check Out You SGPA - Gyan Aangan",
+            meta_description="Check Out your SGPA NOW at GYAN AANGAN CALCULATOR",
+            og_image=None,
+            site_name="Gyan Aangan",
+        )
     form = RollNumberSearchForm()
     result = None
     show_preview = False
@@ -186,6 +226,7 @@ def search_result(request):
                 
                 # Get appropriate subject data for this roll number
                 subjects_data = get_subjects_data_by_roll(result.roll_number)
+                print(subjects_data)
                 
                 # Calculate SGPA and total marks
                 sgpa, total_marks = calculate_sgpa(result, subjects_data['subjects'])
@@ -264,8 +305,14 @@ def search_result(request):
             'sgpa': str(sgpa) if sgpa else 'N/A',
             'total_marks': str(total_marks) if total_marks else 'N/A'
         }) if result else '{}',
-        'title': 'Search Result by Roll Number',
-        'meta_description': 'Search for your 6th semester CSE result using your roll number.',
+        "title": seo_detail.title,
+        "meta_description": seo_detail.meta_description,
+        "og_image": (
+            seo_detail.og_image.url
+            if seo_detail.og_image
+            else static("images/default-og-image.jpg")
+        ),
+        "site_name": seo_detail.site_name,
     }
     return render(request, 'results/search_result.html', context)
 

@@ -146,7 +146,7 @@ class StudentResult(models.Model):
             if 100220500 <= roll_int <= 100220600:
                 return cls.IT_SUBJECTS_DATA
             # CSE Branch (default)
-            else:
+            elif 100220100 <= roll_int <= 100220200:
                 return cls.SUBJECTS_DATA
         except (ValueError, TypeError):
             # Default to CSE if roll number parsing fails
