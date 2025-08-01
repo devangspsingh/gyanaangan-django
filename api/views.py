@@ -18,6 +18,8 @@ from .serializers import (
     NotificationSerializer,
     ProfileSerializer,
     SpecialPageSerializer,  # Import SpecialPageSerializer
+    BlogPostSerializer,  # Import BlogPostSerializer
+    CategorySerializer,  # Import CategorySerializer
 )
 from courses.models import (
     Course,
@@ -29,6 +31,7 @@ from courses.models import (
     Year  # Import Year model
 )
 from accounts.models import Profile, SavedResource
+from blog.models import BlogPost, Category
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
@@ -36,7 +39,7 @@ from django.http import HttpResponse
 from django.core.signing import TimestampSigner
 from urllib.parse import quote
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity, SearchVector
-from django.db.models import Q, F
+from django.db.models import Q, F, Count
 from django.db.models.functions import Greatest
 from rest_framework.pagination import PageNumberPagination
 
@@ -572,3 +575,54 @@ class GlobalSearchAPIView(APIView):
                 "resources": resource_serializer.data,
             }
         )
+
+class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = BlogPost.published.all()
+    serializer_class = BlogPostSerializer
+    lookup_field = "slug"
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = BlogPost.published.all()
+        category = self.request.query_params.get('category', None)
+        tag = self.request.query_params.get('tag', None)
+        search = self.request.query_params.get('search', None)
+
+        if category:
+            queryset = queryset.filter(category__slug=category)
+        if tag:
+            queryset = queryset.filter(tags__slug=tag)
+        if search:
+            search_query = SearchQuery(search, config='english', search_type='websearch')
+            queryset = queryset.annotate(
+                similarity=Greatest(
+                    SearchRank(F('search_vector'), search_query),
+                    TrigramSimilarity('title', search) * 0.4,
+                    TrigramSimilarity('content', search) * 0.2,
+                    TrigramSimilarity('excerpt', search) * 0.3
+                )
+            ).filter(
+                Q(search_vector=search_query) | Q(similarity__gt=0.1)
+            ).order_by('-similarity', '-publish_date')
+        
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def featured(self, request):
+        featured_posts = self.get_queryset().filter(is_featured=True)[:5]
+        serializer = self.get_serializer(featured_posts, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        popular_posts = self.get_queryset().order_by('-view_count')[:5]
+        serializer = self.get_serializer(popular_posts, many=True)
+        return Response(serializer.data)
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.annotate(post_count=Count('posts'))
+    serializer_class = CategorySerializer
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        return self.queryset.filter(posts__status='published').distinct()

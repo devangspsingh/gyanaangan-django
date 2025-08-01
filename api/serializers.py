@@ -4,6 +4,9 @@ from accounts.models import Profile, SavedResource, Subscription
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import Truncator
+from blog.models import BlogPost, Category
+from taggit.serializers import (TagListSerializerField,
+                              TaggitSerializer)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -349,3 +352,27 @@ class SpecialPageSerializer(serializers.ModelSerializer):
         
         serializer = SubjectForSpecialPageSerializer(related_subjects_qs, many=True, context=self.context)
         return serializer.data
+
+class CategorySerializer(serializers.ModelSerializer):
+    post_count = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug', 'post_count']
+
+class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tags = TagListSerializerField()
+    category = CategorySerializer(read_only=True)
+    author_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'author_name', 'category', 
+            'content', 'excerpt', 'featured_image', 'tags',
+            'publish_date', 'is_featured', 'view_count', 
+            'reading_time', 'meta_description', 'og_image'
+        ]
+    
+    def get_author_name(self, obj):
+        return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
