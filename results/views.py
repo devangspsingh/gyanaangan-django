@@ -37,14 +37,14 @@ def get_8th_sem_cse_subjects_v2():
 def get_4th_sem_csit_subjects_v2():
     return [
         {"code": "BT-405", "name": "Mathematics - IV", "credit": 4, "max_marks": 100},
-        {"code": "BT-414", "name": "Universal Human Values", "credit": 3, "max_marks": 100},
         {"code": "BT-406", "name": "Operating Systems", "credit": 4, "max_marks": 100},
         {"code": "BT-407", "name": "Theory of Automata and Formal Languages", "credit": 4, "max_marks": 100},
         {"code": "BT-408", "name": "Object Oriented Programming with Java", "credit": 3, "max_marks": 100},
+        {"code": "BT-410", "name": "Python Programming", "credit": 2, "max_marks": 100},
+        {"code": "BT-414", "name": "Universal Human Values", "credit": 3, "max_marks": 100},
         {"code": "BT-456", "name": "Operating Systems Lab", "credit": 1, "max_marks": 100},
         {"code": "BT-458", "name": "Object Oriented Programming with Java Lab", "credit": 1, "max_marks": 100},
         {"code": "BT-459", "name": "Cyber Security Workshop", "credit": 1, "max_marks": 100},
-        {"code": "BT-410", "name": "Python Programming", "credit": 2, "max_marks": 100},
         {"code": "BT-454", "name": "Sports and Yoga - II", "credit": 0, "max_marks": 100},
     ]
 
