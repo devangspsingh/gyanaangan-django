@@ -48,6 +48,22 @@ def get_4th_sem_csit_subjects_v2():
         {"code": "BT-459", "name": "Cyber Security Workshop", "credit": 1, "max_marks": 100},
     ]
 
+
+def get_2nd_sem_csit_subjects_v2():
+    """Returns the list of subjects for 2nd Semester CS/IT."""
+    return [
+        {'code': 'BT-201', 'name': 'Fundamentals of Electrical Engineering', 'credit': 3, 'max_marks': 100},
+        {'code': 'BT-203', 'name': 'Engineering Chemistry', 'credit': 4, 'max_marks': 100},
+        {'code': 'BT-205', 'name': 'Engineering Mathematics - II', 'credit': 4, 'max_marks': 100},
+        {'code': 'BT-206', 'name': 'Fundamentals of Mechanical Engineering', 'credit': 3, 'max_marks': 100},
+        {'code': 'BT-209', 'name': 'Soft Skill', 'credit': 3, 'max_marks': 100},
+        {'code': 'BT-251', 'name': 'Basic Electrical Engineering Lab', 'credit': 1, 'max_marks': 100},
+        {'code': 'BT-253', 'name': 'Engineering Chemistry Lab', 'credit': 1, 'max_marks': 100},
+        {'code': 'BT-255', 'name': 'Workshop Practices Lab', 'credit': 2, 'max_marks': 100},
+        {'code': 'BT-259', 'name': 'English Language Lab', 'credit': 1, 'max_marks': 100},
+        {'code': 'BT-260', 'name': 'Sports and Yoga', 'credit': 0, 'max_marks': 100}
+    ]
+
 def get_grade_point_by_percentage(percent):
     if percent >= 90:
         return 10
@@ -95,6 +111,20 @@ def get_subjects_data_by_roll(roll_number):
                 "branch": "CS",
                 "college": "SCRIET",
                 "subjects": get_4th_sem_csit_subjects_v2()
+            }
+        elif 100240500 <= roll_int <= 100240600:
+            return {
+                "semester": "2nd",
+                "branch": "IT",
+                "college": "SCRIET",
+                "subjects": get_2nd_sem_csit_subjects_v2()
+            }
+        elif 100240100 <= roll_int <= 100240200:
+            return {
+                "semester": "2nd",
+                "branch": "CS",
+                "college": "SCRIET",
+                "subjects": get_2nd_sem_csit_subjects_v2()
             }
         elif 100220500 <= roll_int <= 100220600:
             # IT 6th sem
