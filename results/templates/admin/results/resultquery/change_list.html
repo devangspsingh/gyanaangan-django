@@ -1,0 +1,134 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .analytics-card {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .analytics-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .analytics-table th, .analytics-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .analytics-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+    </style>
+{% endblock %}
+
+{% block content_title %}
+    <h1>Query Analytics & Logs</h1>
+{% endblock %}
+
+{% block result_list %}
+    <!-- Analytics Dashboard -->
+    <div class="p-4 bg-gray-50 rounded-lg mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Analytics Overview</h2>
+
+        <!-- Stats Cards -->
+        <div class="analytics-grid grid-cols-1 md:grid-cols-3">
+            <div class="analytics-card">
+                <h3 class="text-lg font-semibold text-gray-500 mb-2">Total Queries</h3>
+                <p class="text-4xl font-bold text-blue-600">{{ total_queries }}</p>
+            </div>
+            <div class="analytics-card">
+                <h3 class="text-lg font-semibold text-gray-500 mb-2">Unique Roll Numbers</h3>
+                <p class="text-4xl font-bold text-green-600">{{ unique_roll_numbers }}</p>
+            </div>
+            <div class="analytics-card">
+                <h3 class="text-lg font-semibold text-gray-500 mb-2">Unique IP Addresses</h3>
+                <p class="text-4xl font-bold text-purple-600">{{ unique_ip_addresses }}</p>
+            </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="analytics-grid grid-cols-1 lg:grid-cols-2">
+            <div class="analytics-card lg:col-span-2">
+                <h3 class="text-xl font-bold mb-4">Top 15 Active Users</h3>
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Query Count</th>
+                            <th>Last Known IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in top_users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.query_count }}</td>
+                            <td>{{ user.last_ip|default:"N/A" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3">No user data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="analytics-card">
+                <h3 class="text-xl font-bold mb-4">Top 15 Searched Roll Numbers</h3>
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Search Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_roll_numbers %}
+                        <tr>
+                            <td>{{ item.roll_number }}</td>
+                            <td>{{ item.count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2">No data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="analytics-card">
+                <h3 class="text-xl font-bold mb-4">Top 15 IP Addresses</h3>
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Query Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_ip_addresses %}
+                        <tr>
+                            <td>{{ item.ip_address|default:"N/A" }}</td>
+                            <td>{{ item.count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2">No IP data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{ block.super }}
+{% endblock %}
