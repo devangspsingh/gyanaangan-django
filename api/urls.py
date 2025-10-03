@@ -12,6 +12,8 @@ from .views import (
     SpecialPageListViewSet,
     SpecialPageDetailView,  # Import SpecialPageDetailView
     GlobalSearchAPIView,
+    BlogPostViewSet,
+    CategoryViewSet,
 )
 
 router = DefaultRouter()
@@ -25,6 +27,8 @@ router.register(r"saved-resources", SavedResourceViewSet, basename="savedresourc
 router.register(
     r"special-pages", SpecialPageListViewSet, basename="specialpage"
 )  # Register SpecialPage
+router.register(r"blog/posts", BlogPostViewSet, basename="blogpost")
+router.register(r"blog/categories", CategoryViewSet, basename="category")
 
 
 urlpatterns = [
