@@ -193,6 +193,7 @@ class SpecialPageSerializer(serializers.ModelSerializer):
 class ResourceSerializer(serializers.ModelSerializer):
     is_saved = serializers.SerializerMethodField()
     subject_name = serializers.CharField(source='subject.name', read_only=True, allow_null=True)
+    subject_slug = serializers.CharField(source='subject.slug', read_only=True, allow_null=True)
     resource_type_display = serializers.CharField(source='get_resource_type_display', read_only=True)
     updated_at = serializers.CharField(source='get_last_updated_at.status', read_only=True)
     # view_url will now be the direct file URL
@@ -206,7 +207,7 @@ class ResourceSerializer(serializers.ModelSerializer):
         model = Resource
         fields = [
             'id', 'name', 'slug', 'resource_type', 'resource_type_display', 'file', 'privacy',
-            'embed_link', 'subject', 'subject_name', 'educational_year', 'created_at', 'updated_at',
+            'embed_link', 'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
             'description', 'meta_description', 'og_image_url', 'is_saved', 'status',
             'view_url', 'download_url',
         ]
