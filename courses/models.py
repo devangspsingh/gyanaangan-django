@@ -325,7 +325,7 @@ class Resource(SEOModel):
                 #     "exact_time": last_updated,
                 # }
                 return {
-                    "status": f"Older {last_updated.strftime('%b %Y')}",
+                    "status": f"Older",
                     "exact_time": last_updated,
                 }
         return None
