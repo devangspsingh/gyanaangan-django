@@ -320,8 +320,12 @@ class Resource(SEOModel):
             elif diff < timedelta(days=365):
                 return {"status": "this year", "exact_time": last_updated}
             else:
+                # return {
+                #     "status": f"updated on {last_updated.strftime('%b %Y')}",
+                #     "exact_time": last_updated,
+                # }
                 return {
-                    "status": f"updated on {last_updated.strftime('%b %Y')}",
+                    "status": f"Older {last_updated.strftime('%b %Y')}",
                     "exact_time": last_updated,
                 }
         return None
