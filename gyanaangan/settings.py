@@ -258,10 +258,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     # "localhost:3000",
     "https://app.gyanaangan.in",
+    "https://gyanaangan.in",
+    "https://api.gyanaangan.in",
+    "https://back.gyanaangan.in",
     # "*",
 ]
-# CORS_ALLOW_ALL_ORIGINS = True
-# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=60),
@@ -276,5 +279,6 @@ DJOSER = {
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
         "http://localhost:3000/login",
         "https://app.gyanaangan.in/login",
+        "https://gyanaangan.in/login",
     ],
 }
