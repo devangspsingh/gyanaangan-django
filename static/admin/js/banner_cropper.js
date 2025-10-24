@@ -96,13 +96,16 @@
                     <button type="button" id="modal-cancel-btn" class="crop-btn" style="background: #6c757d; color: white; border: none; padding: 15px 40px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
                         Cancel
                     </button>
+                    <button type="button" id="modal-skip-crop" class="crop-btn" style="background: #ffc107; color: black; border: none; padding: 15px 40px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                        Skip Crop & Upload Original
+                    </button>
                     <button type="button" id="modal-apply-crop" class="crop-btn" style="background: #4CAF50; color: white; border: none; padding: 15px 40px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
                         ✓ Apply Crop & Use Image
                     </button>
                 </div>
 
                 <p style="text-align: center; margin: 15px 0 0 0; color: #666; font-size: 14px;">
-                    The cropped image (${targetDims.width}x${targetDims.height}px) will be automatically uploaded
+                    Crop the image to ${targetDims.width}x${targetDims.height}px or skip to upload original
                 </p>
             </div>
         `;
@@ -242,6 +245,14 @@
             });
         }
 
+        // Skip crop - upload original
+        const skipBtn = modal.querySelector('#modal-skip-crop');
+        if (skipBtn) {
+            skipBtn.addEventListener('click', function() {
+                skipCropAndUploadOriginal(fieldType);
+            });
+        }
+
         // Apply crop
         const applyBtn = modal.querySelector('#modal-apply-crop');
         if (applyBtn) {
@@ -256,6 +267,34 @@
                 closeModal();
             }
         });
+
+        // Close on ESC key
+        const escapeHandler = function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    }
+
+    // Skip crop and upload original image
+    function skipCropAndUploadOriginal(fieldType) {
+        // Close modal
+        const modal = document.getElementById('banner-crop-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+
+        // Destroy cropper
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        // The original file is already in the input field from the change event
+        // Just show success message
+        showSuccessNotification('✓ Original image selected! Click "Save" button to upload.');
     }
 
     // Apply cropped image
@@ -376,9 +415,13 @@
         // Desktop image field
         const imageField = document.querySelector('input[name="image"]');
         if (imageField) {
+            // Store original file change handler
+            let originalFile = null;
+            
             imageField.addEventListener('change', function(e) {
                 const files = e.target.files;
                 if (files && files.length > 0) {
+                    originalFile = files[0];
                     currentFile = files[0];
                     
                     // Check if it's an image
@@ -388,6 +431,9 @@
                         return;
                     }
 
+                    // Store the original file for potential skip
+                    imageField.dataset.originalFile = 'stored';
+                    
                     // Show cropper modal
                     showCropperModal(currentFile, 'desktop');
                 }
@@ -397,9 +443,13 @@
         // Mobile image field
         const mobileImageField = document.querySelector('input[name="mobile_image"]');
         if (mobileImageField) {
+            // Store original file change handler
+            let originalMobileFile = null;
+            
             mobileImageField.addEventListener('change', function(e) {
                 const files = e.target.files;
                 if (files && files.length > 0) {
+                    originalMobileFile = files[0];
                     currentFile = files[0];
                     
                     // Check if it's an image
@@ -409,6 +459,9 @@
                         return;
                     }
 
+                    // Store the original file for potential skip
+                    mobileImageField.dataset.originalFile = 'stored';
+                    
                     // Show cropper modal
                     showCropperModal(currentFile, 'mobile');
                 }
