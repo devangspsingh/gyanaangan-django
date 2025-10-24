@@ -228,7 +228,7 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = (
     "http://localhost:8000/accounts/oauth/callback/"
     if DEBUG
-    else "https://gyanaangan.in/accounts/oauth/callback/"
+    else "https://api.gyanaangan.in/accounts/oauth/callback/"
 )
 
 
@@ -280,5 +280,6 @@ DJOSER = {
         "http://localhost:3000/login",
         "https://app.gyanaangan.in/login",
         "https://gyanaangan.in/login",
+        "https://api.gyanaangan.in/login",
     ],
 }
