@@ -231,6 +231,10 @@ GOOGLE_REDIRECT_URI = (
     else "https://api.gyanaangan.in/accounts/oauth/callback/"
 )
 
+# Note: When setting up Google OAuth Console, also add these redirect URIs:
+# - http://localhost:8000/accounts/oauth/admin-callback/ (for development)
+# - https://api.gyanaangan.in/accounts/oauth/admin-callback/ (for production)
+
 
 CKEDITOR_UPLOAD_PATH = "public/uploads/"
 CKEDITOR_CONFIGS = {

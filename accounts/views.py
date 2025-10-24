@@ -56,6 +56,23 @@ def google_login(request):
     return redirect(google_auth_url)
 
 
+def admin_google_login(request):
+    """Google login specifically for admin users"""
+    next_url = request.GET.get("next", "/admin/")
+    # Use a different redirect URI for admin login
+    admin_redirect_uri = settings.GOOGLE_REDIRECT_URI.replace('/accounts/oauth/callback/', '/accounts/oauth/admin-callback/')
+    
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/auth"
+        "?response_type=code"
+        f"&client_id={settings.GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={admin_redirect_uri}"
+        "&scope=email%20profile"
+        f"&state={urlencode({'next': next_url, 'admin': 'true'})}"
+    )
+    return redirect(google_auth_url)
+
+
 def google_callback(request):
     code = request.GET.get("code")
     state = request.GET.get("state")
@@ -106,6 +123,80 @@ def google_callback(request):
 
     login(request, user)
     messages.success(request, f'You have been logged in!')
+    return redirect(next_url)
+
+
+def admin_google_callback(request):
+    """Google callback specifically for admin users"""
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    parsed_state = parse_qs(state)
+    next_url = parsed_state.get("next", ["/admin/"])[0]
+    is_admin = parsed_state.get("admin", ["false"])[0] == "true"
+
+    # Use the admin redirect URI
+    admin_redirect_uri = settings.GOOGLE_REDIRECT_URI.replace('/accounts/oauth/callback/', '/accounts/oauth/admin-callback/')
+
+    token_url = "https://oauth2.googleapis.com/token"
+    token_data = {
+        "code": code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": admin_redirect_uri,
+        "grant_type": "authorization_code",
+    }
+    token_r = requests.post(token_url, data=token_data)
+    token_json = token_r.json()
+    access_token = token_json.get("access_token")
+
+    if not access_token:
+        messages.error(request, "Failed to authenticate with Google.")
+        return redirect("admin:login")
+
+    user_info_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    user_info_params = {"access_token": access_token}
+    user_info_r = requests.get(user_info_url, params=user_info_params)
+    user_info = user_info_r.json()
+
+    email = user_info.get("email")
+    name = user_info.get("name")
+    picture_url = user_info.get("picture")
+
+    if not email:
+        messages.error(request, "Failed to get email from Google.")
+        return redirect("admin:login")
+
+    try:
+        # Try to get existing user
+        user = User.objects.get(username=email)
+        
+        # Check if user has admin permissions
+        if not (user.is_staff or user.is_superuser):
+            messages.error(request, "You don't have permission to access the admin panel.")
+            return redirect("admin:login")
+            
+    except User.DoesNotExist:
+        # Create new user only if it's a new registration
+        # For admin, we might want to restrict this
+        messages.error(request, "User account not found. Please contact administrator.")
+        return redirect("admin:login")
+
+    # Update user info if needed
+    if user.first_name != name:
+        user.first_name = name
+        user.save()
+
+    # Update or create profile
+    profile, profile_created = Profile.objects.get_or_create(user=user)
+    if profile.img_google_url != picture_url:
+        profile.img_google_url = picture_url
+    if profile_created:
+        profile.bio = f"This is {name}'s bio."
+        profile.emoji_tag = "😊"
+    profile.save()
+
+    login(request, user)
+    messages.success(request, f'Welcome to admin panel, {name}!')
     return redirect(next_url)
 
 

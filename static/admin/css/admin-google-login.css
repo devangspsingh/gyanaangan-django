@@ -1,0 +1,43 @@
+/* Admin Google Login Styles */
+.google-login-section {
+    margin-top: 30px;
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.google-login-section p {
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.google-login-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.google-login-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #c6c6c6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-login-btn svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.google-login-btn span {
+    color: #333;
+}

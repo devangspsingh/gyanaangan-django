@@ -3,6 +3,8 @@ from .views import (
     login_page,
     google_login,
     google_callback,
+    admin_google_login,
+    admin_google_callback,
     google_logout,
     profile,
     subscriptions,
@@ -16,6 +18,8 @@ urlpatterns = [
     path("login/", login_page, name="login_page"),  # Default login page
     path("oauth/login/", google_login, name="login"),  # Google login URL
     path("oauth/callback/", google_callback, name="callback"),  # Google callback URL
+    path("oauth/admin-login/", admin_google_login, name="admin_google_login"),  # Admin Google login URL
+    path("oauth/admin-callback/", admin_google_callback, name="admin_google_callback"),  # Admin Google callback URL
     path("logout/", google_logout, name="logout"),  # Logout URL
     path("profile/", profile, name="profile"),  # Profile page URL
     path(
