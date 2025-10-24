@@ -20,6 +20,7 @@ from .serializers import (
     SpecialPageSerializer,  # Import SpecialPageSerializer
     BlogPostSerializer,  # Import BlogPostSerializer
     CategorySerializer,  # Import CategorySerializer
+    BannerSerializer,  # Import BannerSerializer
 )
 from courses.models import (
     Course,
@@ -30,6 +31,7 @@ from courses.models import (
     SpecialPage,
     Year  # Import Year model
 )
+from core.models import Banner
 from accounts.models import Profile, SavedResource
 from blog.models import BlogPost, Category
 from rest_framework.permissions import IsAuthenticated
@@ -626,3 +628,50 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(posts__status='published').distinct()
+
+
+class BannerViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for retrieving active banners.
+    Provides list of all active banners and detail view for individual banners.
+    """
+    queryset = Banner.active.all()
+    serializer_class = BannerSerializer
+    pagination_class = None  # No pagination for banners
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def get_queryset(self):
+        """Return only currently active banners, ordered by display_order and primary status."""
+        return Banner.active.all().order_by('display_order', '-is_primary', '-created_at')
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get all currently active banners."""
+        banners = self.get_queryset()
+        serializer = self.get_serializer(banners, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def primary(self, request):
+        """Get the primary banner if available."""
+        primary_banner = self.get_queryset().filter(is_primary=True).first()
+        if primary_banner:
+            serializer = self.get_serializer(primary_banner)
+            return Response(serializer.data)
+        return Response({'detail': 'No primary banner found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    def track_view(self, request, pk=None):
+        """Track banner view (analytics)."""
+        banner = self.get_object()
+        banner.increment_view_count()
+        return Response({'detail': 'View tracked successfully.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
+    def track_click(self, request, pk=None):
+        """Track banner click (analytics)."""
+        banner = self.get_object()
+        banner.increment_click_count()
+        return Response({'detail': 'Click tracked successfully.'}, status=status.HTTP_200_OK)

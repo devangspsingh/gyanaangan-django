@@ -1,0 +1,46 @@
+/* Custom CSS for Banner Admin */
+
+/* Make the image preview section stand out */
+.field-image_preview_with_ratio {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+/* Style for the dimensions info */
+.field-image_dimensions_info {
+    background: #e7f3ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+/* Make readonly fields more readable */
+.readonly {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* Improve fieldset headers */
+.aligned .form-row {
+    padding: 10px 0;
+}
+
+/* Style for help text */
+.help {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Make status badges more prominent */
+span[style*="background-color"] {
+    display: inline-block;
+    padding: 4px 12px !important;
+    border-radius: 15px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+}

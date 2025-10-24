@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from courses.models import Course, Subject, Resource, Stream, Notification, SpecialPage, Year, EducationalYear
 from accounts.models import Profile, SavedResource, Subscription
+from core.models import SEODetail, Banner
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import Truncator
@@ -377,3 +378,59 @@ class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
     
     def get_author_name(self, obj):
         return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
+
+
+class BannerSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Banner model with computed fields for frontend display.
+    """
+    image_url = serializers.SerializerMethodField()
+    mobile_image_url = serializers.SerializerMethodField()
+    is_currently_active = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Banner
+        fields = [
+            'id',
+            'title',
+            'description',
+            'image',
+            'image_url',
+            'mobile_image',
+            'mobile_image_url',
+            'link_url',
+            'link_text',
+            'is_primary',
+            'is_active',
+            'active_from',
+            'active_until',
+            'display_order',
+            'view_count',
+            'is_currently_active',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['view_count', 'created_at', 'updated_at']
+    
+    def get_image_url(self, obj):
+        """Get absolute URL for banner image."""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+    
+    def get_mobile_image_url(self, obj):
+        """Get absolute URL for mobile banner image, fallback to desktop image."""
+        image = obj.mobile_image if obj.mobile_image else obj.image
+        if image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(image.url)
+            return image.url
+        return None
+    
+    def get_is_currently_active(self, obj):
+        """Check if banner is currently active based on time range."""
+        return obj.is_currently_active()

@@ -14,6 +14,7 @@ from .views import (
     GlobalSearchAPIView,
     BlogPostViewSet,
     CategoryViewSet,
+    BannerViewSet,  # Import BannerViewSet
 )
 
 router = DefaultRouter()
@@ -29,6 +30,7 @@ router.register(
 )  # Register SpecialPage
 router.register(r"blog/posts", BlogPostViewSet, basename="blogpost")
 router.register(r"blog/categories", CategoryViewSet, basename="category")
+router.register(r"banners", BannerViewSet, basename="banner")  # Register Banner
 
 
 urlpatterns = [
