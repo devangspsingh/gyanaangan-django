@@ -8,6 +8,70 @@
     margin: 15px 0;
 }
 
+/* Cropper tool section */
+.field-image_cropper_tool {
+    background: #fff;
+    padding: 0;
+    margin: 20px 0;
+}
+
+#banner-cropper-container {
+    max-width: 100%;
+}
+
+#banner-image-to-crop {
+    max-height: 600px;
+    width: 100%;
+}
+
+/* Cropper.js overrides */
+.cropper-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.cropper-view-box {
+    outline: 2px solid #2196F3;
+    outline-offset: -1px;
+}
+
+.cropper-line,
+.cropper-point {
+    background-color: #2196F3;
+}
+
+.cropper-face {
+    background-color: rgba(33, 150, 243, 0.1);
+}
+
+/* Cropper control buttons */
+#banner-cropper-container button {
+    transition: all 0.3s ease;
+}
+
+#banner-cropper-container button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+}
+
+#banner-cropper-container button:active {
+    transform: translateY(0);
+}
+
+#crop-download {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(76, 175, 80, 0.5);
+    }
+}
+
 /* Style for the dimensions info */
 .field-image_dimensions_info {
     background: #e7f3ff;
@@ -44,3 +108,16 @@ span[style*="background-color"] {
     font-size: 11px !important;
     font-weight: bold !important;
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #banner-cropper-container {
+        padding: 10px;
+    }
+    
+    #banner-cropper-container button {
+        font-size: 12px;
+        padding: 6px 12px !important;
+    }
+}
+

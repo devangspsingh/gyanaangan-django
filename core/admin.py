@@ -29,8 +29,11 @@ class BannerAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'link_text')
     readonly_fields = (
         'image_preview_with_ratio',
+        'image_cropper_tool',
         'image_dimensions_info',
-        'mobile_image_preview',
+        'mobile_image_preview_with_ratio',
+        'mobile_image_cropper_tool',
+        'mobile_image_dimensions_info',
         'view_count',
         'click_count',
         'created_at',
@@ -40,20 +43,26 @@ class BannerAdmin(admin.ModelAdmin):
     
     class Media:
         css = {
-            'all': ('admin/css/banner_admin.css',)
+            'all': (
+                'admin/css/banner_admin.css',
+                'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css',
+            )
         }
+        js = (
+            'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js',
+            'admin/js/banner_cropper.js',
+        )
     fieldsets = (
         ('Basic Information', {
             'fields': ('title', 'description')
         }),
-        ('Banner Image (Recommended: 1600x324px)', {
-            'fields': ('image', 'image_preview_with_ratio', 'image_dimensions_info'),
-            'description': '<strong>Important:</strong> Upload an image with aspect ratio 1600:324 (approximately 4.94:1). The same image will be used on both desktop and mobile.'
+        ('Desktop Banner Image (Recommended: 1600x324px)', {
+            'fields': ('image', 'image_preview_with_ratio', 'image_cropper_tool', 'image_dimensions_info'),
+            'description': '<strong>Important:</strong> Upload an image with aspect ratio 1600:324 (approximately 4.94:1). Use the cropper tool below to adjust your image.'
         }),
-        ('Optional Mobile Image (Deprecated)', {
-            'fields': ('mobile_image', 'mobile_image_preview'),
-            'classes': ('collapse',),
-            'description': 'Mobile image field is deprecated. The main image will be used for all devices.'
+        ('Mobile Banner Image (Recommended: 1600x648px)', {
+            'fields': ('mobile_image', 'mobile_image_preview_with_ratio', 'mobile_image_cropper_tool', 'mobile_image_dimensions_info'),
+            'description': '<strong>Mobile Image:</strong> Same width (1600px) but double height (648px) for better mobile display. If not provided, desktop image will be used.'
         }),
         ('Link Settings', {
             'fields': ('link_url', 'link_text')
@@ -177,6 +186,71 @@ class BannerAdmin(admin.ModelAdmin):
         )
     image_preview_with_ratio.short_description = "Banner Preview"
 
+    def image_cropper_tool(self, obj):
+        """Interactive image cropper tool with 1600:324 aspect ratio."""
+        if not obj.image:
+            return format_html(
+                '<div style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; text-align: center;">'
+                '<p style="color: #856404; margin: 0; font-weight: bold;">📸 Upload an image first to use the cropper tool</p>'
+                '</div>'
+            )
+        
+        return format_html(
+            '<div id="banner-cropper-container" style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #2196F3;">'
+            '<div style="margin-bottom: 15px;">'
+            '<h3 style="margin: 0 0 10px 0; color: #1976D2;">✂️ Image Cropper Tool</h3>'
+            '<p style="margin: 0; color: #666;">Adjust the crop area below to match the 1600:324 aspect ratio (4.94:1)</p>'
+            '</div>'
+            
+            '<!-- Original Image for Cropping -->'
+            '<div style="max-width: 100%; overflow: hidden; margin-bottom: 15px;">'
+            '<img id="banner-image-to-crop" src="{}" style="max-width: 100%; display: block;" />'
+            '</div>'
+            
+            '<!-- Cropper Controls -->'
+            '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 4px;">'
+            '<button type="button" id="crop-zoom-in" class="button" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔍 Zoom In'
+            '</button>'
+            '<button type="button" id="crop-zoom-out" class="button" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔍 Zoom Out'
+            '</button>'
+            '<button type="button" id="crop-rotate-left" class="button" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '↺ Rotate Left'
+            '</button>'
+            '<button type="button" id="crop-rotate-right" class="button" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '↻ Rotate Right'
+            '</button>'
+            '<button type="button" id="crop-reset" class="button" style="background: #757575; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔄 Reset'
+            '</button>'
+            '</div>'
+            
+            '<!-- Crop Info Display -->'
+            '<div id="crop-info" style="padding: 12px; background: #e3f2fd; border-radius: 4px; margin-bottom: 15px; font-family: monospace; font-size: 13px;">'
+            '<strong>Current Crop Area:</strong> <span id="crop-dimensions">Select crop area...</span>'
+            '</div>'
+            
+            '<!-- Download Button -->'
+            '<div style="text-align: center;">'
+            '<button type="button" id="crop-download" class="button" style="background: #4CAF50; color: white; border: none; padding: 12px 32px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">'
+            '⬇️ Download Cropped Image (1600x324px)'
+            '</button>'
+            '<p style="margin: 10px 0 0 0; color: #666; font-size: 13px;">'
+            'After downloading, re-upload the cropped image in the "Image" field above'
+            '</p>'
+            '</div>'
+            
+            '<!-- Hidden data -->'
+            '<input type="hidden" id="banner-image-url" value="{}" />'
+            '<input type="hidden" id="banner-id" value="{}" />'
+            '</div>',
+            obj.image.url,
+            obj.image.url,
+            obj.id
+        )
+    image_cropper_tool.short_description = "Interactive Cropper (1600x324)"
+
     def image_dimensions_info(self, obj):
         """Display detailed image information and cropping guide."""
         if not obj.image:
@@ -217,6 +291,191 @@ class BannerAdmin(admin.ModelAdmin):
             actual_ratio - target_ratio
         )
     image_dimensions_info.short_description = "Dimensions Info & Crop Guide"
+
+    # Mobile Image Methods
+    def mobile_image_preview_with_ratio(self, obj):
+        """Display mobile image with aspect ratio overlay and crop suggestions."""
+        if not obj.mobile_image:
+            return format_html(
+                '<div style="padding: 20px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; text-align: center;">'
+                '<p style="color: #6c757d; margin: 0;">No mobile image uploaded</p>'
+                '<p style="color: #6c757d; font-size: 12px; margin: 5px 0 0 0;">Recommended: 1600x648px (aspect ratio 2.47:1)</p>'
+                '<p style="color: #6c757d; font-size: 11px; margin: 5px 0 0 0;">If not provided, desktop image will be used on mobile</p>'
+                '</div>'
+            )
+        
+        dimensions = self.get_image_dimensions(obj.mobile_image)
+        if not dimensions:
+            return format_html(
+                '<img src="{}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />',
+                obj.mobile_image.url
+            )
+        
+        width, height = dimensions
+        actual_ratio = width / height if height > 0 else 0
+        target_ratio = 1600 / 648  # 2.469...
+        ratio_diff = abs(actual_ratio - target_ratio)
+        
+        # Determine status and styling
+        if ratio_diff < 0.01:  # Very close to target
+            status_color = '#28a745'
+            status_icon = '✓'
+            status_text = 'Perfect Ratio'
+            border_color = '#28a745'
+        elif ratio_diff < 0.5:  # Acceptable
+            status_color = '#ffc107'
+            status_icon = '⚠'
+            status_text = 'Acceptable Ratio'
+            border_color = '#ffc107'
+        else:  # Needs adjustment
+            status_color = '#dc3545'
+            status_icon = '✕'
+            status_text = 'Needs Cropping'
+            border_color = '#dc3545'
+        
+        # Calculate suggested crop dimensions
+        if actual_ratio > target_ratio:
+            # Image is too wide, crop width
+            new_width = int(height * target_ratio)
+            crop_suggestion = f"Crop to {new_width}x{height}px (remove {width - new_width}px from width)"
+        else:
+            # Image is too tall, crop height
+            new_height = int(width / target_ratio)
+            crop_suggestion = f"Crop to {width}x{new_height}px (remove {height - new_height}px from height)"
+        
+        return format_html(
+            '<div style="border: 3px solid {}; border-radius: 8px; padding: 10px; background: #f8f9fa;">'
+            '<div style="position: relative; margin-bottom: 10px;">'
+            '<img src="{}" style="width: 100%; max-width: 800px; height: auto; display: block; border-radius: 4px;" />'
+            '<div style="position: absolute; top: 10px; right: 10px; background: {}; color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px;">'
+            '{} {}'
+            '</div>'
+            '</div>'
+            '<div style="background: white; padding: 12px; border-radius: 4px; margin-top: 10px;">'
+            '<p style="margin: 5px 0; font-weight: bold;">Current Dimensions: {}x{}px</p>'
+            '<p style="margin: 5px 0;">Current Aspect Ratio: <strong>{:.2f}:1</strong></p>'
+            '<p style="margin: 5px 0;">Target Aspect Ratio: <strong>2.47:1</strong> (1600x648px)</p>'
+            '<p style="margin: 5px 0; color: {}; font-weight: bold;">{}</p>'
+            '{}'
+            '</div>'
+            '</div>',
+            border_color,
+            obj.mobile_image.url,
+            status_color,
+            status_icon,
+            status_text,
+            width,
+            height,
+            actual_ratio,
+            status_color,
+            status_text,
+            format_html(
+                '<p style="margin: 5px 0; padding: 8px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;">'
+                '<strong>💡 Crop Suggestion:</strong> {}'
+                '</p>',
+                crop_suggestion
+            ) if ratio_diff >= 0.01 else ''
+        )
+    mobile_image_preview_with_ratio.short_description = "Mobile Banner Preview"
+
+    def mobile_image_cropper_tool(self, obj):
+        """Interactive image cropper tool with 1600:648 aspect ratio for mobile."""
+        if not obj.mobile_image:
+            return format_html(
+                '<div style="padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; text-align: center;">'
+                '<p style="color: #856404; margin: 0; font-weight: bold;">📱 Upload a mobile image first to use the cropper tool</p>'
+                '</div>'
+            )
+        
+        return format_html(
+            '<div id="banner-mobile-cropper-container" style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #FF9800;">'
+            '<div style="margin-bottom: 15px;">'
+            '<h3 style="margin: 0 0 10px 0; color: #F57C00;">✂️ Mobile Image Cropper Tool</h3>'
+            '<p style="margin: 0; color: #666;">Adjust the crop area below to match the 1600:648 aspect ratio (2.47:1)</p>'
+            '</div>'
+            
+            '<!-- Original Image for Cropping -->'
+            '<div style="max-width: 100%; overflow: hidden; margin-bottom: 15px;">'
+            '<img id="banner-mobile-image-to-crop" src="{}" style="max-width: 100%; display: block;" />'
+            '</div>'
+            
+            '<!-- Cropper Controls -->'
+            '<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 4px;">'
+            '<button type="button" id="mobile-crop-zoom-in" class="button" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔍 Zoom In'
+            '</button>'
+            '<button type="button" id="mobile-crop-zoom-out" class="button" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔍 Zoom Out'
+            '</button>'
+            '<button type="button" id="mobile-crop-rotate-left" class="button" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '↺ Rotate Left'
+            '</button>'
+            '<button type="button" id="mobile-crop-rotate-right" class="button" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '↻ Rotate Right'
+            '</button>'
+            '<button type="button" id="mobile-crop-reset" class="button" style="background: #757575; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">'
+            '🔄 Reset'
+            '</button>'
+            '</div>'
+            
+            '<!-- Crop Info Display -->'
+            '<div id="mobile-crop-info" style="padding: 12px; background: #fff3e0; border-radius: 4px; margin-bottom: 15px; font-family: monospace; font-size: 13px;">'
+            '<strong>Current Crop Area:</strong> <span id="mobile-crop-dimensions">Select crop area...</span>'
+            '</div>'
+            
+            '<!-- Download Button -->'
+            '<div style="text-align: center;">'
+            '<button type="button" id="mobile-crop-download" class="button" style="background: #FF9800; color: white; border: none; padding: 12px 32px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">'
+            '⬇️ Download Cropped Mobile Image (1600x648px)'
+            '</button>'
+            '<p style="margin: 10px 0 0 0; color: #666; font-size: 13px;">'
+            'After downloading, re-upload the cropped image in the "Mobile Image" field above'
+            '</p>'
+            '</div>'
+            
+            '<!-- Hidden data -->'
+            '<input type="hidden" id="banner-mobile-image-url" value="{}" />'
+            '</div>',
+            obj.mobile_image.url,
+            obj.mobile_image.url
+        )
+    mobile_image_cropper_tool.short_description = "Interactive Mobile Cropper (1600x648)"
+
+    def mobile_image_dimensions_info(self, obj):
+        """Display detailed mobile image information and cropping guide."""
+        if not obj.mobile_image:
+            return "Upload a mobile image first"
+        
+        dimensions = self.get_image_dimensions(obj.mobile_image)
+        if not dimensions:
+            return "Could not read image dimensions"
+        
+        width, height = dimensions
+        actual_ratio = width / height if height > 0 else 0
+        target_ratio = 1600 / 648
+        
+        return format_html(
+            '<div style="background: #fff3e0; border-left: 4px solid #FF9800; padding: 15px; border-radius: 4px; font-family: monospace;">'
+            '<h4 style="margin: 0 0 10px 0; color: #F57C00;">📱 Mobile Image Dimensions Guide</h4>'
+            '<table style="width: 100%; border-collapse: collapse;">'
+            '<tr><td style="padding: 5px; font-weight: bold;">Current Size:</td><td style="padding: 5px;">{} x {} pixels</td></tr>'
+            '<tr><td style="padding: 5px; font-weight: bold;">Current Ratio:</td><td style="padding: 5px;">{:.4f}:1</td></tr>'
+            '<tr><td style="padding: 5px; font-weight: bold;">Target Ratio:</td><td style="padding: 5px;">{:.4f}:1 (1600:648)</td></tr>'
+            '<tr><td style="padding: 5px; font-weight: bold;">Difference:</td><td style="padding: 5px; color: {};">{:+.4f}</td></tr>'
+            '</table>'
+            '<div style="margin-top: 15px; padding: 10px; background: white; border-radius: 4px;">'
+            '<p style="margin: 0; font-weight: bold; color: #F57C00;">📱 Why Mobile Image?</p>'
+            '<p style="margin: 5px 0; font-size: 13px;">Mobile images have double the height (648px vs 324px) to display better on portrait-oriented mobile screens.</p>'
+            '</div>'
+            '</div>',
+            width,
+            height,
+            actual_ratio,
+            target_ratio,
+            '#dc3545' if abs(actual_ratio - target_ratio) > 0.01 else '#28a745',
+            actual_ratio - target_ratio
+        )
+    mobile_image_dimensions_info.short_description = "Mobile Dimensions Info"
 
     def mobile_image_preview(self, obj):
         if obj.mobile_image:

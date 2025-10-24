@@ -43,14 +43,14 @@ class Banner(models.Model):
     image = models.ImageField(
         storage=PublicMediaStorage,
         upload_to='banners/',
-        help_text="Banner image (recommended size: 1600x324px with aspect ratio 4.94:1)"
+        help_text="Desktop banner image (recommended size: 1600x324px with aspect ratio 4.94:1)"
     )
     mobile_image = models.ImageField(
         storage=PublicMediaStorage,
         upload_to='banners/mobile/',
         blank=True,
         null=True,
-        help_text="[DEPRECATED] Optional mobile image - Main image is now used for all devices"
+        help_text="Mobile banner image (recommended size: 1600x648px - same width, double height)"
     )
     link_url = models.URLField(
         blank=True,
