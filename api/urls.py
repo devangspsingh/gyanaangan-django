@@ -15,6 +15,8 @@ from .views import (
     BlogPostViewSet,
     CategoryViewSet,
     BannerViewSet,  # Import BannerViewSet
+    AdminBlogPostViewSet,
+    CategoryManagementViewSet,  # Import CategoryManagementViewSet
 )
 
 router = DefaultRouter()
@@ -31,7 +33,8 @@ router.register(
 router.register(r"blog/posts", BlogPostViewSet, basename="blogpost")
 router.register(r"blog/categories", CategoryViewSet, basename="category")
 router.register(r"banners", BannerViewSet, basename="banner")  # Register Banner
-
+router.register(r"admin/blog/posts", AdminBlogPostViewSet, basename="admin-blog-posts")
+router.register(r"admin/blog/categories", CategoryManagementViewSet, basename="admin-blog-categories")
 
 urlpatterns = [
     path("", include(router.urls)),

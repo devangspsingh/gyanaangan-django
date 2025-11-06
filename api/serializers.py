@@ -10,16 +10,28 @@ from taggit.serializers import (TagListSerializerField,
                               TaggitSerializer)
 
 class UserSerializer(serializers.ModelSerializer):
+    is_staff = serializers.BooleanField(read_only=True)
+    is_superuser = serializers.BooleanField(read_only=True)
+    
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name')
+        fields = ('id', 'username', 'email', 'first_name', 'is_staff', 'is_superuser')
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    profile_pic_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Profile
-        fields = ('id', 'user', 'bio', 'emoji_tag', 'img_google_url')
+        fields = ('id', 'user', 'bio', 'emoji_tag', 'img_google_url', 'profile_pic_url')
+    
+    def get_profile_pic_url(self, obj):
+        if obj.profile_pic and hasattr(obj.profile_pic, 'url'):
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_pic.url)
+            return obj.profile_pic.url
+        return None
 
 class YearSerializer(serializers.ModelSerializer):
     class Meta:
@@ -365,19 +377,70 @@ class CategorySerializer(serializers.ModelSerializer):
 class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
     tags = TagListSerializerField()
     category = CategorySerializer(read_only=True)
+    category_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     author_name = serializers.SerializerMethodField()
+    # author_username = serializers.SerializerMethodField()
+    author_profile_picture = serializers.SerializerMethodField()
+    og_image_url = serializers.SerializerMethodField()
+    featured_image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = BlogPost
         fields = [
-            'id', 'title', 'slug', 'author_name', 'category', 
-            'content', 'excerpt', 'featured_image', 'tags',
-            'publish_date', 'is_featured', 'view_count', 
-            'reading_time', 'meta_description', 'og_image'
+            'id', 'title', 'slug', 'author', 'author_name', 
+            'author_profile_picture', 'category', 'category_id',
+            'content', 'excerpt', 'featured_image', 'featured_image_url', 'tags',
+            'publish_date', 'is_featured', 'sticky_post', 'view_count', 
+            'reading_time', 'meta_description', 'keywords', 'og_image', 'og_image_url',
+            'status', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['author', 'slug', 'view_count', 'reading_time', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
         return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
+    
+    # def get_author_username(self, obj):
+    #     return obj.author.username
+    
+    def get_author_profile_picture(self, obj):
+        try:
+            profile = obj.author.profile
+            if profile.profile_pic:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(profile.profile_pic.url)
+                return profile.profile_pic.url
+        except Exception:
+            pass
+        return None
+    
+    def get_og_image_url(self, obj):
+        if obj.og_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.og_image.url)
+            return obj.og_image.url
+        return None
+    
+    def get_featured_image_url(self, obj):
+        if obj.featured_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.featured_image.url)
+            return obj.featured_image.url
+        return None
+    
+    def create(self, validated_data):
+        category_id = validated_data.pop('category_id', None)
+        if category_id:
+            validated_data['category_id'] = category_id
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        category_id = validated_data.pop('category_id', None)
+        if category_id is not None:
+            validated_data['category_id'] = category_id
+        return super().update(instance, validated_data)
 
 
 class BannerSerializer(serializers.ModelSerializer):

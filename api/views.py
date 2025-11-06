@@ -224,6 +224,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):  # Add context for serializers
         return {'request': self.request}
+    
+    @action(detail=False, methods=['get'], url_path='me')
+    def get_current_user_profile(self, request):
+        """Get the current authenticated user's profile with permissions"""
+        try:
+            profile = Profile.objects.get(user=request.user)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "Profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class SavedResourceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -432,6 +445,8 @@ class GoogleLoginView(APIView):
                         "username": user.username, 
                         "name": user.first_name, # Sourced from the User model
                         "picture": profile_pic_url_to_return, # Use the URL of the saved ImageField
+                        "is_staff": user.is_staff, # Include staff status for admin access
+                        "is_superuser": user.is_superuser, # Include superuser status
                     },
                 }
             )
@@ -675,3 +690,267 @@ class BannerViewSet(viewsets.ReadOnlyModelViewSet):
         banner = self.get_object()
         banner.increment_click_count()
         return Response({'detail': 'Click tracked successfully.'}, status=status.HTTP_200_OK)
+
+# Add these imports at the top
+from rest_framework.permissions import IsAdminUser
+
+# Add this new ViewSet after your existing BlogPostViewSet
+class AdminBlogPostViewSet(viewsets.ModelViewSet):
+    """
+    Admin-only viewset for creating, updating, and deleting blog posts.
+    Allows authenticated staff users to view and manage all posts including drafts.
+    """
+    queryset = BlogPost.objects.all()  # Using objects manager to get ALL posts
+    serializer_class = BlogPostSerializer
+    lookup_field = "slug"
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_queryset(self):
+        """
+        Return all posts (including drafts) for authenticated staff users.
+        Supports filtering by status via query parameter.
+        """
+        # Explicitly use objects.all() to get both published and draft posts
+        queryset = BlogPost.objects.all().order_by('-created_at')
+        
+        # Filter by status if provided (e.g., ?status=draft or ?status=published)
+        status_filter = self.request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        # Filter by category if provided
+        category = self.request.query_params.get('category', None)
+        if category:
+            queryset = queryset.filter(category__slug=category)
+        
+        # Search functionality
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(content__icontains=search) | 
+                Q(excerpt__icontains=search)
+            ).order_by('-created_at')
+        
+        return queryset
+
+    def get_permissions(self):
+        """
+        Custom permissions - only staff/superusers can create/edit blogs
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'upload_image']:
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        """Automatically set the author to the current user"""
+        serializer.save(author=self.request.user)
+
+    def perform_update(self, serializer):
+        """Update blog post"""
+        serializer.save()
+    
+    @action(detail=False, methods=['post'], url_path='upload-image')
+    def upload_image(self, request):
+        """
+        Upload image for blog post content
+        Accepts multipart/form-data with 'image' field
+        Returns image URL for insertion into editor
+        """
+        if 'image' not in request.FILES:
+            return Response(
+                {"error": "No image provided. Please upload an image file."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        image_file = request.FILES['image']
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if image_file.content_type not in allowed_types:
+            return Response(
+                {"error": f"Invalid file type. Allowed: {', '.join(allowed_types)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate file size (max 5MB)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if image_file.size > max_size:
+            return Response(
+                {"error": "File too large. Maximum size is 5MB."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Create a temporary BlogPost to use CKEditor's upload path
+            # Or use a dedicated media upload model/path
+            from django.core.files.storage import default_storage
+            from django.utils.text import slugify
+            import uuid
+            
+            # Generate unique filename
+            ext = os.path.splitext(image_file.name)[1]
+            filename = f"blog_images/{uuid.uuid4()}{ext}"
+            
+            # Save file (will use Minio if configured in settings)
+            saved_path = default_storage.save(filename, image_file)
+            image_url = default_storage.url(saved_path)
+            
+            # Return absolute URL
+            if not image_url.startswith('http'):
+                image_url = request.build_absolute_uri(image_url)
+            
+            logger.info(f"✅ Image uploaded successfully: {saved_path}")
+            
+            return Response({
+                "url": image_url,
+                "filename": image_file.name,
+                "size": image_file.size
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logger.error(f"❌ Error uploading image: {e}", exc_info=True)
+            return Response(
+                {"error": f"Failed to upload image: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'], url_path='upload-featured-image')
+    def upload_featured_image(self, request, slug=None):
+        """
+        Upload featured image for a specific blog post
+        """
+        post = self.get_object()
+        
+        if 'image' not in request.FILES:
+            return Response(
+                {"error": "No image provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        image_file = request.FILES['image']
+        
+        # Validate file
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+        if image_file.content_type not in allowed_types:
+            return Response(
+                {"error": f"Invalid file type"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        max_size = 10 * 1024 * 1024  # 10MB for featured images
+        if image_file.size > max_size:
+            return Response(
+                {"error": "File too large. Maximum 10MB"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Delete old featured image if exists
+            if post.featured_image:
+                post.featured_image.delete(save=False)
+            
+            # Save new featured image
+            post.featured_image = image_file
+            post.save()
+            
+            # Get absolute URL
+            image_url = request.build_absolute_uri(post.featured_image.url)
+            
+            logger.info(f"✅ Featured image uploaded for post: {post.slug}")
+            
+            return Response({
+                "url": image_url,
+                "filename": image_file.name
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ Error uploading featured image: {e}", exc_info=True)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'], url_path='upload-og-image')
+    def upload_og_image(self, request, slug=None):
+        """
+        Upload OG (Open Graph) image for a specific blog post
+        """
+        post = self.get_object()
+        
+        if 'image' not in request.FILES:
+            return Response(
+                {"error": "No image provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        image_file = request.FILES['image']
+        
+        # Validate file
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+        if image_file.content_type not in allowed_types:
+            return Response(
+                {"error": "Invalid file type"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        max_size = 5 * 1024 * 1024  # 5MB for OG images
+        if image_file.size > max_size:
+            return Response(
+                {"error": "File too large. Maximum 5MB"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            from django.core.files.storage import default_storage
+            import uuid
+            
+            # Generate unique filename
+            ext = os.path.splitext(image_file.name)[1]
+            filename = f"og-image/{uuid.uuid4()}{ext}"
+            
+            # Delete old OG image if exists
+            if post.og_image:
+                post.og_image.delete(save=False)
+            
+            # Save file
+            saved_path = default_storage.save(filename, image_file)
+            
+            # Update post
+            post.og_image = saved_path
+            post.save()
+            
+            # Get absolute URL
+            image_url = default_storage.url(saved_path)
+            if not image_url.startswith('http'):
+                image_url = request.build_absolute_uri(image_url)
+            
+            logger.info(f"✅ OG image uploaded for post: {post.slug}")
+            
+            return Response({
+                "url": image_url,
+                "filename": image_file.name
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ Error uploading OG image: {e}", exc_info=True)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class CategoryManagementViewSet(viewsets.ModelViewSet):
+    """
+    Admin viewset for managing blog categories
+    """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = "slug"
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAuthenticated(), IsAdminUser()]
