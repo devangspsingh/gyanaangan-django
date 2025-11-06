@@ -383,18 +383,21 @@ class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
     author_profile_picture = serializers.SerializerMethodField()
     og_image_url = serializers.SerializerMethodField()
     featured_image_url = serializers.SerializerMethodField()
+    # Make image fields optional for write operations
+    featured_image = serializers.ImageField(required=False, allow_null=True)
+    og_image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = BlogPost
         fields = [
-            'id', 'title', 'slug', 'author', 'author_name', 
+            'id', 'title', 'slug', 'author', 'author_name', 'tags'
             'author_profile_picture', 'category', 'category_id',
-            'content', 'excerpt', 'featured_image', 'featured_image_url', 'tags',
-            'publish_date', 'is_featured', 'sticky_post', 'view_count', 
+            'content', 'excerpt', 'featured_image', 'featured_image_url',
+            'publish_date', 'is_featured', 'sticky_post', 
             'reading_time', 'meta_description', 'keywords', 'og_image', 'og_image_url',
             'status', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['author', 'slug', 'view_count', 'reading_time', 'created_at', 'updated_at']
+        read_only_fields = ['author', 'slug', 'reading_time', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
         return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
