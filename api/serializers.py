@@ -390,7 +390,7 @@ class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
     class Meta:
         model = BlogPost
         fields = [
-            'id', 'title', 'slug', 'author', 'author_name', 'tags'
+            'id', 'title', 'slug', 'author', 'author_name', 'tags',
             'author_profile_picture', 'category', 'category_id',
             'content', 'excerpt', 'featured_image', 'featured_image_url',
             'publish_date', 'is_featured', 'sticky_post', 
