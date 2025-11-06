@@ -637,12 +637,14 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Category.objects.annotate(post_count=Count('posts'))
     serializer_class = CategorySerializer
     lookup_field = "slug"
 
     def get_queryset(self):
-        return self.queryset.filter(posts__status='published').distinct()
+        # Annotate with count of only published posts
+        return Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).order_by('-post_count', 'name')
 
 
 class BannerViewSet(viewsets.ReadOnlyModelViewSet):
@@ -945,10 +947,15 @@ class CategoryManagementViewSet(viewsets.ModelViewSet):
     """
     Admin viewset for managing blog categories
     """
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = "slug"
     permission_classes = [IsAuthenticated, IsAdminUser]
+    
+    def get_queryset(self):
+        # Annotate with count of all posts (including drafts) for admin view
+        return Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count', 'name')
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
