@@ -54,7 +54,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     search_fields = (
         "user__username",
         "course__name",
-        "stream__name",
+        # "stream__name",
         "subject__name",
         "special_page",
     )
@@ -62,8 +62,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def get_subscription_type(self, obj):
         if obj.course:
             return "Course"
-        elif obj.stream:
-            return "Stream"
+        # elif obj.stream:
+        #     return "Stream"
         elif obj.subject:
             return "Subject"
         elif obj.special_page:
@@ -75,8 +75,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     def get_subscription_name(self, obj):
         if obj.course:
             return obj.course.name
-        elif obj.stream:
-            return obj.stream.name
+       
         elif obj.subject:
             return obj.subject.name
         elif obj.special_page:
