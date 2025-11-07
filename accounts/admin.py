@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Profile, SavedResource, Subscription
+from .models import Profile, SavedResource, Subscription, StudentProfile
 
 
 class ProfileInline(admin.StackedInline):
@@ -93,6 +93,22 @@ class SavedResourceAdmin(admin.ModelAdmin):
     ordering = ("-saved_at",)  # Order by most recent saved resource
 
 
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "course",
+        "stream",
+        "year",
+        "college_name",
+        "is_profile_complete",
+        "created_at",
+    )
+    list_filter = ("is_profile_complete", "course", "stream", "year", "created_at")
+    search_fields = ("user__username", "college_name", "mobile_number")
+    ordering = ("-created_at",)
+    readonly_fields = ("is_profile_complete", "created_at", "updated_at")
+
+
 # Unregister the default User admin
 admin.site.unregister(User)
 # Register the custom User admin
@@ -100,3 +116,4 @@ admin.site.register(User, UserAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(SavedResource, SavedResourceAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
+admin.site.register(StudentProfile, StudentProfileAdmin)

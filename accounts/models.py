@@ -9,7 +9,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 import requests
 from django.db.models import Max
-from courses.models import Course, Resource, Subject, Stream, SpecialPage
+from courses.models import Course, Resource, Subject, Stream, SpecialPage, Year
 
 
 def profile_pic_upload_path(instance, filename):
@@ -79,9 +79,14 @@ class Profile(models.Model):
 
 
 class Subscription(models.Model):
+    """
+    Subscription model for users to subscribe to courses, subjects, or special pages.
+    Note: special_page already contains course, stream, and year information.
+    """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions"
     )
+    # For subscribing to individual courses (without specific stream/year)
     course = models.ForeignKey(
         Course,
         on_delete=models.SET_NULL,
@@ -89,6 +94,7 @@ class Subscription(models.Model):
         blank=True,
         related_name="subscribed_users",
     )
+    # For subscribing to specific course/stream/year combinations
     special_page = models.ForeignKey(
         SpecialPage,
         on_delete=models.SET_NULL,
@@ -96,13 +102,7 @@ class Subscription(models.Model):
         blank=True,
         related_name="subscribed_users",
     )
-    stream = models.ForeignKey(
-        Stream,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="subscribed_users",
-    )
+    # For subscribing to individual subjects
     subject = models.ForeignKey(
         Subject,
         on_delete=models.SET_NULL,
@@ -112,50 +112,46 @@ class Subscription(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # Ensure unique subscriptions per user for each type
+        unique_together = [['user', 'course', 'subject', 'special_page']]
+
     def __str__(self):
-        subscription_name = (
-            self.course.name
-            if self.course
-            else (
-                self.stream.name
-                if self.stream
-                else (
-                    self.subject.name
-                    if self.subject
-                    else (self.special_page if self.special_page else "Unknown")
-                )
-            )
-        )
-        return f"{self.user.username} - {subscription_name}"
+        if self.special_page:
+            return f"{self.user.username} - {self.special_page.course.name}/{self.special_page.stream.name}/{self.special_page.year.name}"
+        elif self.course:
+            return f"{self.user.username} - {self.course.name}"
+        elif self.subject:
+            return f"{self.user.username} - {self.subject.name}"
+        return f"{self.user.username} - Unknown"
 
     @staticmethod
-    def is_subscribed(user, course=None, stream=None, subject=None, special_page=None):
+    def is_subscribed(user, course=None, subject=None, special_page=None):
         return Subscription.objects.filter(
             user=user,
             course=course,
-            stream=stream,
             subject=subject,
             special_page=special_page,
         ).exists()
 
     @staticmethod
-    def subscribe(user, course=None, stream=None, subject=None, special_page=None):
-        if not Subscription.is_subscribed(user, course, stream, subject, special_page):
+    def subscribe(user, course=None, subject=None, special_page=None):
+        if not Subscription.is_subscribed(user, course, subject, special_page):
             subscription = Subscription(
                 user=user,
                 course=course,
-                stream=stream,
                 subject=subject,
                 special_page=special_page,
             )
             subscription.save()
+            return subscription
+        return None
 
     @staticmethod
-    def unsubscribe(user, course=None, stream=None, subject=None, special_page=None):
+    def unsubscribe(user, course=None, subject=None, special_page=None):
         Subscription.objects.filter(
             user=user,
             course=course,
-            stream=stream,
             subject=subject,
             special_page=special_page,
         ).delete()
@@ -173,3 +169,40 @@ class SavedResource(models.Model):
     @staticmethod
     def is_resource_saved(user, resource):
         return SavedResource.objects.filter(user=user, resource=resource).exists()
+
+
+class StudentProfile(models.Model):
+    """
+    Extended profile for students with academic information
+    """
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_profile')
+    
+    # Academic Information
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='enrolled_students')
+    stream = models.ForeignKey(Stream, on_delete=models.SET_NULL, null=True, blank=True, related_name='enrolled_students')
+    year = models.ForeignKey(Year, on_delete=models.SET_NULL, null=True, blank=True, related_name='enrolled_students')
+    
+    # Additional Information
+    college_name = models.CharField(max_length=255, blank=True, null=True)
+    mobile_number = models.CharField(max_length=15, blank=True, null=True)
+    year_of_graduation = models.IntegerField(blank=True, null=True, help_text="Expected year of graduation")
+    
+    # Metadata
+    is_profile_complete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - Student Profile"
+    
+    def save(self, *args, **kwargs):
+        # Check if profile is complete
+        if self.course and self.stream and self.year:
+            self.is_profile_complete = True
+        else:
+            self.is_profile_complete = False
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        verbose_name = "Student Profile"
+        verbose_name_plural = "Student Profiles"

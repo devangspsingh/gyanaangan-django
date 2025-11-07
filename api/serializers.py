@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from courses.models import Course, Subject, Resource, Stream, Notification, SpecialPage, Year, EducationalYear
-from accounts.models import Profile, SavedResource, Subscription
+from accounts.models import Profile, SavedResource, Subscription, StudentProfile
 from core.models import SEODetail, Banner
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -32,7 +32,6 @@ class ProfileSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.profile_pic.url)
             return obj.profile_pic.url
         return None
-
 class YearSerializer(serializers.ModelSerializer):
     class Meta:
         model = Year
@@ -57,6 +56,94 @@ class EducationalYearSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationalYear
         fields = ['id', 'name']
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+    stream = SimpleStreamSerializer(read_only=True)
+    year = SimpleYearSerializer(read_only=True)
+    
+    course_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    stream_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    year_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    
+    class Meta:
+        model = StudentProfile
+        fields = [
+            'id', 'course', 'stream', 'year', 'college_name', 
+            'mobile_number', 'year_of_graduation', 'is_profile_complete',
+            'course_id', 'stream_id', 'year_id', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['is_profile_complete', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        course_id = validated_data.pop('course_id', None)
+        stream_id = validated_data.pop('stream_id', None)
+        year_id = validated_data.pop('year_id', None)
+        
+        if course_id:
+            validated_data['course_id'] = course_id
+        if stream_id:
+            validated_data['stream_id'] = stream_id
+        if year_id:
+            validated_data['year_id'] = year_id
+            
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        course_id = validated_data.pop('course_id', None)
+        stream_id = validated_data.pop('stream_id', None)
+        year_id = validated_data.pop('year_id', None)
+        
+        if course_id is not None:
+            validated_data['course_id'] = course_id
+        if stream_id is not None:
+            validated_data['stream_id'] = stream_id
+        if year_id is not None:
+            validated_data['year_id'] = year_id
+            
+        return super().update(instance, validated_data)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+    subject = serializers.SerializerMethodField()
+    special_page = serializers.SerializerMethodField()
+    
+    course_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    subject_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    special_page_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    
+    class Meta:
+        model = Subscription
+        fields = [
+            'id', 'course', 'subject', 'special_page',
+            'course_id', 'subject_id', 'special_page_id',
+            'created_at'
+        ]
+        read_only_fields = ['created_at']
+    
+    def get_subject(self, obj):
+        if obj.subject:
+            return {
+                'id': obj.subject.id,
+                'name': obj.subject.name,
+                'slug': obj.subject.slug
+            }
+        return None
+    
+    def get_special_page(self, obj):
+        if obj.special_page:
+            return {
+                'id': obj.special_page.id,
+                'course': obj.special_page.course.name,
+                'stream': obj.special_page.stream.name,
+                'year': obj.special_page.year.name,
+                'course_slug': obj.special_page.course.slug,
+                'stream_slug': obj.special_page.stream.slug,
+                'year_slug': obj.special_page.year.slug,
+            }
+        return None
+
 
 class StreamForCourseSerializer(serializers.ModelSerializer):
     years = SimpleYearSerializer(many=True, read_only=True)
@@ -170,12 +257,13 @@ class SpecialPageSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     meta_description = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = SpecialPage
         fields = [
             'id', 'name', 'description', 'meta_description', 'og_image_url',
-            'course', 'stream', 'year', 'subjects', 'status'
+            'course', 'stream', 'year', 'subjects', 'status', 'is_subscribed'
         ]
 
     def get_name(self, obj):
@@ -186,6 +274,15 @@ class SpecialPageSerializer(serializers.ModelSerializer):
 
     def get_meta_description(self, obj):
         return obj.meta_description or Truncator(self.get_description(obj)).chars(160)
+    
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.is_subscribed(
+                user=request.user,
+                special_page=obj
+            )
+        return False
 
     def get_og_image_url(self, obj):
         if obj.og_image:

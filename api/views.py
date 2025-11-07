@@ -21,6 +21,8 @@ from .serializers import (
     BlogPostSerializer,  # Import BlogPostSerializer
     CategorySerializer,  # Import CategorySerializer
     BannerSerializer,  # Import BannerSerializer
+    StudentProfileSerializer,  # Import StudentProfileSerializer
+    SubscriptionSerializer,  # Import SubscriptionSerializer
 )
 from courses.models import (
     Course,
@@ -32,7 +34,7 @@ from courses.models import (
     Year  # Import Year model
 )
 from core.models import Banner
-from accounts.models import Profile, SavedResource
+from accounts.models import Profile, SavedResource, Subscription, StudentProfile
 from blog.models import BlogPost, Category
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -961,3 +963,146 @@ class CategoryManagementViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAuthenticated(), IsAdminUser()]
+
+
+# Student Profile and Subscription ViewSets
+class StudentProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing student profiles
+    """
+    serializer_class = StudentProfileSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can only see their own student profile
+        return StudentProfile.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['get'], url_path='me')
+    def get_my_profile(self, request):
+        """Get or create the current user's student profile"""
+        profile, created = StudentProfile.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post', 'put', 'patch'], url_path='update-me')
+    def update_my_profile(self, request):
+        """Update the current user's student profile"""
+        profile, created = StudentProfile.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing subscriptions
+    """
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can only see their own subscriptions
+        return Subscription.objects.filter(user=self.request.user).select_related(
+            'course', 'subject', 'special_page', 
+            'special_page__course', 'special_page__stream', 'special_page__year'
+        )
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['post'], url_path='toggle-special-page')
+    def toggle_special_page_subscription(self, request):
+        """Toggle subscription to a special page (course/stream/year)"""
+        special_page_id = request.data.get('special_page_id')
+        
+        if not special_page_id:
+            return Response(
+                {'error': 'special_page_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            special_page = SpecialPage.objects.get(id=special_page_id)
+        except SpecialPage.DoesNotExist:
+            return Response(
+                {'error': 'Special page not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if already subscribed
+        is_subscribed = Subscription.is_subscribed(
+            user=request.user,
+            special_page=special_page
+        )
+        
+        if is_subscribed:
+            # Unsubscribe
+            Subscription.unsubscribe(
+                user=request.user,
+                special_page=special_page
+            )
+            return Response({
+                'subscribed': False,
+                'message': 'Successfully unsubscribed'
+            })
+        else:
+            # Subscribe
+            subscription = Subscription.subscribe(
+                user=request.user,
+                special_page=special_page
+            )
+            serializer = self.get_serializer(subscription)
+            return Response({
+                'subscribed': True,
+                'message': 'Successfully subscribed',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['post'], url_path='toggle-subject')
+    def toggle_subject_subscription(self, request):
+        """Toggle subscription to a subject"""
+        subject_id = request.data.get('subject_id')
+        
+        if not subject_id:
+            return Response(
+                {'error': 'subject_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response(
+                {'error': 'Subject not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_subscribed = Subscription.is_subscribed(
+            user=request.user,
+            subject=subject
+        )
+        
+        if is_subscribed:
+            Subscription.unsubscribe(
+                user=request.user,
+                subject=subject
+            )
+            return Response({
+                'subscribed': False,
+                'message': 'Successfully unsubscribed'
+            })
+        else:
+            subscription = Subscription.subscribe(
+                user=request.user,
+                subject=subject
+            )
+            serializer = self.get_serializer(subscription)
+            return Response({
+                'subscribed': True,
+                'message': 'Successfully subscribed',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
