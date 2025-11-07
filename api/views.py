@@ -1027,6 +1027,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         
         try:
             special_page = SpecialPage.objects.get(id=special_page_id)
+            print(special_page)
         except SpecialPage.DoesNotExist:
             return Response(
                 {'error': 'Special page not found'},

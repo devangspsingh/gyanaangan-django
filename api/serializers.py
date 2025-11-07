@@ -50,7 +50,7 @@ class SimpleStreamSerializer(serializers.ModelSerializer):
 class SimpleYearSerializer(serializers.ModelSerializer):
     class Meta:
         model = Year
-        fields = ['year', 'slug', 'name']
+        fields = ['id', 'year', 'slug', 'name']
 
 class EducationalYearSerializer(serializers.ModelSerializer):
     class Meta:
@@ -220,12 +220,13 @@ class SubjectForSpecialPageSerializer(serializers.ModelSerializer):
     resource_types = serializers.SerializerMethodField()
     og_image_url = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
         fields = [
             'id', 'name', 'slug', 'description', 'meta_description', 
-            'og_image_url', 'last_updated_info', 'resource_types', 'url','resource_count'
+            'og_image_url', 'last_updated_info', 'resource_types', 'url','resource_count', 'is_subscribed'
         ]
     
     def get_og_image_url(self, obj):
@@ -247,6 +248,15 @@ class SubjectForSpecialPageSerializer(serializers.ModelSerializer):
 
     def get_url(self, obj):
         return f"/subjects/{obj.slug}"
+    
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.is_subscribed(
+                user=request.user,
+                subject=obj
+            )
+        return False
 
 class SpecialPageSerializer(serializers.ModelSerializer):
     course = SimpleCourseSerializer(read_only=True)
@@ -379,6 +389,7 @@ class SubjectSerializer(serializers.ModelSerializer):
     og_image_url = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     meta_description = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
@@ -388,7 +399,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             'stream', 
             'years',  
             'resource_count', 'last_updated_info', 'resource_types',
-            'created_at', 'updated_at', 'last_resource_updated_at'
+            'created_at', 'updated_at', 'last_resource_updated_at', 'is_subscribed'
         ]
 
     def get_description(self, obj):
@@ -414,6 +425,15 @@ class SubjectSerializer(serializers.ModelSerializer):
         if obj.og_image and hasattr(obj.og_image, 'url'):
             return request.build_absolute_uri(obj.og_image.url)
         return None
+    
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.is_subscribed(
+                user=request.user,
+                subject=obj
+            )
+        return False
 
 class NotificationSerializer(serializers.ModelSerializer):
     content = serializers.CharField(source='message', read_only=True)
@@ -421,15 +441,6 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ('id', 'title', 'content', 'url', 'importance', 'tags', 'created_at')
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
-    subject = SubjectSerializer(read_only=True)
-    stream = StreamSerializer(read_only=True)
-    
-    class Meta:
-        model = Subscription
-        fields = ('id', 'user', 'course', 'subject', 'stream', 'created_at')
 
 class YearNameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -443,10 +454,11 @@ class SpecialPageSerializer(serializers.ModelSerializer):
     og_image_url = serializers.SerializerMethodField()
     notifications = NotificationSerializer(many=True, read_only=True)
     subjects = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = SpecialPage
-        fields = ('id', 'course', 'stream', 'year', 'description', 'og_image_url', 'notifications', 'subjects')
+        fields = ('id', 'course', 'stream', 'year', 'description', 'og_image_url', 'notifications', 'subjects', 'is_subscribed')
         lookup_field = 'id'
 
     def get_og_image_url(self, obj):
@@ -463,6 +475,25 @@ class SpecialPageSerializer(serializers.ModelSerializer):
         
         serializer = SubjectForSpecialPageSerializer(related_subjects_qs, many=True, context=self.context)
         return serializer.data
+    
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.is_subscribed(
+                user=request.user,
+                special_page=obj
+            )
+        return False
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+    subject = SubjectSerializer(read_only=True)
+    stream = SimpleStreamSerializer(read_only=True)
+    special_page = SpecialPageSerializer(read_only=True)
+    
+    class Meta:
+        model = Subscription
+        fields = ('id', 'user', 'course', 'subject', 'stream','special_page', 'created_at')
 
 class CategorySerializer(serializers.ModelSerializer):
     post_count = serializers.IntegerField(read_only=True)
