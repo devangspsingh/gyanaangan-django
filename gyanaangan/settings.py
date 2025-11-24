@@ -15,7 +15,7 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
-load_dotenv()
+load_dotenv(".env.prod")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -57,6 +57,9 @@ INSTALLED_APPS = [
     "accounts",
     "blog",
     "results",
+    "organization",  # New app for organizations
+    "event",  # New app for events
+    "certificate",  # New app for certificates
     "mathfilters",
 ]
 
