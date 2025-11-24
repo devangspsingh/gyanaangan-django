@@ -26,6 +26,7 @@ class Profile(models.Model):
     )
     emoji_tag = models.CharField(max_length=5, blank=True)
     img_google_url = models.URLField(max_length=500, blank=True, null=True)
+    is_profile_public = models.BooleanField(default=True, help_text="Whether the user's profile is publicly visible")
 
     def save(self, *args, **kwargs):
         if not self.pk:  # If this is a new profile
