@@ -74,7 +74,19 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'course_id', 'stream_id', 'year_id', 'created_at', 'updated_at'
         ]
         read_only_fields = ['is_profile_complete', 'created_at', 'updated_at']
-    
+        
+        extra_kwargs = {
+            'college_name': {
+                'required': False, 
+
+            },
+            'mobile_number': {
+                'required': False, 
+
+            },
+           
+        }
+        
     def create(self, validated_data):
         course_id = validated_data.pop('course_id', None)
         stream_id = validated_data.pop('stream_id', None)
