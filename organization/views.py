@@ -26,9 +26,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'list':
-            # if self.request.user.is_authenticated:
-            #     from .serializers import OrganizationListAuthenticatedSerializer
-            #     return OrganizationListAuthenticatedSerializer
             return OrganizationListSerializer
         elif self.action in ['create', 'update', 'partial_update']:
             return OrganizationCreateUpdateSerializer
@@ -40,12 +37,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         Explicitly defines permissions for groups of actions to ensure security.
         """
         # 1. Admin Only Actions
-        # These actions require the user to be an ADMIN of the organization
         admin_actions = [
             'update', 
             'partial_update', 
             'destroy', 
-            'members',       # <--- Explicitly added here
+            'members',
             'add_member', 
             'update_member', 
             'remove_member'
@@ -54,7 +50,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsOrganizationAdmin()]
 
         # 2. Member Only Actions
-        # These actions require the user to be a MEMBER of the organization
         member_actions = [
             'add_gallery_image', 
             'remove_gallery_image'
@@ -62,18 +57,31 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         if self.action in member_actions:
             return [permissions.IsAuthenticated(), IsOrganizationMember()]
 
-        # 3. Authenticated Only Actions (General)
+        # 3. Authenticated Only Actions
         if self.action in ['create']:
             return [permissions.IsAuthenticated()]
-
+        
         # 4. Public/Read-Only Actions
-        # 'list', 'retrieve', 'gallery', 'events', 'stats'
-        # 'stats' has internal logic checks, but 'IsAuthenticatedOrReadOnly' is a safe default for GETs
         return [permissions.IsAuthenticatedOrReadOnly()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
         
+        # Check if the user is filtering for their OWN organizations
+        my_orgs = self.request.query_params.get('my_organizations', None)
+        
+        if my_orgs and self.request.user.is_authenticated:
+            # If user wants their own orgs, show them ALL (even unverified ones)
+            # This allows them to manage pending organizations.
+            queryset = queryset.filter(
+                members__user=self.request.user,
+                members__is_active=True
+            ).distinct()
+        else:
+            # --- PUBLIC VIEW CHANGE ---
+            # For general listing/searching, ONLY show verified organizations.
+            queryset = queryset.filter(is_verified=True)
+
         # Filter by search query
         search = self.request.query_params.get('search', None)
         if search:
@@ -81,29 +89,15 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 Q(name__icontains=search) | Q(description__icontains=search)
             )
         
-        # Filter by verified status
-        verified = self.request.query_params.get('verified', None)
-        if verified is not None:
-            queryset = queryset.filter(is_verified=verified.lower() == 'true')
-        
-        # Filter by user's organizations
-        my_orgs = self.request.query_params.get('my_organizations', None)
-        if my_orgs and self.request.user.is_authenticated:
-            queryset = queryset.filter(
-                members__user=self.request.user,
-                members__is_active=True
-            ).distinct()
-        
         return queryset
 
     # --- Actions ---
 
-    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def check_user_permissions(self, request, slug=None):
         """
         Check current user's permissions for this organization.
-        Returns role, permissions, and admin status.
-        This endpoint is separate to avoid leaking permission data in public APIs.
+        Safe for Anonymous users.
         """
         if not request.user.is_authenticated:
             return Response({
@@ -112,8 +106,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
                 'role': None,
                 'permissions': {},
             })
-        organization = self.get_object()
         
+        # We need to use the base queryset (verified only) OR fetch specifically?
+        # Note: If get_object() is used here, and the org is unverified, it might 404 for public users.
+        # This is usually desired behavior (hiding unverified orgs completely).
+        try:
+            organization = self.get_object()
+        except:
+            # Fallback for unverified orgs if an admin tries to access them directly via slug
+            # but get_object filtered them out.
+            organization = get_object_or_404(Organization, slug=slug)
+
         try:
             member = organization.members.get(user=request.user, is_active=True)
             return Response({
@@ -264,8 +267,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         """Get organization statistics"""
         organization = self.get_object()
         
-        # Explicit check here is good, but relying on permission class is better.
-        # Currently, get_permissions returns ReadOnly for this, so this manual check is vital.
         if not request.user.is_authenticated or not organization.has_member(request.user):
             return Response(
                 {'error': 'Only organization members can view stats'},
