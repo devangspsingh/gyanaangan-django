@@ -55,7 +55,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
     user_is_registered = serializers.SerializerMethodField()
     user_registration = serializers.SerializerMethodField()
     can_user_register = serializers.SerializerMethodField()
-    
+    meeting_link = serializers.SerializerMethodField()
     class Meta:
         model = Event
         fields = [
@@ -66,14 +66,34 @@ class EventDetailSerializer(serializers.ModelSerializer):
             'meeting_link', 'max_participants', 'registration_fee',
             'is_registration_open', 'prizes', 'rules', 'eligibility_criteria',
             'schedule', 'tags', 'contact_person', 'contact_email', 'contact_phone',
-            'status', 'is_published', 'is_featured', 'created_by',
+            'status', 'is_published', 'is_featured',
             'view_count', 'registered_count', 'present_count',
             'is_past', 'is_ongoing', 'is_upcoming', 'registration_closed',
             'is_full', 'spots_remaining', 'user_is_registered', 'user_registration',
             'can_user_register', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'slug', 'view_count', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = ['id', 'slug', 'view_count', 'created_at', 'updated_at']
 
+    def get_meeting_link(self, obj):
+        request = self.context.get('request')
+        
+        # 1. Safety check: Ensure request and user exist
+        if not request or not request.user.is_authenticated:
+            return None
+
+        # 2. Check the database for registration
+        # Note: Replace 'registrations' with the related_name from your EventRegistration model
+        # If you didn't set a related_name, it might be 'eventregistration_set'
+        is_registered = obj.registrations.filter(
+            user=request.user, 
+            # is_active=True # Assuming you have an is_active field
+        ).exists()
+
+        if is_registered:
+             return obj.meeting_link
+             
+        return None
+    
     def get_user_is_registered(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -101,7 +121,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.can_register(request.user)
         return False
-
+    
 
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating events"""

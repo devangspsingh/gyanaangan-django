@@ -26,6 +26,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'list':
+            # if self.request.user.is_authenticated:
+            #     from .serializers import OrganizationListAuthenticatedSerializer
+            #     return OrganizationListAuthenticatedSerializer
             return OrganizationListSerializer
         elif self.action in ['create', 'update', 'partial_update']:
             return OrganizationCreateUpdateSerializer
@@ -33,12 +36,39 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Custom permissions based on action
+        Custom permissions based on action.
+        Explicitly defines permissions for groups of actions to ensure security.
         """
-        if self.action in ['update', 'partial_update', 'destroy']:
+        # 1. Admin Only Actions
+        # These actions require the user to be an ADMIN of the organization
+        admin_actions = [
+            'update', 
+            'partial_update', 
+            'destroy', 
+            'members',       # <--- Explicitly added here
+            'add_member', 
+            'update_member', 
+            'remove_member'
+        ]
+        if self.action in admin_actions:
             return [permissions.IsAuthenticated(), IsOrganizationAdmin()]
-        elif self.action in ['create']:
+
+        # 2. Member Only Actions
+        # These actions require the user to be a MEMBER of the organization
+        member_actions = [
+            'add_gallery_image', 
+            'remove_gallery_image'
+        ]
+        if self.action in member_actions:
+            return [permissions.IsAuthenticated(), IsOrganizationMember()]
+
+        # 3. Authenticated Only Actions (General)
+        if self.action in ['create']:
             return [permissions.IsAuthenticated()]
+
+        # 4. Public/Read-Only Actions
+        # 'list', 'retrieve', 'gallery', 'events', 'stats'
+        # 'stats' has internal logic checks, but 'IsAuthenticatedOrReadOnly' is a safe default for GETs
         return [permissions.IsAuthenticatedOrReadOnly()]
 
     def get_queryset(self):
@@ -66,13 +96,46 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         
         return queryset
 
-    @action(detail=True, methods=['get'])
+    # --- Actions ---
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def check_user_permissions(self, request, slug=None):
+        """
+        Check current user's permissions for this organization.
+        Returns role, permissions, and admin status.
+        This endpoint is separate to avoid leaking permission data in public APIs.
+        """
+        if not request.user.is_authenticated:
+            return Response({
+                'is_member': False,
+                'is_admin': False,
+                'role': None,
+                'permissions': {},
+            })
+        organization = self.get_object()
+        
+        try:
+            member = organization.members.get(user=request.user, is_active=True)
+            return Response({
+                'is_member': True,
+                'is_admin': member.role == 'ADMIN',
+                'role': member.role,
+                'permissions': member.permissions,
+            })
+        except OrganizationMember.DoesNotExist:
+            return Response({
+                'is_member': False,
+                'is_admin': False,
+                'role': None,
+                'permissions': {},
+            })
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated, IsOrganizationAdmin])
     def members(self, request, slug=None):
-        """Get all members of an organization"""
+        """Get all members of an organization (admin only)"""
         organization = self.get_object()
         members = organization.members.filter(is_active=True)
         
-        # Filter by role if specified
         role = request.query_params.get('role', None)
         if role:
             members = members.filter(role=role.upper())
@@ -80,7 +143,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         serializer = OrganizationMemberSerializer(members, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsOrganizationAdmin])
+    @action(detail=True, methods=['post'])
     def add_member(self, request, slug=None):
         """Add a new member to the organization"""
         organization = self.get_object()
@@ -94,23 +157,16 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAuthenticated, IsOrganizationAdmin])
+    @action(detail=True, methods=['patch'])
     def update_member(self, request, slug=None):
         """Update a member's role or permissions"""
         organization = self.get_object()
         member_id = request.data.get('member_id')
         
         if not member_id:
-            return Response(
-                {'error': 'member_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'member_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        member = get_object_or_404(
-            OrganizationMember,
-            id=member_id,
-            organization=organization
-        )
+        member = get_object_or_404(OrganizationMember, id=member_id, organization=organization)
         
         serializer = OrganizationMemberSerializer(
             member,
@@ -123,25 +179,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsOrganizationAdmin])
+    @action(detail=True, methods=['post'])
     def remove_member(self, request, slug=None):
         """Remove a member from the organization"""
         organization = self.get_object()
         member_id = request.data.get('member_id')
         
         if not member_id:
-            return Response(
-                {'error': 'member_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'member_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        member = get_object_or_404(
-            OrganizationMember,
-            id=member_id,
-            organization=organization
-        )
+        member = get_object_or_404(OrganizationMember, id=member_id, organization=organization)
         
-        # Check if trying to remove the last admin
         if member.role == 'ADMIN':
             active_admins = OrganizationMember.objects.filter(
                 organization=organization,
@@ -168,7 +216,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         serializer = OrganizationGallerySerializer(gallery, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsOrganizationMember])
+    @action(detail=True, methods=['post'])
     def add_gallery_image(self, request, slug=None):
         """Add an image to organization gallery"""
         organization = self.get_object()
@@ -182,23 +230,16 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['delete'], permission_classes=[permissions.IsAuthenticated, IsOrganizationMember])
+    @action(detail=True, methods=['delete'])
     def remove_gallery_image(self, request, slug=None):
         """Remove an image from organization gallery"""
         organization = self.get_object()
         image_id = request.query_params.get('image_id')
         
         if not image_id:
-            return Response(
-                {'error': 'image_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'image_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        image = get_object_or_404(
-            OrganizationGallery,
-            id=image_id,
-            organization=organization
-        )
+        image = get_object_or_404(OrganizationGallery, id=image_id, organization=organization)
         image.delete()
         
         return Response({'message': 'Gallery image removed successfully'})
@@ -211,7 +252,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         
         events = organization.events.filter(is_published=True)
         
-        # Filter by status
         event_status = request.query_params.get('status', None)
         if event_status:
             events = events.filter(status=event_status.upper())
@@ -224,7 +264,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         """Get organization statistics"""
         organization = self.get_object()
         
-        # Check if user is a member
+        # Explicit check here is good, but relying on permission class is better.
+        # Currently, get_permissions returns ReadOnly for this, so this manual check is vital.
         if not request.user.is_authenticated or not organization.has_member(request.user):
             return Response(
                 {'error': 'Only organization members can view stats'},

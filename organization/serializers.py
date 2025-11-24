@@ -67,55 +67,29 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
 
 
 class OrganizationListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for organization lists"""
+    """Lightweight serializer for organization lists - public data only, NO user-specific data"""
     member_count = serializers.IntegerField(read_only=True)
     event_count = serializers.SerializerMethodField()
-    user_role = serializers.SerializerMethodField()
-    user_is_member = serializers.SerializerMethodField()
-    user_is_admin = serializers.SerializerMethodField()
     
     class Meta:
         model = Organization
         fields = [
             'id', 'name', 'slug', 'logo', 'cover_image', 'description',
             'is_verified', 'is_active',
-            'member_count', 'event_count', 'user_role', 'user_is_member', 
-            'user_is_admin', 'created_at', 'updated_at'
+            'member_count', 'event_count', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
     def get_event_count(self, obj):
         return obj.events.filter(is_published=True).count()
 
-    def get_user_role(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.get_user_role(request.user)
-        return None
-
-    def get_user_is_member(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.has_member(request.user)
-        return False
-
-    def get_user_is_admin(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.is_admin(request.user)
-        return False
-
 
 class OrganizationDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for organization with all relations"""
-    members = OrganizationMemberSerializer(many=True, read_only=True)
+    """Detailed serializer for organization - public data only, NO user-specific data"""
     gallery_images = OrganizationGallerySerializer(many=True, read_only=True)
     member_count = serializers.IntegerField(read_only=True)
     admin_count = serializers.IntegerField(read_only=True)
     event_count = serializers.SerializerMethodField()
-    user_role = serializers.SerializerMethodField()
-    user_is_member = serializers.SerializerMethodField()
-    user_is_admin = serializers.SerializerMethodField()
     
     class Meta:
         model = Organization
@@ -123,32 +97,13 @@ class OrganizationDetailSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'description', 'logo', 'cover_image',
             'contact_email', 'contact_phone', 'website', 'social_links',
             'is_verified', 'is_active',
-            'members', 'gallery_images', 'member_count', 'admin_count',
-            'event_count', 'user_role', 'user_is_member', 'user_is_admin',
-            'created_at', 'updated_at'
+            'gallery_images', 'member_count', 'admin_count',
+            'event_count', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
     def get_event_count(self, obj):
         return obj.events.filter(is_published=True).count()
-
-    def get_user_role(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.get_user_role(request.user)
-        return None
-
-    def get_user_is_member(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.has_member(request.user)
-        return False
-
-    def get_user_is_admin(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.is_admin(request.user)
-        return False
 
 
 class OrganizationCreateUpdateSerializer(serializers.ModelSerializer):
