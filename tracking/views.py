@@ -143,7 +143,18 @@ class SessionViewSet(AnalyticsBaseViewSet):
     serializer_class = SessionSerializer
     filterset_fields = ['is_active']
 
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+
+# ...
+
 class EventViewSet(AnalyticsBaseViewSet):
     queryset = Event.objects.all().order_by('-timestamp')
     serializer_class = EventSerializer
-    filterset_fields = ['event_type']
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = {
+        'event_type': ['exact'],
+        'session__user': ['exact', 'isnull'],
+        'session__visitor__visitor_id': ['exact'],
+    }
+    search_fields = ['url', 'target_resource', 'session__user__username', 'session__visitor__ip_address', 'session__visitor__visitor_id']

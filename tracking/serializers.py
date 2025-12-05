@@ -8,6 +8,9 @@ class VisitorSerializer(serializers.ModelSerializer):
 
 class SessionSerializer(serializers.ModelSerializer):
     visitor = VisitorSerializer(read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_name = serializers.CharField(source='user.name', read_only=True)
+
     class Meta:
         model = Session
         fields = '__all__'

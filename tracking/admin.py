@@ -24,10 +24,20 @@ class SessionAdmin(admin.ModelAdmin):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('event_type', 'url', 'timestamp', 'session_link')
-    list_filter = ('event_type', 'timestamp')
-    search_fields = ('url', 'target_resource')
+    list_display = ('event_type', 'url', 'get_user', 'get_ip', 'timestamp')
+    list_filter = ('event_type', 'timestamp', 'session__user', 'session__visitor__ip_address')
+    search_fields = ('url', 'target_resource', 'session__user__username', 'session__visitor__ip_address', 'session__visitor__visitor_id')
     readonly_fields = ('id', 'timestamp')
+
+    def get_user(self, obj):
+        return obj.session.user
+    get_user.short_description = 'User'
+    get_user.admin_order_field = 'session__user'
+
+    def get_ip(self, obj):
+        return obj.session.visitor.ip_address
+    get_ip.short_description = 'IP Address'
+    get_ip.admin_order_field = 'session__visitor__ip_address'
 
     def session_link(self, obj):
         return obj.session
