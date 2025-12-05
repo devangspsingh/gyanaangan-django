@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "event",  # New app for events
     "certificate",  # New app for certificates
     "mathfilters",
+    "tracking",
 ]
 
 MIDDLEWARE = [
@@ -270,8 +271,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://back.gyanaangan.in",
     # "*",
 ]
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = True
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=60),

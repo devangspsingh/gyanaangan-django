@@ -54,4 +54,5 @@ urlpatterns = [
     # Organization and Event Management
     path("organizations/", include("organization.urls")),
     path("events/", include("event.urls")),
+    path("tracking/", include("tracking.urls")), # Analytics API
 ]
