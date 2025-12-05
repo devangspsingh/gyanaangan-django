@@ -24,6 +24,13 @@ class Visitor(models.Model):
     os_version = models.CharField(max_length=50, blank=True, null=True)
     screen_resolution = models.CharField(max_length=50, blank=True, null=True)
 
+    ACCESS_STATUS_CHOICES = (
+        ('allow', 'Allow'),
+        ('force_login', 'Force Login'),
+        ('block', 'Block'),
+    )
+    access_status = models.CharField(max_length=20, choices=ACCESS_STATUS_CHOICES, default='allow')
+
     def __str__(self):
         return f"Visitor {self.visitor_id[:8]}..."
 

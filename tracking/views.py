@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
@@ -127,13 +127,29 @@ class TrackEventView(APIView):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+        return ip
 
-# --- Admin / Dashboard ViewSets ---
+class VisitorStatusView(APIView):
+    """
+    Public endpoint to check visitor status (Block/Force Login).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, visitor_id):
+        if not visitor_id:
+            return Response({"error": "Visitor ID required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            visitor = Visitor.objects.get(visitor_id=visitor_id)
+            return Response({"status": visitor.access_status})
+        except Visitor.DoesNotExist:
+            # New visitor implies 'allow' by default
+            return Response({"status": "allow"})
 
 class AnalyticsBaseViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAdminUser]
 
-class VisitorViewSet(AnalyticsBaseViewSet):
+class VisitorViewSet(mixins.UpdateModelMixin, AnalyticsBaseViewSet):
     queryset = Visitor.objects.all().order_by('-last_seen')
     serializer_class = VisitorSerializer
     filterset_fields = ['visitor_id', 'device_type']

@@ -41,6 +41,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from django.http import HttpResponse
 from django.core.signing import TimestampSigner
+from tracking.permissions import IsVisitorAllowed
 from urllib.parse import quote
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity, SearchVector
 from django.db.models import Q, F, Count
@@ -105,6 +106,7 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsVisitorAllowed]
     serializer_class = ResourceSerializer
     lookup_field = "slug"
     pagination_class = StandardResultsSetPagination  # Ensure pagination is set
