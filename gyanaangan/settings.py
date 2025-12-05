@@ -155,7 +155,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 # STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+# DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -178,12 +178,12 @@ AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 AWS_S3_ENDPOINT_URL = os.getenv("AWS_URL_ENDPOINT")
 AWS_S3_USE_SSL = True  # Use SSL/TLS for secure connections
 
-if AWS_S3_ENDPOINT_URL and AWS_STORAGE_BUCKET_NAME:
-    MEDIA_URL = f"https://{AWS_S3_ENDPOINT_URL.split('//')[-1]}/{AWS_STORAGE_BUCKET_NAME}/public/"
+# if AWS_S3_ENDPOINT_URL and AWS_STORAGE_BUCKET_NAME:
+#     MEDIA_URL = f"https://{AWS_S3_ENDPOINT_URL.split('//')[-1]}/{AWS_STORAGE_BUCKET_NAME}/public/"
 
 # STATIC_URL = 'https://%s/%s/' % (AWS_S3_ENDPOINT_URL.split('//')[1], AWS_STORAGE_BUCKET_NAME)
 STATIC_ROOT = "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [BASE_DIR / "static"]
 # settings.py
@@ -226,7 +226,16 @@ class PrivateMediaStorage(S3Boto3Storage):
 
 
 # Set the default file storage to private
-DEFAULT_FILE_STORAGE = "gyanaangan.settings.PublicMediaStorage"
+# DEFAULT_FILE_STORAGE = "gyanaangan.settings.PublicMediaStorage"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "gyanaangan.settings.PublicMediaStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 GOOGLE_ANALYTICS_GTAG_PROPERTY_ID = os.getenv("G_TAG")
 
@@ -254,6 +263,9 @@ CKEDITOR_CONFIGS = {
     },
 }
 
+# settings.py
+
+CKEDITOR_STORAGE_BACKEND = "gyanaangan.settings.PublicMediaStorage"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
