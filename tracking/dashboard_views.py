@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.db.models.functions import TruncMinute
 from datetime import timedelta
 from .models import Visitor, Session, Event
 
@@ -48,5 +49,50 @@ class DashboardStatsView(APIView):
                 "device": list(visitors_by_device),
             }
         }
+        
+        return Response(data)
+
+class ActivitySeriesView(APIView):
+    """
+    Returns granular event activity for the last N minutes (default 30).
+    Ideal for 'Real-time' charts.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        now = timezone.now()
+        # Default to 30 minutes window
+        minutes = int(request.query_params.get('minutes', 30))
+        start_time = now - timedelta(minutes=minutes)
+        
+        # Base Query
+        events = Event.objects.filter(timestamp__gte=start_time)
+        
+        # Filters
+        if request.query_params.get('is_active') == 'true':
+             events = events.filter(session__is_active=True)
+             
+        if request.query_params.get('authenticated') == 'true':
+             events = events.filter(session__user__isnull=False)
+             
+        path_filter = request.query_params.get('path')
+        if path_filter:
+            events = events.filter(Q(url__icontains=path_filter) | Q(target_resource__icontains=path_filter))
+
+        # Aggregate events by minute
+        # We use TruncMinute to bucket timestamps
+        activity = events\
+            .annotate(minute=TruncMinute('timestamp'))\
+            .values('minute')\
+            .annotate(count=Count('id'))\
+            .order_by('minute')
+            
+        data = [
+            {
+                "time": item['minute'], # This is a datetime
+                "count": item['count']
+            }
+            for item in activity
+        ]
         
         return Response(data)
