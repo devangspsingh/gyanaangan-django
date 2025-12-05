@@ -5,7 +5,7 @@ class VisitorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitor
         fields = '__all__'
-        read_only_fields = ('visitor_id', 'ip_address', 'device_type', 'os', 'browser', 'access_status') # Make status read-only for public API
+        read_only_fields = ('visitor_id', 'ip_address', 'device_type', 'os', 'browser') # Removed access_status to allow admin updates
 
 class SessionSerializer(serializers.ModelSerializer):
     visitor = VisitorSerializer(read_only=True)

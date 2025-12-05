@@ -152,6 +152,7 @@ class AnalyticsBaseViewSet(viewsets.ReadOnlyModelViewSet):
 class VisitorViewSet(mixins.UpdateModelMixin, AnalyticsBaseViewSet):
     queryset = Visitor.objects.all().order_by('-last_seen')
     serializer_class = VisitorSerializer
+    lookup_field = 'visitor_id'
     filterset_fields = ['visitor_id', 'device_type']
 
 class SessionViewSet(AnalyticsBaseViewSet):
