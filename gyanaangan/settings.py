@@ -178,6 +178,9 @@ AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 AWS_S3_ENDPOINT_URL = os.getenv("AWS_URL_ENDPOINT")
 AWS_S3_USE_SSL = True  # Use SSL/TLS for secure connections
 
+if AWS_S3_ENDPOINT_URL and AWS_STORAGE_BUCKET_NAME:
+    MEDIA_URL = f"https://{AWS_S3_ENDPOINT_URL.split('//')[-1]}/{AWS_STORAGE_BUCKET_NAME}/public/"
+
 # STATIC_URL = 'https://%s/%s/' % (AWS_S3_ENDPOINT_URL.split('//')[1], AWS_STORAGE_BUCKET_NAME)
 STATIC_ROOT = "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
