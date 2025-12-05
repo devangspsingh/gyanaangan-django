@@ -17,9 +17,30 @@ class Visitor(models.Model):
     
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
+    
+    # Detailed Info
+    device_brand = models.CharField(max_length=50, blank=True, null=True)
+    device_model = models.CharField(max_length=50, blank=True, null=True)
+    os_version = models.CharField(max_length=50, blank=True, null=True)
+    screen_resolution = models.CharField(max_length=50, blank=True, null=True)
 
     def __str__(self):
         return f"Visitor {self.visitor_id[:8]}..."
+
+class UserVisitor(models.Model):
+    """
+    Links a User to a Visitor (Device).
+    Answer: "Which devices does this user use?"
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='known_devices')
+    visitor = models.ForeignKey(Visitor, on_delete=models.CASCADE, related_name='users')
+    last_used_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('user', 'visitor')
+
+    def __str__(self):
+        return f"{self.user} on {self.visitor}"
 
 class Session(models.Model):
     """

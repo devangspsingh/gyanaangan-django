@@ -1,11 +1,16 @@
 from django.contrib import admin
-from .models import Visitor, Session, Event
+from .models import Visitor, Session, Event, UserVisitor
 
 @admin.register(Visitor)
 class VisitorAdmin(admin.ModelAdmin):
     list_display = ('visitor_id', 'ip_address', 'device_type', 'os', 'browser','first_seen', 'last_seen')
     search_fields = ('visitor_id', 'ip_address', 'user_agent')
-    readonly_fields = ('id', 'first_seen', 'last_seen')
+    readonly_fields = ('id', 'first_seen', 'last_seen', 'device_brand', 'device_model', 'os_version')
+
+@admin.register(UserVisitor)
+class UserVisitorAdmin(admin.ModelAdmin):
+    list_display = ('user', 'visitor', 'last_used_at')
+    search_fields = ('user__email', 'visitor__visitor_id')
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
