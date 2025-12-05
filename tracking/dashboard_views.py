@@ -39,6 +39,8 @@ class DashboardStatsView(APIView):
                 "total_sessions": total_sessions,
                 "total_events": total_events,
                 "active_sessions": active_sessions,
+                "unique_ips": Visitor.objects.values('ip_address').distinct().count(),
+                "unique_users": Session.objects.filter(user__isnull=False).values('user').distinct().count(),
             },
             "charts": {
                 "os": list(visitors_by_os),
