@@ -10,12 +10,24 @@ class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
     verbose_name_plural = "Profile"
+    readonly_fields = ("profile_picture",)
+
+    def profile_picture(self, obj):
+        if obj.profile_pic:
+            return format_html(
+                '<img src="{}" width="150" height="150" style="border-radius: 50%;" />',
+                obj.profile_pic.url,
+            )
+        return "No Image"
+
+    profile_picture.short_description = "Profile Picture"
 
 
 class UserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
     list_display = (
         "username",
+        "profile_picture",
         "email",
         "first_name",
         "last_name",
@@ -24,6 +36,16 @@ class UserAdmin(BaseUserAdmin):
         "view_profile_link",
     )
     ordering = ("-date_joined",)  # Order users by most recently joined
+
+    def profile_picture(self, obj):
+        if hasattr(obj, "profile") and obj.profile.profile_pic:
+            return format_html(
+                '<img src="{}" width="40" height="40" style="border-radius: 50%;" />',
+                obj.profile.profile_pic.url,
+            )
+        return "No Image"
+
+    profile_picture.short_description = "DP"
 
     def view_profile_link(self, obj):
         url = reverse("admin:accounts_profile_change", args=[obj.profile.id])
@@ -35,12 +57,24 @@ class UserAdmin(BaseUserAdmin):
 class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         "user",
+        "profile_picture",
         "bio",
         "emoji_tag",
         "img_google_url",
     )
+    readonly_fields = ("profile_picture",)
     search_fields = ("user__username", "bio")
     ordering = ("user__username",)  # Order profiles by most recently updated
+
+    def profile_picture(self, obj):
+        if obj.profile_pic:
+            return format_html(
+                '<img src="{}" width="50" height="50" style="border-radius: 50%;" />',
+                obj.profile_pic.url,
+            )
+        return "No Image"
+
+    profile_picture.short_description = "Picture"
 
 
 class SubscriptionAdmin(admin.ModelAdmin):

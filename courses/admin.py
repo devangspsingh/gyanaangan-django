@@ -169,12 +169,19 @@ class ResourceAdmin(BaseModelAdmin):
     fieldsets = (
         (None, {"fields": ("name", "slug", "resource_type", "status")}),
         (
-            "File and Links",
-            {"fields": ("file", "privacy", "embed_link", "description")},
+            "Resource Content",
+            {
+                "fields": ("file", "resource_link", "embed_link", "content"),
+                "description": "Provide at least one: File upload, Resource link (Google Drive/Dropbox), Embed link (YouTube only), or Rich text content.",
+            },
+        ),
+        (
+            "Settings & Description",
+            {"fields": ("privacy", "description")},
         ),
         ("Associations", {"fields": ("subject", "educational_year")}),
         (
-            "Additional Info",
+            "SEO & Meta",
             {
                 "classes": ("collapse",),
                 "fields": ("meta_description", "keywords", "og_image"),

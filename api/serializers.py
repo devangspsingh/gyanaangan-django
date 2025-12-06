@@ -328,7 +328,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     subject_slug = serializers.CharField(source='subject.slug', read_only=True, allow_null=True)
     resource_type_display = serializers.CharField(source='get_resource_type_display', read_only=True)
     updated_at = serializers.CharField(source='get_last_updated_at.status', read_only=True)
-    # view_url will now be the direct file URL
+    # view_url will now be the direct file URL or resource link
     view_url = serializers.SerializerMethodField() 
     download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
@@ -339,7 +339,7 @@ class ResourceSerializer(serializers.ModelSerializer):
         model = Resource
         fields = [
             'id', 'name', 'slug', 'resource_type', 'resource_type_display', 'file', 'privacy',
-            'embed_link', 'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
+            'embed_link', 'resource_link', 'content', 'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
             'description', 'meta_description', 'og_image_url', 'is_saved', 'status',
             'view_url', 'download_url',
         ]
@@ -362,30 +362,43 @@ class ResourceSerializer(serializers.ModelSerializer):
 
     def get_view_url(self, obj):
         request = self.context.get('request')
-        if obj.file and hasattr(obj.file, 'url'):
-            # For S3Boto3Storage, obj.file.url generates a presigned URL if the bucket is private
-            # and querystring_auth is True for the storage, or a direct URL if public.
-            # Ensure your storage settings (PrivateMediaStorage/PublicMediaStorage) are correct.
-            # If 'view' is in privacy, we provide the URL.
-            if 'view' in obj.privacy:
-                try:
-                    # If it's a private file, this generates a presigned URL.
-                    # If public, it's the direct URL.
-                    return request.build_absolute_uri(obj.file.url)
-                except Exception as e:
-                    # Log error: print(f"Error generating file URL for {obj.name}: {e}")
-                    return None
-        elif obj.resource_type == Resource.VIDEO and obj.embed_link:
+        
+        # Priority 1: If file exists and view is allowed (uploaded PDFs, images, etc.)
+        if obj.file and hasattr(obj.file, 'url') and 'view' in obj.privacy:
+            try:
+                # If it's a private file, this generates a presigned URL.
+                # If public, it's the direct URL.
+                return request.build_absolute_uri(obj.file.url)
+            except Exception as e:
+                # Log error: print(f"Error generating file URL for {obj.name}: {e}")
+                return None
+        
+        # Priority 2: For videos, use embed_link (YouTube embeds)
+        if obj.resource_type == Resource.VIDEO and obj.embed_link:
              # For videos, the embed_link can serve as the view_url if it's directly viewable
             return obj.embed_link
+        
+        # Priority 3: If resource_link exists (external PDF/document link)
+        if obj.resource_link:
+            return obj.resource_link
+        
+        # Priority 4: Content is rendered on frontend, no URL needed
+        # (Frontend will check for resource.content field)
+        
         return None
 
     def get_download_url(self, obj):
         request = self.context.get('request')
+        
+        # If resource_link exists and download is allowed, return it
+        if obj.resource_link and 'download' in obj.privacy:
+            return obj.resource_link
+        
         # Download URL is only provided if user is authenticated AND resource allows download
         if request and request.user.is_authenticated and obj.file and 'download' in obj.privacy:
             # This uses the 'download' action URL from the ResourceViewSet
             return obj.file.url
+        
         return None
 
 class StreamNameSerializer(serializers.ModelSerializer):

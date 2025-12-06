@@ -4,6 +4,7 @@ from django.db.models import Max
 from django.utils import timezone
 from datetime import datetime, timedelta
 from multiselectfield import MultiSelectField
+from ckeditor.fields import RichTextField
 import io
 import cairosvg
 from django.template.loader import render_to_string
@@ -261,7 +262,9 @@ class Resource(SEOModel):
 
     privacy = MultiSelectField(choices=RESOURCE_PRIVACY_CHOICES, default=["view"])
 
-    embed_link = models.URLField(blank=True, null=True)  # For YouTube videos
+    embed_link = models.URLField(blank=True, null=True, help_text="For YouTube videos only")
+    resource_link = models.URLField(blank=True, null=True, help_text="Direct link to external resource (PDF, document, etc.)")
+    content = RichTextField(blank=True, null=True, help_text="Rich text content for the resource (alternative to file/link)")
     subject = models.ForeignKey(
         Subject,
         on_delete=models.SET_NULL,
@@ -284,6 +287,12 @@ class Resource(SEOModel):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Ensure at least one resource source is provided
+        if not self.file and not self.embed_link and not self.resource_link and not self.content:
+            raise ValidationError("You must provide at least one of: file upload, resource link, embed link (YouTube), or content.")
 
     def save(self, *args, **kwargs):
         if not self.slug:
