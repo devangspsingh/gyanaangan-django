@@ -107,7 +107,7 @@ def google_callback(request):
     )
 
     if not user.is_active:
-        messages.error(request, "This account is inactive. Please try with another account or contact support at gyanaangan.in@gmail.com to request an appeal.")
+        messages.error(request, "This account is inactive. Please try with another account or contact support at gyanaangan.in@gmail.com.")
         return redirect("login_page")
 
     if not created and user.first_name != name:

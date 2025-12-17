@@ -367,6 +367,9 @@ class GoogleLoginView(APIView):
                 return Response(
                     {"error": "Email not provided in token"}, status=status.HTTP_400_BAD_REQUEST
                 )
+            
+            # Normalize email to ensure case-insensitive matching
+            email = email.lower()
 
             # Get or create user
             User = get_user_model()
