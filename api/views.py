@@ -375,6 +375,13 @@ class GoogleLoginView(APIView):
                 email=email, # Use email as the primary lookup
                 defaults={"username": email, "first_name": name} # Set username to email by default
             )
+
+            if not user.is_active:
+                return Response(
+                    {"detail": "This account is inactive. Please try with another account or contact support at gyanaangan.in@gmail.com to request an appeal."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             if not created: # If user exists, update name if it changed
                 if user.first_name != name:
                     user.first_name = name

@@ -106,6 +106,10 @@ def google_callback(request):
         username=email, defaults={"first_name": name, "email": email}
     )
 
+    if not user.is_active:
+        messages.error(request, "This account is inactive. Please try with another account or contact support at gyanaangan.in@gmail.com to request an appeal.")
+        return redirect("login_page")
+
     if not created and user.first_name != name:
         user.first_name = name
         user.save()
@@ -170,6 +174,10 @@ def admin_google_callback(request):
         # Try to get existing user
         user = User.objects.get(username=email)
         
+        if not user.is_active:
+            messages.error(request, "This account is inactive.")
+            return redirect("admin:login")
+
         # Check if user has admin permissions
         if not (user.is_staff or user.is_superuser):
             messages.error(request, "You don't have permission to access the admin panel.")
