@@ -6,6 +6,7 @@ import io
 import os
 from typing import BinaryIO
 from datetime import datetime
+from pathlib import Path
 
 try:
     from pypdf import PdfReader, PdfWriter, Transformation
@@ -19,7 +20,9 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch
 from reportlab.lib.colors import Color
+from reportlab.lib.utils import ImageReader
 from django.core.files.base import ContentFile
+from django.conf import settings
 
 
 class PDFWatermarker:
@@ -231,6 +234,259 @@ class PDFWatermarker:
             import traceback
             traceback.print_exc()
             return False
+
+
+class PDFLogoWatermarker:
+    """Add logo watermark to PDF files"""
+    
+    def __init__(
+        self, 
+        logo_path=None,
+        opacity=0.15,
+        logo_width=200,
+        logo_height=200,
+        text="GyanAangan",
+        font_name="Helvetica-Bold",
+        font_size=24
+    ):
+        """
+        Initialize PDF Logo Watermarker
+        
+        Args:
+            logo_path: Path to logo image file
+            opacity: Transparency (0.0 to 1.0, where 1.0 is fully opaque)
+            logo_width: Width of logo in points
+            logo_height: Height of logo in points
+            text: Text to display below logo
+            font_name: Font to use for text
+            font_size: Size of text
+        """
+        if logo_path is None:
+            # Default to GyanAangan logo in static folder
+            logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png')
+        
+        self.logo_path = logo_path
+        self.opacity = opacity
+        self.logo_width = logo_width
+        self.logo_height = logo_height
+        self.text = text
+        self.font_name = font_name
+        self.font_size = font_size
+    
+    def create_watermark_page(self, page_width, page_height):
+        """
+        Create a watermark page with logo and text using ReportLab
+        
+        Args:
+            page_width: Width of the page
+            page_height: Height of the page
+            
+        Returns:
+            BytesIO object containing the watermark PDF
+        """
+        packet = io.BytesIO()
+        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
+        
+        # Calculate center position
+        center_x = page_width / 2
+        center_y = page_height / 2
+        
+        # Draw logo in center
+        if os.path.exists(self.logo_path):
+            logo_x = center_x - (self.logo_width / 2)
+            logo_y = center_y - (self.logo_height / 2)
+            
+            # Set opacity for logo
+            can.setFillAlpha(self.opacity)
+            can.setStrokeAlpha(self.opacity)
+            
+            # Draw the logo
+            can.drawImage(
+                self.logo_path,
+                logo_x,
+                logo_y,
+                width=self.logo_width,
+                height=self.logo_height,
+                preserveAspectRatio=True,
+                mask='auto'
+            )
+        
+        # Draw text below logo
+        can.setFillColor(Color(0, 0, 0, alpha=self.opacity))
+        can.setFont(self.font_name, self.font_size)
+        
+        text_width = can.stringWidth(self.text, self.font_name, self.font_size)
+        text_x = center_x - (text_width / 2)
+        text_y = center_y - (self.logo_height / 2) - 40  # 40 points below logo
+        
+        can.drawString(text_x, text_y, self.text)
+        
+        can.save()
+        packet.seek(0)
+        return packet
+    
+    def add_watermark_to_pdf(self, input_pdf_path_or_file):
+        """
+        Add logo watermark to PDF file
+        
+        Args:
+            input_pdf_path_or_file: Path to PDF file or file-like object
+            
+        Returns:
+            BytesIO object containing watermarked PDF
+        """
+        # Open the input PDF
+        if isinstance(input_pdf_path_or_file, str):
+            pdf_reader = PdfReader(input_pdf_path_or_file)
+        else:
+            pdf_reader = PdfReader(input_pdf_path_or_file)
+        
+        pdf_writer = PdfWriter()
+        
+        # Process each page
+        for page_num, page in enumerate(pdf_reader.pages):
+            # Get page dimensions
+            page_width = float(page.mediabox.width)
+            page_height = float(page.mediabox.height)
+            
+            # Create watermark for this page size
+            watermark_pdf = self.create_watermark_page(page_width, page_height)
+            watermark_reader = PdfReader(watermark_pdf)
+            watermark_page = watermark_reader.pages[0]
+            
+            # Merge watermark with page
+            page.merge_page(watermark_page)
+            pdf_writer.add_page(page)
+        
+        # Save to BytesIO
+        output = io.BytesIO()
+        pdf_writer.write(output)
+        output.seek(0)
+        
+        return output
+    
+    def watermark_resource_file(self, resource, backup_original=True):
+        """
+        Watermark a Django Resource model's file field with logo
+        
+        Args:
+            resource: Resource model instance with file field
+            backup_original: If True, saves original file to original_file field
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not resource.file:
+            return False
+        
+        # Check if it's a PDF
+        file_name = resource.file.name
+        if not file_name.lower().endswith('.pdf'):
+            return False
+        
+        try:
+            # Backup original file if requested and not already backed up
+            if backup_original and not resource.original_file:
+                resource.file.seek(0)
+                original_content = resource.file.read()
+                original_filename = os.path.basename(file_name)
+                
+                # Save to original_file field
+                resource.original_file.save(
+                    original_filename,
+                    ContentFile(original_content),
+                    save=False
+                )
+                print(f"✅ Backed up original file: {original_filename}")
+            
+            # Get the file content for watermarking
+            resource.file.seek(0)
+            file_content = resource.file.read()
+            
+            # Create file-like object
+            input_file = io.BytesIO(file_content)
+            
+            # Add logo watermark
+            watermarked_pdf = self.add_watermark_to_pdf(input_file)
+            
+            # Generate new filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            original_name = os.path.basename(file_name)
+            name_without_ext = os.path.splitext(original_name)[0]
+            new_filename = f"{name_without_ext}_logo_wm_{timestamp}.pdf"
+            
+            # Save the watermarked PDF back to the resource
+            resource.file.save(
+                new_filename,
+                ContentFile(watermarked_pdf.read()),
+                save=True
+            )
+            
+            print(f"✅ Added logo watermark: {new_filename}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error adding logo watermark to {resource.name}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+
+def add_logo_watermark_to_resources(resources_queryset, request=None, backup_original=True):
+    """
+    Add logo watermark to multiple resources (admin action helper)
+    
+    Args:
+        resources_queryset: QuerySet of Resource objects
+        request: Django request object (optional, for messages)
+        backup_original: If True, backup original files before watermarking
+        
+    Returns:
+        dict: Statistics about the operation
+    """
+    watermarker = PDFLogoWatermarker(
+        opacity=0.15,  # 15% opacity for subtle branding
+        logo_width=200,
+        logo_height=200,
+        text="GyanAangan",
+        font_size=24
+    )
+    
+    stats = {
+        'total': resources_queryset.count(),
+        'processed': 0,
+        'backed_up': 0,
+        'skipped': 0,
+        'failed': 0,
+        'not_pdf': 0,
+        'no_file': 0
+    }
+    
+    for resource in resources_queryset:
+        if not resource.file:
+            stats['no_file'] += 1
+            stats['skipped'] += 1
+            continue
+        
+        file_name = resource.file.name
+        if not file_name.lower().endswith('.pdf'):
+            stats['not_pdf'] += 1
+            stats['skipped'] += 1
+            continue
+        
+        # Track if backup was created
+        had_backup_before = bool(resource.original_file)
+        
+        success = watermarker.watermark_resource_file(resource, backup_original=backup_original)
+        if success:
+            stats['processed'] += 1
+            # Check if backup was created during this operation
+            if backup_original and not had_backup_before and resource.original_file:
+                stats['backed_up'] += 1
+        else:
+            stats['failed'] += 1
+    
+    return stats
 
 
 def add_watermark_to_resources(resources_queryset, request=None, backup_original=True):

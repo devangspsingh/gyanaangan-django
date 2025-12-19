@@ -17,7 +17,7 @@ from .models import (
 )
 from .forms import CourseForm, StreamForm, SubjectForm, ResourceForm
 from django.utils.translation import gettext_lazy as _
-from .pdf_watermark import add_watermark_to_resources
+from .pdf_watermark import add_watermark_to_resources, add_logo_watermark_to_resources
 
 
 def generate_og_images(modeladmin, request, queryset):
@@ -124,6 +124,46 @@ def restore_original_files(modeladmin, request, queryset):
 
 add_pdf_watermark.short_description = _("Add GyanAangan watermark to PDF files")
 restore_original_files.short_description = _("Restore original files (remove watermark)")
+
+
+def add_logo_watermark(modeladmin, request, queryset):
+    """Add GyanAangan logo watermark to PDF resources"""
+    from django.contrib import messages
+    
+    stats = add_logo_watermark_to_resources(queryset, request)
+    
+    # Prepare detailed message
+    message_parts = []
+    
+    if stats['processed'] > 0:
+        message_parts.append(f"✅ Successfully added logo watermark to {stats['processed']} PDF(s)")
+    
+    if stats['backed_up'] > 0:
+        message_parts.append(f"💾 Backed up {stats['backed_up']} original file(s)")
+    
+    if stats['no_file'] > 0:
+        message_parts.append(f"⚠️ Skipped {stats['no_file']} resource(s) with no file")
+    
+    if stats['not_pdf'] > 0:
+        message_parts.append(f"⚠️ Skipped {stats['not_pdf']} non-PDF file(s)")
+    
+    if stats['failed'] > 0:
+        message_parts.append(f"❌ Failed to add logo watermark to {stats['failed']} file(s)")
+    
+    message = " | ".join(message_parts) if message_parts else "No resources were processed"
+    
+    # Determine message level
+    if stats['processed'] > 0 and stats['failed'] == 0:
+        level = messages.SUCCESS
+    elif stats['failed'] > 0:
+        level = messages.WARNING
+    else:
+        level = messages.INFO
+    
+    modeladmin.message_user(request, message, level=level)
+
+
+add_logo_watermark.short_description = _("Add GyanAangan logo watermark (center)")
 
 
 def make_published(modeladmin, request, queryset):
@@ -271,7 +311,8 @@ class ResourceAdmin(BaseModelAdmin):
     actions = [
         make_published,
         make_draft,
-        add_pdf_watermark,  # Add watermark action
+        # add_pdf_watermark,  # Add text watermark action
+        # add_logo_watermark,  # Add logo watermark action
         restore_original_files,  # Restore original action
     ]
     
