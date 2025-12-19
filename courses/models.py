@@ -258,7 +258,21 @@ class Resource(SEOModel):
     resource_type = models.CharField(
         max_length=20, choices=RESOURCE_TYPE_CHOICES, db_index=True
     )
-    file = models.FileField(storage=PrivateMediaStorage, upload_to="resources/",blank=True,null=True)
+    file = models.FileField(
+        storage=PrivateMediaStorage, 
+        upload_to="resources/",
+        blank=True,
+        null=True,
+        max_length=500
+    )
+    original_file = models.FileField(
+        storage=PrivateMediaStorage, 
+        upload_to="resources/originals/",
+        blank=True,
+        null=True,
+        max_length=500,
+        help_text="Backup of original file before watermarking"
+    )
 
     privacy = MultiSelectField(choices=RESOURCE_PRIVACY_CHOICES, default=["view"])
 
