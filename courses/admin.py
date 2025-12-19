@@ -316,11 +316,6 @@ class ResourceAdmin(BaseModelAdmin):
         restore_original_files,  # Restore original action
     ]
     
-    def has_backup(self, obj):
-        """Show if resource has original file backup"""
-        return bool(obj.original_file)
-    has_backup.boolean = True
-    has_backup.short_description = "Has Backup"
     
     fieldsets = (
         (None, {"fields": ("name", "slug", "resource_type", "status")}),
