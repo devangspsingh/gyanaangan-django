@@ -304,7 +304,7 @@ class SubjectAdmin(BaseModelAdmin):
 @admin.register(Resource)
 class ResourceAdmin(BaseModelAdmin):
     form = ResourceForm
-    list_display = ["name", "resource_type", "slug", "status", "has_backup", "educational_year", "created_at", "updated_at"]
+    list_display = ["name", "resource_type", "slug", "status", "educational_year", "created_at", "updated_at"]
     list_filter = ["status", "resource_type", "subject", "educational_year", "created_at", "updated_at"]
     search_fields = ["name", "resource_type", "slug"]
     ordering = ["-created_at", "-updated_at"]
