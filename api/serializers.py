@@ -685,21 +685,19 @@ class BlogPostSimpleSerializer(TaggitSerializer, serializers.ModelSerializer):
     category_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     author_name = serializers.SerializerMethodField()
     # author_username = serializers.SerializerMethodField()
-    author_profile_picture = serializers.SerializerMethodField()
-    og_image_url = serializers.SerializerMethodField()
-    featured_image_url = serializers.SerializerMethodField()
+    # author_profile_picture = serializers.SerializerMethodField()
+    # og_image_url = serializers.SerializerMethodField()
     # Make image fields optional for write operations
     featured_image = serializers.ImageField(required=False, allow_null=True)
-    og_image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = BlogPost
         fields = [
             'id', 'title', 'slug', 'author', 'author_name', 'tags',
             'category', 'category_id',
-            'featured_image', 'featured_image_url',
+            'featured_image',
             'publish_date', 'is_featured', 'sticky_post', 
-            'reading_time', 'og_image', 'og_image_url',
+            'reading_time',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['author', 'slug', 'reading_time', 'created_at', 'updated_at']

@@ -20,6 +20,7 @@ from .serializers import (
     ProfileSerializer,
     SpecialPageSerializer,  # Import SpecialPageSerializer
     BlogPostSerializer,  # Import BlogPostSerializer
+    BlogPostSimpleSerializer,  # Import BlogPostSerializer
     CategorySerializer,  # Import CategorySerializer
     BannerSerializer,  # Import BannerSerializer
     StudentProfileSerializer,  # Import StudentProfileSerializer
@@ -616,7 +617,6 @@ class GlobalSearchAPIView(APIView):
 
 class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = BlogPost.published.all()
-    serializer_class = BlogPostSerializer
     lookup_field = "slug"
     pagination_class = StandardResultsSetPagination
 
@@ -656,6 +656,11 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
         popular_posts = self.get_queryset().order_by('-view_count')[:5]
         serializer = self.get_serializer(popular_posts, many=True)
         return Response(serializer.data)
+    
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return BlogPostSerializer
+        return BlogPostSimpleSerializer
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
