@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile  # Add this import
 from urllib.parse import urlparse  # Add this import to help with filename
 from .serializers import (
     CourseSerializer,
+    ResourceSimpleSerializer,
     SubjectSerializer,
     ResourceSerializer,
     StreamSerializer,
@@ -52,9 +53,9 @@ logger = logging.getLogger(__name__)  # Initialize logger for this module
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 30
+    page_size = 9
+    # page_size_query_param = "page_size"
+    # max_page_size = 0
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
@@ -107,7 +108,7 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsVisitorAllowed]
-    serializer_class = ResourceSerializer
+    # serializer_class = ResourceSimpleSerializer
     lookup_field = "slug"
     pagination_class = StandardResultsSetPagination  # Ensure pagination is set
 
@@ -142,6 +143,12 @@ class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.order_by('-updated_at', 'name') # Default ordering
 
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return ResourceSerializer
+        return ResourceSimpleSerializer
+
 
     def get_serializer_context(self):  # Add context for serializers
         return {'request': self.request}

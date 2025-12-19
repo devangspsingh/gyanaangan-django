@@ -401,6 +401,86 @@ class ResourceSerializer(serializers.ModelSerializer):
         
         return None
 
+
+class ResourceSimpleSerializer(serializers.ModelSerializer):
+    is_saved = serializers.SerializerMethodField()
+    subject_name = serializers.CharField(source='subject.name', read_only=True, allow_null=True)
+    subject_slug = serializers.CharField(source='subject.slug', read_only=True, allow_null=True)
+    resource_type_display = serializers.CharField(source='get_resource_type_display', read_only=True)
+    updated_at = serializers.CharField(source='get_last_updated_at.status', read_only=True)
+    # view_url will now be the direct file URL or resource link
+    # view_url = serializers.SerializerMethodField() 
+    # download_url = serializers.SerializerMethodField()
+    educational_year = EducationalYearSerializer(read_only=True)
+    # og_image_url = serializers.SerializerMethodField()
+
+
+    class Meta:
+        model = Resource
+        fields = [
+            'id', 'name', 'slug', 'resource_type', 'resource_type_display',
+             'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
+            'description', 'meta_description', 'is_saved'
+
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'resource_type_display', 'is_saved', 'view_url']
+
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return SavedResource.objects.filter(
+                user=request.user, 
+                resource=obj
+            ).exists()
+        return False
+
+    # def get_og_image_url(self, obj):
+    #     if obj.og_image:
+    #         return self.context['request'].build_absolute_uri(obj.og_image.url)
+    #     return None
+
+
+    # def get_view_url(self, obj):
+    #     request = self.context.get('request')
+        
+    #     # Priority 1: If file exists and view is allowed (uploaded PDFs, images, etc.)
+    #     if obj.file and hasattr(obj.file, 'url') and 'view' in obj.privacy:
+    #         try:
+    #             # If it's a private file, this generates a presigned URL.
+    #             # If public, it's the direct URL.
+    #             return request.build_absolute_uri(obj.file.url)
+    #         except Exception as e:
+    #             # Log error: print(f"Error generating file URL for {obj.name}: {e}")
+    #             return None
+        
+    #     # Priority 2: For videos, use embed_link (YouTube embeds)
+    #     if obj.resource_type == Resource.VIDEO and obj.embed_link:
+    #          # For videos, the embed_link can serve as the view_url if it's directly viewable
+    #         return obj.embed_link
+        
+    #     # Priority 3: If resource_link exists (external PDF/document link)
+    #     if obj.resource_link:
+    #         return obj.resource_link
+        
+    #     # Priority 4: Content is rendered on frontend, no URL needed
+    #     # (Frontend will check for resource.content field)
+        
+    #     return None
+
+    # def get_download_url(self, obj):
+    #     request = self.context.get('request')
+        
+    #     # If resource_link exists and download is allowed, return it
+    #     if obj.resource_link and 'download' in obj.privacy:
+    #         return obj.resource_link
+        
+    #     # Download URL is only provided if user is authenticated AND resource allows download
+    #     if request and request.user.is_authenticated and obj.file and 'download' in obj.privacy:
+    #         # This uses the 'download' action URL from the ResourceViewSet
+    #         return obj.file.url
+        
+    #     return None
+
 class StreamNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stream
