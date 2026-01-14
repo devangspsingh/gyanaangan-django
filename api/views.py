@@ -518,10 +518,10 @@ class GlobalSearchAPIView(APIView):
                 target_course = Course.objects.get(slug=course_slug)
                 
                 # Filter Subjects: subject.stream must be in the target_course.streams
-                subjects_qs = subjects_qs.filter(stream__in=target_course.streams.all())
+                subjects_qs = subjects_qs.filter(stream__in=target_course.streams.all()).distinct()
                 
                 # Filter Resources: resource.subject.stream must be in the target_course.streams
-                resources_qs = resources_qs.filter(subject__stream__in=target_course.streams.all())
+                resources_qs = resources_qs.filter(subject__stream__in=target_course.streams.all()).distinct()
                 
             except Course.DoesNotExist:
                 # If course is invalid, return empty or ignore
@@ -530,14 +530,14 @@ class GlobalSearchAPIView(APIView):
 
         # --- STREAM FILTER ---
         if stream_slug:
-            subjects_qs = subjects_qs.filter(stream__slug=stream_slug)
-            resources_qs = resources_qs.filter(subject__stream__slug=stream_slug)
+            subjects_qs = subjects_qs.filter(stream__slug=stream_slug).distinct()
+            resources_qs = resources_qs.filter(subject__stream__slug=stream_slug).distinct()
 
         # --- YEAR FILTER ---
         if year_id:
             # Using 'years' (plural) as identified in previous error logs
-            subjects_qs = subjects_qs.filter(years__id=year_id)
-            resources_qs = resources_qs.filter(subject__years__id=year_id)
+            subjects_qs = subjects_qs.filter(years__id=year_id).distinct()
+            resources_qs = resources_qs.filter(subject__years__id=year_id).distinct()
 
         # 3. Apply Search Logic (if query exists)
         if query:
@@ -550,7 +550,7 @@ class GlobalSearchAPIView(APIView):
                     TrigramSimilarity("name", query) * 0.4,
                     TrigramSimilarity("description", query) * 0.2,
                 )
-            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity").distinct()
 
             # Subjects
             subjects_qs = subjects_qs.annotate(
@@ -559,7 +559,7 @@ class GlobalSearchAPIView(APIView):
                     TrigramSimilarity("name", query) * 0.4,
                     TrigramSimilarity("description", query) * 0.2,
                 )
-            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity").distinct()
 
             # Resources
             resources_qs = resources_qs.annotate(
@@ -568,7 +568,7 @@ class GlobalSearchAPIView(APIView):
                     TrigramSimilarity("name", query) * 0.4,
                     TrigramSimilarity("description", query) * 0.2,
                 )
-            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity").distinct()
         else:
             courses_qs = courses_qs[:5] 
             subjects_qs = subjects_qs.order_by('-updated_at')
@@ -586,13 +586,13 @@ class GlobalSearchAPIView(APIView):
                  )
             
             subj_data = SubjectSerializer(subj_instance, context=self.get_serializer_context()).data
-            subj_data["related_resources"] = ResourceSerializer(
+            subj_data["related_resources"] = ResourceSimpleSerializer(
                 related_resources_qs[:3], many=True, context=self.get_serializer_context()
             ).data
             subjects_data_with_resources.append(subj_data)
 
         course_serializer = CourseSerializer(courses_qs[:10], many=True, context=self.get_serializer_context())
-        resource_serializer = ResourceSerializer(resources_qs[:10], many=True, context=self.get_serializer_context())
+        resource_serializer = ResourceSimpleSerializer(resources_qs[:10], many=True, context=self.get_serializer_context())
 
         return Response({
             "courses": course_serializer.data,
