@@ -480,140 +480,125 @@ class GoogleLoginView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
 class GlobalSearchAPIView(APIView):
     permission_classes = [permissions.AllowAny]
-    pagination_class = StandardResultsSetPagination  # Note: APIView doesn't use this directly like ViewSets
 
-    def get_serializer_context(self):  # Add context for serializers
+    def get_serializer_context(self):
         return {'request': self.request}
 
     def get(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        if not query:
-            return Response(
+        
+        # 1. Get Filter Params
+        course_slug = request.query_params.get("course")
+        stream_slug = request.query_params.get("stream")
+        year_id = request.query_params.get("year")
+
+        if not query and not (course_slug or stream_slug or year_id):
+             return Response(
                 {"courses": [], "subjects": [], "resources": []},
                 status=status.HTTP_200_OK,
             )
 
-        search_query_obj = SearchQuery(query, config="english", search_type="websearch")
+        # Initialize base QuerySets
+        courses_qs = Course.published.all()
+        subjects_qs = Subject.published.all()
+        resources_qs = Resource.published.all()
 
-        # Courses
-        courses_qs = (
-            Course.published.annotate(
+        # 2. Apply Filters
+        
+        # --- COURSE FILTER (FIXED) ---
+        if course_slug:
+            courses_qs = courses_qs.filter(slug=course_slug)
+            
+            # Logic: Find the course object, get its ID/Streams, and filter subjects in those streams.
+            # We use 'streams' here assuming Course has a 'streams' M2M field.
+            # If your field is named differently on Course, update 'streams' below.
+            try:
+                target_course = Course.objects.get(slug=course_slug)
+                
+                # Filter Subjects: subject.stream must be in the target_course.streams
+                subjects_qs = subjects_qs.filter(stream__in=target_course.streams.all())
+                
+                # Filter Resources: resource.subject.stream must be in the target_course.streams
+                resources_qs = resources_qs.filter(subject__stream__in=target_course.streams.all())
+                
+            except Course.DoesNotExist:
+                # If course is invalid, return empty or ignore
+                subjects_qs = subjects_qs.none()
+                resources_qs = resources_qs.none()
+
+        # --- STREAM FILTER ---
+        if stream_slug:
+            subjects_qs = subjects_qs.filter(stream__slug=stream_slug)
+            resources_qs = resources_qs.filter(subject__stream__slug=stream_slug)
+
+        # --- YEAR FILTER ---
+        if year_id:
+            # Using 'years' (plural) as identified in previous error logs
+            subjects_qs = subjects_qs.filter(years__id=year_id)
+            resources_qs = resources_qs.filter(subject__years__id=year_id)
+
+        # 3. Apply Search Logic (if query exists)
+        if query:
+            search_query_obj = SearchQuery(query, config="english", search_type="websearch")
+            
+            # Courses
+            courses_qs = courses_qs.annotate(
                 similarity=Greatest(
-                    SearchRank(
-                        F("search_vector"),
-                        search_query_obj,
-                        cover_density=True,
-                        normalization=2,
-                    ),
+                    SearchRank(F("search_vector"), search_query_obj, cover_density=True, normalization=2),
                     TrigramSimilarity("name", query) * 0.4,
                     TrigramSimilarity("description", query) * 0.2,
-                    TrigramSimilarity("meta_description", query) * 0.1,
                 )
-            )
-            .filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05))
-            .order_by("-similarity")
-        )
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
 
-        # Subjects
-        subjects_qs_initial = (
-            Subject.published.annotate(
+            # Subjects
+            subjects_qs = subjects_qs.annotate(
                 similarity=Greatest(
-                    SearchRank(
-                        F("search_vector"),
-                        search_query_obj,
-                        cover_density=True,
-                        normalization=2,
-                    ),
+                    SearchRank(F("search_vector"), search_query_obj, cover_density=True, normalization=2),
                     TrigramSimilarity("name", query) * 0.4,
                     TrigramSimilarity("description", query) * 0.2,
-                    TrigramSimilarity("meta_description", query) * 0.1,
                 )
-            )
-            .filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05))
-            .order_by("-similarity")
-        )
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
 
-        top_subjects_instances = list(
-            subjects_qs_initial[:10]
-        )  # Get top 10 subject instances
-        top_subject_ids = [s.id for s in top_subjects_instances]
+            # Resources
+            resources_qs = resources_qs.annotate(
+                similarity=Greatest(
+                    SearchRank(F("search_vector"), search_query_obj, cover_density=True, normalization=2),
+                    TrigramSimilarity("name", query) * 0.4,
+                    TrigramSimilarity("description", query) * 0.2,
+                )
+            ).filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05)).order_by("-similarity")
+        else:
+            courses_qs = courses_qs[:5] 
+            subjects_qs = subjects_qs.order_by('-updated_at')
+            resources_qs = resources_qs.order_by('-updated_at')
 
-        # Fetch related resources for these top subjects
-        # We use a subquery or a separate query to get resources for these subjects
-        # and then attach them. For simplicity and given the limit, direct filtering is okay.
-
+        # 4. Serialization
+        top_subjects_instances = list(subjects_qs[:10])
+        
         subjects_data_with_resources = []
         for subj_instance in top_subjects_instances:
-            # Fetch top 3 resources for this subject, ordered by relevance or date
-            # This is a simplified approach. For better performance on many subjects,
-            # consider prefetching or a more optimized bulk query.
-            related_resources_qs = (
-                Resource.published.filter(subject=subj_instance)
-                .annotate(
-                    resource_similarity=(
-                        Greatest(  # Optional: rank resources if they also match query
-                            SearchRank(
-                                F("search_vector"),
-                                search_query_obj,
-                                cover_density=True,
-                                normalization=2,
-                            ),
-                            TrigramSimilarity("name", query) * 0.3,
-                            TrigramSimilarity("description", query) * 0.1,
-                        )
-                        if query
-                        else F("updated_at")
-                    )  # Fallback to date if no query for ranking
-                )
-                .order_by("-resource_similarity" if query else "-updated_at")[:3]
-            )
-
-            subj_data = SubjectSerializer(
-                subj_instance, context=self.get_serializer_context()  # Pass context
-            ).data
+            related_resources_qs = Resource.published.filter(subject=subj_instance)
+            if query:
+                 related_resources_qs = related_resources_qs.filter(
+                     Q(name__icontains=query) | Q(description__icontains=query)
+                 )
+            
+            subj_data = SubjectSerializer(subj_instance, context=self.get_serializer_context()).data
             subj_data["related_resources"] = ResourceSerializer(
-                related_resources_qs, many=True, context=self.get_serializer_context()  # Pass context
+                related_resources_qs[:3], many=True, context=self.get_serializer_context()
             ).data
             subjects_data_with_resources.append(subj_data)
 
-        # General Resources (not necessarily tied to the top subjects, or could be filtered out if already shown)
-        resources_qs = (
-            Resource.published.annotate(
-                similarity=Greatest(
-                    SearchRank(
-                        F("search_vector"),
-                        search_query_obj,
-                        cover_density=True,
-                        normalization=2,
-                    ),
-                    TrigramSimilarity("name", query) * 0.4,
-                    TrigramSimilarity("description", query) * 0.2,
-                    TrigramSimilarity("meta_description", query) * 0.1,
-                )
-            )
-            .filter(Q(search_vector=search_query_obj) | Q(similarity__gt=0.05))
-            .order_by("-similarity")
-        )
+        course_serializer = CourseSerializer(courses_qs[:10], many=True, context=self.get_serializer_context())
+        resource_serializer = ResourceSerializer(resources_qs[:10], many=True, context=self.get_serializer_context())
 
-        course_serializer = CourseSerializer(
-            courses_qs[:10], many=True, context=self.get_serializer_context()  # Pass context
-        )
-        # Use the subjects_data_with_resources which now includes related_resources
-        # subject_serializer = SubjectSerializer(subjects_qs[:10], many=True, context=self.get_serializer_context())
-        resource_serializer = ResourceSerializer(
-            resources_qs[:10], many=True, context=self.get_serializer_context()  # Pass context
-        )
-
-        return Response(
-            {
-                "courses": course_serializer.data,
-                "subjects": subjects_data_with_resources,  # Use augmented data
-                "resources": resource_serializer.data,
-            }
-        )
+        return Response({
+            "courses": course_serializer.data,
+            "subjects": subjects_data_with_resources,
+            "resources": resource_serializer.data,
+        })  
 
 class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = BlogPost.published.all()
