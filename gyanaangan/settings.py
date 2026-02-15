@@ -193,15 +193,17 @@ if not DEBUG:
         "disable_existing_loggers": False,
         "handlers": {
             "file": {
-                "level": "DEBUG",
-                "class": "logging.FileHandler",
+                "level": "ERROR",  # Only log errors, not debug info
+                "class": "logging.handlers.RotatingFileHandler", # Rotates files
                 "filename": "debug.log",
+                "maxBytes": 1024 * 1024 * 5,  # 5 MB max size
+                "backupCount": 5, # Keep only 5 backup files
             },
         },
         "loggers": {
             "django": {
                 "handlers": ["file"],
-                "level": "DEBUG",
+                "level": "ERROR", # Only log errors
                 "propagate": True,
             },
         },
