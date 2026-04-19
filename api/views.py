@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 from django.conf import settings
 import requests
 import os  # Add import for os.path.splitext
@@ -479,6 +480,69 @@ class GoogleLoginView(APIView):
                 {"error": "An unexpected error occurred during Google login.", "details": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class EmailPasswordLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip().lower()
+        password = request.data.get("password")
+
+        if not email or not password:
+            return Response(
+                {"error": "Both email and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        User = get_user_model()
+        user = User.objects.filter(email__iexact=email).first()
+
+        if not user:
+            return Response(
+                {"error": "Invalid email or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        authenticated_user = authenticate(request, username=user.username, password=password)
+
+        if not authenticated_user:
+            return Response(
+                {"error": "Invalid email or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not authenticated_user.is_active:
+            return Response(
+                {
+                    "detail": "This account is inactive. Please try with another account or contact support at gyanaangan.in@gmail.com to request an appeal."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        profile, _ = Profile.objects.get_or_create(user=authenticated_user)
+        refresh = RefreshToken.for_user(authenticated_user)
+
+        profile_pic_url_to_return = None
+        if profile.profile_pic and hasattr(profile.profile_pic, "url"):
+            profile_pic_url_to_return = profile.profile_pic.url
+
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": authenticated_user.id,
+                    "email": authenticated_user.email,
+                    "username": authenticated_user.username,
+                    "name": authenticated_user.first_name,
+                    "picture": profile_pic_url_to_return,
+                    "is_staff": authenticated_user.is_staff,
+                    "is_superuser": authenticated_user.is_superuser,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class GlobalSearchAPIView(APIView):
     permission_classes = [permissions.AllowAny]

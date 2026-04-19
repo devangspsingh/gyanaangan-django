@@ -9,6 +9,7 @@ from .views import (
     UserProfileViewSet,
     SavedResourceViewSet,
     GoogleLoginView,
+    EmailPasswordLoginView,
     SpecialPageListViewSet,
     SpecialPageDetailView,  # Import SpecialPageDetailView
     GlobalSearchAPIView,
@@ -51,6 +52,7 @@ urlpatterns = [
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
     path("auth/google/", GoogleLoginView.as_view(), name="google_login"),
+    path("auth/login/", EmailPasswordLoginView.as_view(), name="email_password_login"),
     # Organization and Event Management
     path("organizations/", include("organization.urls")),
     path("events/", include("event.urls")),
