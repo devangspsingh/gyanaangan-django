@@ -1,7 +1,8 @@
 import json
-import requests
 import logging
 from django.conf import settings
+from groq import Groq
+from openai import OpenAI
 from .models import LLMProviderConfig, Topic, PYQTopicMap
 
 logger = logging.getLogger(__name__)
@@ -17,36 +18,51 @@ class LLMService:
         if not config:
             raise ValueError("No active LLM Provider configured in the admin panel.")
 
-        url = ""
-        headers = {
-            "Authorization": f"Bearer {config.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        if config.provider == 'groq':
-            url = "https://api.groq.com/openai/v1/chat/completions"
-        elif config.provider == 'openrouter':
-            url = "https://openrouter.ai/api/v1/chat/completions"
-            headers["HTTP-Referer"] = getattr(settings, 'SITE_URL', 'http://localhost:8000') 
-            headers["X-Title"] = "GyanAangan"
-
-        payload = {
-            "model": config.model_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "response_format": {"type": "json_object"}, 
-            "temperature": 0.1
-        }
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        print("\n" + "="*50)
+        print(f"🤖 LLM API REQUEST to {config.provider.upper()}")
+        print(f"System Prompt: {system_prompt}")
+        print(f"User Prompt: {user_prompt[:500]}..." if len(user_prompt) > 500 else f"User Prompt: {user_prompt}")
+        print("="*50 + "\n")
         
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=15)
-            response.raise_for_status()
-            
-            data = response.json()
-            content = data['choices'][0]['message']['content']
-            
+            content = ""
+            if config.provider == 'groq':
+                client = Groq(api_key=config.api_key)
+                response = client.chat.completions.create(
+                    model=config.model_name,
+                    messages=messages,
+                    response_format={"type": "json_object"},
+                    temperature=0.1
+                )
+                content = response.choices[0].message.content
+
+            elif config.provider == 'openrouter':
+                client = OpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=config.api_key,
+                )
+                response = client.chat.completions.create(
+                    model=config.model_name,
+                    messages=messages,
+                    response_format={"type": "json_object"},
+                    temperature=0.1,
+                    extra_headers={
+                        "HTTP-Referer": getattr(settings, 'SITE_URL', 'http://localhost:8000'),
+                        "X-Title": "GyanAangan",
+                    }
+                )
+                content = response.choices[0].message.content
+
+            print("\n" + "="*50)
+            print("🟢 LLM API RESPONSE")
+            print(content)
+            print("="*50 + "\n")
+
             return json.loads(content)
         except Exception as e:
             logger.error(f"LLM API Call failed: {e}")
@@ -81,44 +97,69 @@ class LLMService:
 
     @classmethod
     def extract_pyq_topics(cls, resource, question_text):
-        """Processes PYQ questions to map them to topics."""
+        """Processes an entire PYQ paper to extract multiple questions and map them to topics."""
         if not question_text:
-            return None
+            return []
+
+        # Get existing topics
+        existing_topics = list(Topic.objects.filter(subject=resource.subject).values_list('name', flat=True))
+        topics_list_str = ", ".join(existing_topics) if existing_topics else "None"
 
         system = (
-            "You are given a previous year exam question from an academic paper. "
-            "Identify:\n1. The main topic\n2. Question type (short/long)\n3. Importance weight (1-10)\n"
-            "Return JSON strictly in this format: { \"topic\": \"Process Scheduling\", \"type\": \"short|long\", \"weight\": 9 }"
+            "You are given a document containing a Previous Year Question (PYQ) paper. "
+            "Extract EACH individual question. For each question, identify:\n"
+            "1. The main topics (can be multiple, short specific names). Mappings to existing topics are preferred if relevant:\n"
+            f"   [Existing Topics: {topics_list_str}]\n"
+            "2. Question type ('short' or 'long')\n"
+            "3. Importance weight (1-10)\n"
+            "Return JSON strictly in this format: "
+            "{ \"questions\": [{\"topics\": [\"Cloud Architecture\", \"Virtualization\"], \"type\": \"long\", \"weight\": 8, \"question_text\": \"Describe the Cloud Computing Architecture.\"}, ...] }"
         )
         
         data = cls.call_llm(system, question_text)
+        extracted = data.get("questions", [])
         
-        topic_name = data.get("topic")
-        q_type = data.get("type", "short").lower()
-        weight = int(data.get("weight", 5))
-        
-        if q_type not in ['short', 'long']:
-            q_type = 'short'
-        
-        if topic_name:
-            # We assume syllabus is processed first, so topic exists. Otherwise create it.
-            topic, _ = Topic.objects.get_or_create(
-                subject=resource.subject,
-                name=topic_name.strip()
-            )
+        mappings = []
+        for item in extracted:
+            topics_list = item.get("topics", [])
+            # Fallback if model answered with 'topic'
+            if not topics_list and "topic" in item:
+                val = item.get("topic")
+                if isinstance(val, list):
+                    topics_list = val
+                else:
+                    topics_list = [val]
+                    
+            q_type = item.get("type", "short").lower()
+            try:
+                weight = int(item.get("weight", 5))
+            except ValueError:
+                weight = 5
+            q_text = item.get("question_text", "")
             
-            mapping = PYQTopicMap.objects.create(
-                resource=resource,
-                topic=topic,
-                question_text=question_text,
-                marks_type=q_type,
-                weight=weight
-            )
+            if q_type not in ['short', 'long']:
+                q_type = 'short'
             
-            # Recalculate properties for Priority Logic dynamically
-            topic.pyq_frequency += 1
-            topic.marks_weight += weight
-            topic.save()
-            
-            return mapping
-        return None
+            for topic_name in topics_list:
+                if topic_name:
+                    topic, _ = Topic.objects.get_or_create(
+                        subject=resource.subject,
+                        name=topic_name.strip()
+                    )
+                    
+                    mapping = PYQTopicMap.objects.create(
+                        resource=resource,
+                        topic=topic,
+                        question_text=q_text,
+                        marks_type=q_type,
+                        weight=weight
+                    )
+                    
+                    # Recalculate properties dynamically
+                    topic.pyq_frequency += 1
+                    topic.marks_weight += weight
+                    topic.save()
+                    
+                    mappings.append(mapping)
+                
+        return mappings

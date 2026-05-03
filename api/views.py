@@ -15,6 +15,7 @@ from .serializers import (
     CourseSerializer,
     ResourceSimpleSerializer,
     SubjectSerializer,
+    TopicSerializer,
     ResourceSerializer,
     StreamSerializer,
     NotificationSerializer,
@@ -106,6 +107,17 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_context(self):  # Add context for serializers
         return {'request': self.request}
+
+    @action(detail=True, methods=['get'])
+    def priority_topics(self, request, slug=None):
+        subject = self.get_object()
+        topics = subject.topics.all()
+        
+        # Sort topics by priority
+        topics = sorted(topics, key=lambda t: t.priority, reverse=True)
+        
+        serializer = TopicSerializer(topics, many=True)
+        return Response(serializer.data)
 
 
 class ResourceViewSet(viewsets.ReadOnlyModelViewSet):

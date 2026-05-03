@@ -63,3 +63,15 @@ class PYQTopicMap(models.Model):
     
     def __str__(self):
         return f"{self.topic.name} - {self.get_marks_type_display()} (Wt: {self.weight})"
+
+class SubjectAIProxy(Subject):
+    class Meta:
+        proxy = True
+        verbose_name = "Subject AI Extraction"
+        verbose_name_plural = "Subject AI Extractions"
+
+class ResourceAIProxy(Resource):
+    class Meta:
+        proxy = True
+        verbose_name = "PYQ AI Extraction"
+        verbose_name_plural = "PYQ AI Extractions"

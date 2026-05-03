@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import Truncator
 from blog.models import BlogPost, Category
+from topics.models import Topic
 from taggit.serializers import (TagListSerializerField,
                               TaggitSerializer)
 
@@ -803,3 +804,10 @@ class BannerSerializer(serializers.ModelSerializer):
     def get_is_currently_active(self, obj):
         """Check if banner is currently active based on time range."""
         return obj.is_currently_active()
+
+class TopicSerializer(serializers.ModelSerializer):
+    priority = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'pyq_frequency', 'marks_weight', 'priority', 'difficulty', 'estimated_time']

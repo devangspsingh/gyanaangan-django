@@ -292,6 +292,7 @@ class SubjectAdmin(BaseModelAdmin):
                     "meta_description",
                     "keywords",
                     "og_image",
+                    "syllabus_text"
                 ),
             },
         ),
