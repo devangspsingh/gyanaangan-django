@@ -157,6 +157,7 @@ class Subject(SEOModel):
     slug = models.SlugField(unique=True, blank=True)
     abbreviation = models.CharField(max_length=20, blank=True, null=True)
     common_name = models.CharField(max_length=100, blank=True, null=True)
+    syllabus_text = RichTextField(blank=True, null=True, help_text="Rich text syllabus for AI topic extraction")
     stream = models.ManyToManyField(Stream, related_name="subjects", blank=True)
     years = models.ManyToManyField(Year, related_name="subjects")
     last_resource_updated_at = models.DateTimeField(

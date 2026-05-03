@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "mathfilters",
     "tracking",
     "django_filters",
+    "topics"
 ]
 
 MIDDLEWARE = [
