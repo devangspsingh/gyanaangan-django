@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils.text import Truncator
 from blog.models import BlogPost, Category
 from topics.models import Topic
+from topics.models import PYQTopicMap
 from taggit.serializers import (TagListSerializerField,
                               TaggitSerializer)
 
@@ -496,6 +497,7 @@ class SubjectSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     meta_description = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
+    syllabus_text = serializers.CharField(read_only=True)
 
     class Meta:
         model = Subject
@@ -505,7 +507,7 @@ class SubjectSerializer(serializers.ModelSerializer):
             'stream', 
             'years',  
             'resource_count', 'last_updated_info', 'resource_types',
-            'created_at', 'updated_at', 'last_resource_updated_at', 'is_subscribed'
+            'created_at', 'updated_at', 'last_resource_updated_at', 'is_subscribed', 'syllabus_text'
         ]
 
     def get_description(self, obj):
@@ -811,3 +813,38 @@ class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = ['id', 'name', 'pyq_frequency', 'marks_weight', 'priority', 'difficulty', 'estimated_time']
+
+
+class TopicQuestionMapSerializer(serializers.ModelSerializer):
+    resource = serializers.SerializerMethodField()
+    marks_type_display = serializers.CharField(source="get_marks_type_display", read_only=True)
+
+    class Meta:
+        model = PYQTopicMap
+        fields = ["id", "question_text", "marks_type", "marks_type_display", "weight", "resource"]
+
+    def get_resource(self, obj):
+        return {
+            "id": obj.resource_id,
+            "name": obj.resource.name,
+            "slug": obj.resource.slug,
+            "resource_type": obj.resource.resource_type,
+        }
+
+
+class TopicAnalysisSerializer(serializers.ModelSerializer):
+    priority = serializers.ReadOnlyField()
+    questions = TopicQuestionMapSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Topic
+        fields = [
+            "id",
+            "name",
+            "pyq_frequency",
+            "marks_weight",
+            "priority",
+            "difficulty",
+            "estimated_time",
+            "questions",
+        ]

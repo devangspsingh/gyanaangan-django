@@ -27,6 +27,7 @@ from .serializers import (
     BannerSerializer,  # Import BannerSerializer
     StudentProfileSerializer,  # Import StudentProfileSerializer
     SubscriptionSerializer,  # Import SubscriptionSerializer
+    TopicAnalysisSerializer,
 )
 from courses.models import (
     Course,
@@ -117,6 +118,26 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
         topics = sorted(topics, key=lambda t: t.priority, reverse=True)
         
         serializer = TopicSerializer(topics, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def pyq_analysis(self, request, slug=None):
+        subject = self.get_object()
+        topics = subject.topics.prefetch_related("questions__resource").all()
+        search_term = request.query_params.get("search", "").strip().lower()
+
+        if search_term:
+            topics = [
+                topic
+                for topic in topics
+                if search_term in topic.name.lower()
+                or any(search_term in (mapping.question_text or "").lower() for mapping in topic.questions.all())
+            ]
+        else:
+            topics = list(topics)
+
+        topics.sort(key=lambda topic: topic.priority, reverse=True)
+        serializer = TopicAnalysisSerializer(topics, many=True)
         return Response(serializer.data)
 
 

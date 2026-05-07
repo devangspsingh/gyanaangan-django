@@ -40,11 +40,28 @@ class Topic(models.Model):
     estimated_time = models.FloatField(default=1.0)
     
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def normalize_knowledge_level(knowledge_level):
+        try:
+            value = int(knowledge_level)
+        except (TypeError, ValueError):
+            value = 3
+        return max(1, min(5, value))
     
     @property
     def priority(self):
         # Priority Logic computed synchronously (no LLM needed here)
         return (self.pyq_frequency * 0.7) + (self.marks_weight * 0.3)
+
+    def get_planner_priority(self, knowledge_level=3):
+        knowledge_level = self.normalize_knowledge_level(knowledge_level)
+        return (self.pyq_frequency * 0.5) + (self.marks_weight * 0.3) + ((6 - knowledge_level) * 0.2)
+
+    def get_adjusted_study_hours(self, knowledge_level=3):
+        knowledge_level = self.normalize_knowledge_level(knowledge_level)
+        base_time = self.estimated_time or 1.0
+        return base_time * (6 - knowledge_level) / 3
         
     def __str__(self):
         return f"{self.name} - {self.subject.name}"

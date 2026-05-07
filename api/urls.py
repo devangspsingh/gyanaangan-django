@@ -21,6 +21,7 @@ from .views import (
     StudentProfileViewSet,  # Import StudentProfileViewSet
     SubscriptionViewSet,  # Import SubscriptionViewSet
 )
+from planner.views import GenerateQuestionPaperView, QuickAnswerView
 
 router = DefaultRouter()
 router.register(r"courses", CourseViewSet, basename="course")
@@ -57,4 +58,7 @@ urlpatterns = [
     path("organizations/", include("organization.urls")),
     path("events/", include("event.urls")),
     path("tracking/", include("tracking.urls")), # Analytics API
+    path("planner/", include("planner.urls")),
+    path("ai/generate-paper/", GenerateQuestionPaperView.as_view(), name="ai-generate-paper"),
+    path("ai/quick-answer/", QuickAnswerView.as_view(), name="ai-quick-answer"),
 ]
