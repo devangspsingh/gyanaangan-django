@@ -182,8 +182,26 @@ class LLMService:
 
     @classmethod
     def generate_quick_answer(cls, question: str, subject=None, topic=None) -> str:
+        from .models import PYQTopicMap
+
         subject_name = subject.name if subject else "General Academic"
         topic_name = topic.name if topic else "Not specified"
+        
+        syllabus_text = "Not available"
+        pyq_lines = []
+
+        if subject:
+            syllabus_text = subject.syllabus_text or "Not available"
+            
+            if topic:
+                pyq_mappings = PYQTopicMap.objects.filter(topic=topic).select_related('topic').order_by('-weight')[:5]
+            else:
+                pyq_mappings = PYQTopicMap.objects.filter(topic__subject=subject).select_related('topic').order_by('-weight')[:5]
+                
+            pyq_lines = [
+                f"- [{mapping.get_marks_type_display()} | weight {mapping.weight}] {mapping.topic.name}: {mapping.question_text[:180]}"
+                for mapping in pyq_mappings
+            ]
 
         system_prompt = (
             "You are a concise academic assistant. "
@@ -192,8 +210,10 @@ class LLMService:
         user_prompt = (
             f"Subject: {subject_name}\n"
             f"Topic: {topic_name}\n"
+            f"Syllabus context:\n{syllabus_text}\n\n"
+            f"Relevant PYQs:\n" + ("\n".join(pyq_lines) if pyq_lines else "No PYQs available.") + "\n\n"
             f"Question: {question}\n\n"
-            "Give a crisp answer suitable for revision and writing in exams."
+            "Give a crisp answer suitable for revision and writing in exams. If the user asks if something is in the syllabus or about previous year questions, use the provided context to answer clearly."
         )
 
         answer = cls.call_text_llm(system_prompt, user_prompt)
