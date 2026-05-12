@@ -81,18 +81,15 @@ class AdminResourceViewSet(viewsets.ModelViewSet):
 
         try:
             perm = user.content_management_permission
-            years = perm.years.all()
             courses = perm.courses.all()
             subjects = perm.subjects.all()
 
-            # Filter resources where subject is in permitted subjects
-            # OR subject's course is in permitted courses
-            # OR educational_year is in permitted years
-            
+            # Subject → stream (M2M) → courses (M2M to Course)
+            # ContentManagementPermission.years is Year (academic year), NOT EducationalYear,
+            # so we don't filter by educational_year here to avoid model mismatch.
             queryset = Resource.objects.filter(
                 Q(subject__in=subjects) |
-                Q(subject__courses__in=courses) | # Assuming Subject has M2M or ForeignKey to Course
-                Q(educational_year__in=years) |
+                Q(subject__stream__courses__in=courses) |
                 Q(uploaded_by=user)
             ).distinct().order_by('-created_at')
             return queryset
@@ -188,7 +185,8 @@ class AdminSubjectViewSet(viewsets.ReadOnlyModelViewSet):
                 return perm.subjects.all()
             # If they have course permissions, show subjects of those courses
             if perm.courses.exists():
-                return Subject.objects.filter(courses__in=perm.courses.all()).distinct()
+                # Subject → stream (M2M) → courses (M2M to Course)
+                return Subject.objects.filter(stream__courses__in=perm.courses.all()).distinct()
             return Subject.objects.all() # Fallback for dropdown
         except ContentManagementPermission.DoesNotExist:
             return Subject.objects.none()
