@@ -451,9 +451,18 @@ class ContentManagementPermission(models.Model):
     years = models.ManyToManyField(Year, blank=True, related_name="managers")
     courses = models.ManyToManyField(Course, blank=True, related_name="managers")
     subjects = models.ManyToManyField(Subject, blank=True, related_name="managers")
+    restricted_management = models.BooleanField(
+        default=False,
+        help_text=(
+            "If enabled, this user can only upload new content and edit/delete "
+            "resources they personally uploaded. They cannot modify content "
+            "uploaded by other users."
+        )
+    )
 
     def __str__(self):
-        return f"Permissions for {self.user.username}"
+        mode = "Restricted" if self.restricted_management else "Full"
+        return f"{mode} Permissions for {self.user.username}"
 
 class AIPromptTemplate(models.Model):
     name = models.CharField(max_length=255, unique=True, help_text="e.g. Sessional PYQ, Semester PYQ, Standard Notes")

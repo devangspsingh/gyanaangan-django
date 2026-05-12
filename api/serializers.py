@@ -388,6 +388,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     )
     og_image_url = serializers.SerializerMethodField()
     uploaded_by_user = ResourceUploaderSerializer(source='uploaded_by', read_only=True)
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Resource
@@ -395,9 +396,9 @@ class ResourceSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'resource_type', 'resource_type_display', 'file', 'privacy',
             'embed_link', 'resource_link', 'content', 'subject','subject_slug', 'subject_name', 'educational_year', 'educational_year_id', 'created_at', 'updated_at',
             'description', 'meta_description', 'og_image_url', 'is_saved', 'status',
-            'view_url', 'download_url', 'uploaded_by_user',
+            'view_url', 'download_url', 'uploaded_by_user', 'can_edit',
         ]
-        read_only_fields = ['created_at', 'updated_at', 'resource_type_display', 'is_saved', 'view_url']
+        read_only_fields = ['created_at', 'updated_at', 'resource_type_display', 'is_saved', 'view_url', 'can_edit']
 
     def get_is_saved(self, obj):
         request = self.context.get('request')
@@ -407,6 +408,24 @@ class ResourceSerializer(serializers.ModelSerializer):
                 resource=obj
             ).exists()
         return False
+
+    def get_can_edit(self, obj):
+        """Returns True if the current request user is allowed to edit this resource."""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        user = request.user
+        if user.is_superuser:
+            return True
+        try:
+            perm = user.content_management_permission
+            if perm.restricted_management:
+                # Restricted: can only edit own uploads
+                return obj.uploaded_by == user
+            # Full content manager: can edit anything they can see
+            return True
+        except Exception:
+            return False
 
     def get_og_image_url(self, obj):
         if obj.og_image:
