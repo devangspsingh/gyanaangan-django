@@ -128,6 +128,38 @@ def restore_original_files(modeladmin, request, queryset):
 add_pdf_watermark.short_description = _("Add GyanAangan watermark to PDF files")
 restore_original_files.short_description = _("Restore original files (remove watermark)")
 
+def assign_credit_to_resources(modeladmin, request, queryset):
+    from django.shortcuts import render
+    from django.contrib.admin import helpers
+    from django.http import HttpResponseRedirect
+    from django.contrib.auth import get_user_model
+    from django.contrib import messages
+    
+    User = get_user_model()
+    
+    if 'apply' in request.POST:
+        user_id = request.POST.get('user')
+        if user_id:
+            user = User.objects.get(id=user_id)
+            updated_count = queryset.update(uploaded_by=user)
+            modeladmin.message_user(request, f"Successfully assigned {updated_count} resources to {user.username}.")
+            return HttpResponseRedirect(request.get_full_path())
+        else:
+            modeladmin.message_user(request, "No user selected.", level=messages.ERROR)
+            return HttpResponseRedirect(request.get_full_path())
+    
+    users = User.objects.filter(is_active=True).order_by('username')
+    context = dict(
+        modeladmin.admin_site.each_context(request),
+        title=_("Assign Credit (Uploaded By)"),
+        queryset=queryset,
+        users=users,
+        action_checkbox_name=helpers.ACTION_CHECKBOX_NAME,
+    )
+    return render(request, "admin/assign_credit.html", context)
+
+assign_credit_to_resources.short_description = _("Assign credit (Uploaded By) to selected resources")
+
 
 def add_logo_watermark(modeladmin, request, queryset):
     """Add GyanAangan logo watermark to PDF resources"""
@@ -309,12 +341,14 @@ class SubjectAdmin(BaseModelAdmin):
 class ResourceAdmin(BaseModelAdmin):
     form = ResourceForm
     list_display = ["name", "resource_type", "slug", "status", "educational_year", "uploaded_by", "created_at", "updated_at"]
-    list_filter = ["status", "resource_type", "subject", "educational_year", "uploaded_by", "created_at", "updated_at"]
-    search_fields = ["name", "resource_type", "slug"]
+    list_filter = ["status", "resource_type", "educational_year", "subject__stream__courses", "subject__years", "subject__stream", "subject", "created_at", "updated_at"]
+    search_fields = ["name", "resource_type", "slug", "uploaded_by__username", "uploaded_by__email"]
+    autocomplete_fields = ["uploaded_by"]
     ordering = ["-created_at", "-updated_at"]
     actions = [
         make_published,
         make_draft,
+        assign_credit_to_resources,
         # add_pdf_watermark,  # Add text watermark action
         # add_logo_watermark,  # Add logo watermark action
         restore_original_files,  # Restore original action
