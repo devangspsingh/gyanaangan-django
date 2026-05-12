@@ -377,6 +377,9 @@ class ResourceSerializer(serializers.ModelSerializer):
     view_url = serializers.SerializerMethodField() 
     download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
+    educational_year_id = serializers.PrimaryKeyRelatedField(
+        queryset=EducationalYear.objects.all(), source='educational_year', write_only=True, required=False, allow_null=True
+    )
     og_image_url = serializers.SerializerMethodField()
     uploaded_by_user = ResourceUploaderSerializer(source='uploaded_by', read_only=True)
 
@@ -384,7 +387,7 @@ class ResourceSerializer(serializers.ModelSerializer):
         model = Resource
         fields = [
             'id', 'name', 'slug', 'resource_type', 'resource_type_display', 'file', 'privacy',
-            'embed_link', 'resource_link', 'content', 'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
+            'embed_link', 'resource_link', 'content', 'subject','subject_slug', 'subject_name', 'educational_year', 'educational_year_id', 'created_at', 'updated_at',
             'description', 'meta_description', 'og_image_url', 'is_saved', 'status',
             'view_url', 'download_url', 'uploaded_by_user',
         ]
@@ -457,6 +460,9 @@ class ResourceSimpleSerializer(serializers.ModelSerializer):
     # view_url = serializers.SerializerMethodField() 
     # download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
+    educational_year_id = serializers.PrimaryKeyRelatedField(
+        queryset=EducationalYear.objects.all(), source='educational_year', write_only=True, required=False, allow_null=True
+    )
     # og_image_url = serializers.SerializerMethodField()
     uploaded_by_user = ResourceUploaderSerializer(source='uploaded_by', read_only=True)
 
@@ -464,7 +470,7 @@ class ResourceSimpleSerializer(serializers.ModelSerializer):
         model = Resource
         fields = [
             'id', 'name', 'slug', 'resource_type', 'resource_type_display',
-             'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
+             'subject','subject_slug', 'subject_name', 'educational_year', 'educational_year_id', 'created_at', 'updated_at',
             'description', 'meta_description', 'is_saved', 'uploaded_by_user'
 
         ]
