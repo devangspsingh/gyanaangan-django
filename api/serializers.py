@@ -324,6 +324,49 @@ class SpecialPageSerializer(serializers.ModelSerializer):
         
         return SubjectForSpecialPageSerializer(subjects_qs, many=True, context=self.context).data
 
+class ResourceUploaderSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    profile_pic = serializers.SerializerMethodField()
+    branch = serializers.SerializerMethodField()
+    year = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'name', 'profile_pic', 'branch', 'year']
+        
+    def get_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+        
+    def get_profile_pic(self, obj):
+        try:
+            profile = obj.profile
+            if profile.profile_pic:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(profile.profile_pic.url)
+                return profile.profile_pic.url
+            return profile.img_google_url
+        except Exception:
+            return None
+            
+    def get_branch(self, obj):
+        try:
+            student_profile = obj.student_profile
+            if student_profile.is_profile_complete and student_profile.stream:
+                return student_profile.stream.name
+        except Exception:
+            pass
+        return None
+        
+    def get_year(self, obj):
+        try:
+            student_profile = obj.student_profile
+            if student_profile.is_profile_complete and student_profile.year:
+                return student_profile.year.name
+        except Exception:
+            pass
+        return None
+
 class ResourceSerializer(serializers.ModelSerializer):
     is_saved = serializers.SerializerMethodField()
     subject_name = serializers.CharField(source='subject.name', read_only=True, allow_null=True)
@@ -335,7 +378,7 @@ class ResourceSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
     og_image_url = serializers.SerializerMethodField()
-
+    uploaded_by_user = ResourceUploaderSerializer(source='uploaded_by', read_only=True)
 
     class Meta:
         model = Resource
@@ -343,7 +386,7 @@ class ResourceSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'resource_type', 'resource_type_display', 'file', 'privacy',
             'embed_link', 'resource_link', 'content', 'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
             'description', 'meta_description', 'og_image_url', 'is_saved', 'status',
-            'view_url', 'download_url',
+            'view_url', 'download_url', 'uploaded_by_user',
         ]
         read_only_fields = ['created_at', 'updated_at', 'resource_type_display', 'is_saved', 'view_url']
 
@@ -415,14 +458,14 @@ class ResourceSimpleSerializer(serializers.ModelSerializer):
     # download_url = serializers.SerializerMethodField()
     educational_year = EducationalYearSerializer(read_only=True)
     # og_image_url = serializers.SerializerMethodField()
-
+    uploaded_by_user = ResourceUploaderSerializer(source='uploaded_by', read_only=True)
 
     class Meta:
         model = Resource
         fields = [
             'id', 'name', 'slug', 'resource_type', 'resource_type_display',
              'subject','subject_slug', 'subject_name', 'educational_year', 'created_at', 'updated_at',
-            'description', 'meta_description', 'is_saved'
+            'description', 'meta_description', 'is_saved', 'uploaded_by_user'
 
         ]
         read_only_fields = ['created_at', 'updated_at', 'resource_type_display', 'is_saved', 'view_url']

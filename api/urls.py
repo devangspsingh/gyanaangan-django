@@ -21,6 +21,17 @@ from .views import (
     StudentProfileViewSet,  # Import StudentProfileViewSet
     SubscriptionViewSet,  # Import SubscriptionViewSet
 )
+from .admin_views import (
+    AdminResourceViewSet,
+    AdminSubjectViewSet,
+    AdminCourseViewSet,
+    AdminYearViewSet,
+    AdminStreamViewSet,
+    AdminAIPromptTemplateViewSet,
+    AdminUserViewSet,
+    AdminEducationalYearViewSet,
+    AIGenerateContentView,
+)
 from planner.views import GenerateQuestionPaperView, QuickAnswerView
 
 router = DefaultRouter()
@@ -42,6 +53,16 @@ router.register(r"admin/blog/categories", CategoryManagementViewSet, basename="a
 router.register(r"student-profiles", StudentProfileViewSet, basename="student-profile")
 router.register(r"subscriptions", SubscriptionViewSet, basename="subscription")
 
+# Admin Content Endpoints
+router.register(r"admin/content/resources", AdminResourceViewSet, basename="admin-resource")
+router.register(r"admin/content/subjects", AdminSubjectViewSet, basename="admin-subject")
+router.register(r"admin/content/courses", AdminCourseViewSet, basename="admin-course")
+router.register(r"admin/content/years", AdminYearViewSet, basename="admin-year")
+router.register(r"admin/content/streams", AdminStreamViewSet, basename="admin-stream")
+router.register(r"admin/content/templates", AdminAIPromptTemplateViewSet, basename="admin-template")
+router.register(r"admin/content/users", AdminUserViewSet, basename="admin-user")
+router.register(r"admin/content/educational-years", AdminEducationalYearViewSet, basename="admin-educational-year")
+
 urlpatterns = [
     path("", include(router.urls)),
     path("search/", GlobalSearchAPIView.as_view(), name="global_search_api"),
@@ -61,4 +82,5 @@ urlpatterns = [
     path("planner/", include("planner.urls")),
     path("ai/generate-paper/", GenerateQuestionPaperView.as_view(), name="ai-generate-paper"),
     path("ai/quick-answer/", QuickAnswerView.as_view(), name="ai-quick-answer"),
+    path("ai/generate-content/", AIGenerateContentView.as_view(), name="ai-generate-content"),
 ]

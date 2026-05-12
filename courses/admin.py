@@ -14,6 +14,9 @@ from .models import (
     EducationalYear,
     Advertisement,
     Notification,
+    ContentManagementPermission,
+    AIPromptTemplate,
+    ContentManagementSettings,
 )
 from .forms import CourseForm, StreamForm, SubjectForm, ResourceForm
 from django.utils.translation import gettext_lazy as _
@@ -305,8 +308,8 @@ class SubjectAdmin(BaseModelAdmin):
 @admin.register(Resource)
 class ResourceAdmin(BaseModelAdmin):
     form = ResourceForm
-    list_display = ["name", "resource_type", "slug", "status", "educational_year", "created_at", "updated_at"]
-    list_filter = ["status", "resource_type", "subject", "educational_year", "created_at", "updated_at"]
+    list_display = ["name", "resource_type", "slug", "status", "educational_year", "uploaded_by", "created_at", "updated_at"]
+    list_filter = ["status", "resource_type", "subject", "educational_year", "uploaded_by", "created_at", "updated_at"]
     search_fields = ["name", "resource_type", "slug"]
     ordering = ["-created_at", "-updated_at"]
     actions = [
@@ -331,7 +334,7 @@ class ResourceAdmin(BaseModelAdmin):
             "Settings & Description",
             {"fields": ("privacy", "description")},
         ),
-        ("Associations", {"fields": ("subject", "educational_year")}),
+        ("Associations", {"fields": ("subject", "educational_year", "uploaded_by")}),
         (
             "SEO & Meta",
             {
@@ -395,5 +398,25 @@ class SpecialPageAdmin(BaseModelAdmin):
         ),
     )
 
+
+@admin.register(ContentManagementPermission)
+class ContentManagementPermissionAdmin(admin.ModelAdmin):
+    list_display = ('user',)
+    search_fields = ('user__username', 'user__email')
+    filter_horizontal = ('years', 'courses', 'subjects')
+
+@admin.register(AIPromptTemplate)
+class AIPromptTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'naming_convention')
+    search_fields = ('name',)
+
+@admin.register(ContentManagementSettings)
+class ContentManagementSettingsAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'default_credit_user')
+    
+    def has_add_permission(self, request):
+        if self.model.objects.count() >= 1:
+            return False
+        return super().has_add_permission(request)
 
 admin.site.register(Notification, NotificationAdmin)

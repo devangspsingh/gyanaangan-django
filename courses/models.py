@@ -12,6 +12,7 @@ from gyanaangan.settings import PrivateMediaStorage, PublicMediaStorage
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector
+from django.conf import settings
 
 class BaseModel(models.Model):
     STATUS_CHOICES = [
@@ -290,6 +291,13 @@ class Resource(SEOModel):
     educational_year = models.ForeignKey(
         EducationalYear, on_delete=models.SET_NULL, null=True, blank=True
     )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_resources",
+    )
     search_vector = SearchVectorField(null=True, blank=True)
 
     published = PublishedManager()
@@ -433,3 +441,50 @@ class SpecialPage(SEOModel):
             last_subject = related_subjects.first()
             return last_subject.get_last_updated_resource()
         return None
+
+class ContentManagementPermission(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name="content_management_permission"
+    )
+    years = models.ManyToManyField(Year, blank=True, related_name="managers")
+    courses = models.ManyToManyField(Course, blank=True, related_name="managers")
+    subjects = models.ManyToManyField(Subject, blank=True, related_name="managers")
+
+    def __str__(self):
+        return f"Permissions for {self.user.username}"
+
+class AIPromptTemplate(models.Model):
+    name = models.CharField(max_length=255, unique=True, help_text="e.g. Sessional PYQ, Semester PYQ, Standard Notes")
+    naming_convention = models.CharField(max_length=500, blank=True, help_text="e.g. [Subject] | [Year] | PYQ")
+    description_prompt = models.TextField(blank=True, help_text="Custom instructions for AI on description/keywords")
+
+    def __str__(self):
+        return self.name
+
+class ContentManagementSettings(models.Model):
+    default_credit_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="default_credit_for",
+        help_text="Default user to assign upload credits to when a superuser bulk-uploads."
+    )
+
+    class Meta:
+        verbose_name = "Content Management Setting"
+        verbose_name_plural = "Content Management Settings"
+
+    def __str__(self):
+        return "Global Content Management Settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(ContentManagementSettings, self).save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
