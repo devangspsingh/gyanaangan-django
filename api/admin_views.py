@@ -69,6 +69,28 @@ class IsContentManager(permissions.BasePermission):
             return True
         return hasattr(request.user, 'content_management_permission')
 
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+        
+        # If the user is a content manager
+        try:
+            perm = request.user.content_management_permission
+            
+            # Block deletion for everyone except superusers (as requested)
+            if request.method == 'DELETE':
+                return False
+                
+            # If restricted management is enabled, can only edit/delete own uploads
+            if perm.restricted_management:
+                if request.method in permissions.SAFE_METHODS:
+                    return True # Can view anything in their queryset
+                return obj.uploaded_by == request.user
+            
+            return True # Full content manager can edit anything in their queryset
+        except Exception:
+            return False
+
 class AdminResourceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsContentManager]
     serializer_class = ResourceSerializer
@@ -116,6 +138,14 @@ class AdminResourceViewSet(viewsets.ModelViewSet):
                     pass
         
         serializer.save(uploaded_by=uploaded_by_user)
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return response.Response(
+                {"detail": "Deletion is restricted. Please mark as draft instead."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
 class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsContentManager]
