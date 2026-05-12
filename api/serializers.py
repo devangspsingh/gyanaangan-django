@@ -14,10 +14,16 @@ from taggit.serializers import (TagListSerializerField,
 class UserSerializer(serializers.ModelSerializer):
     is_staff = serializers.BooleanField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
+    has_content_management_permission = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'is_staff', 'is_superuser')
+        fields = ('id', 'username', 'email', 'first_name', 'is_staff', 'is_superuser', 'has_content_management_permission')
+
+    def get_has_content_management_permission(self, obj):
+        if obj.is_superuser:
+            return True
+        return hasattr(obj, 'content_management_permission')
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
