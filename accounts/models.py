@@ -34,49 +34,62 @@ class Profile(models.Model):
             self.id = (last_id or 0) + 1
 
         if self.img_google_url:
-            if (not self.pk or not Profile.objects.filter(pk=self.pk, img_google_url=self.img_google_url).exists()):
-                # Download the image from the new Google URL
-                response = requests.get(self.img_google_url)
-                img_temp = ContentFile(response.content)
+            needs_download = (
+                not self.pk
+                or not Profile.objects.filter(pk=self.pk, img_google_url=self.img_google_url).exists()
+                or not self.profile_pic
+                or getattr(self.profile_pic, 'name', '') in ('', 'default.jpg')
+            )
+            if needs_download:
+                try:
+                    # Download the image from the Google URL
+                    google_url = self.img_google_url.strip()
+                    response = requests.get(google_url, timeout=10)
+                    if response.status_code == 200:
+                        img_temp = ContentFile(response.content)
 
-                # Save the image temporarily
-                temp_image = BytesIO(img_temp.read())
-                temp_image.seek(0)
-                image = Image.open(temp_image)
+                        # Save the image temporarily
+                        temp_image = BytesIO(img_temp.read())
+                        temp_image.seek(0)
+                        image = Image.open(temp_image)
 
-                # Handle GIF separately
-                if image.format == "GIF":
-                    self.profile_pic.save(
-                        f"{self.user.username}_profile_pic.gif",
-                        ContentFile(response.content),
-                        save=False,
-                    )
-                else:
-                    # Convert RGBA to RGB if necessary
-                    if image.mode in ('RGBA', 'LA'):
-                        background = Image.new('RGB', image.size, (255, 255, 255))
-                        background.paste(image, mask=image.split()[-1])
-                        image = background
-                    elif image.mode != 'RGB':
-                        image = image.convert('RGB')
+                        # Handle GIF separately
+                        if image.format == "GIF":
+                            self.profile_pic.save(
+                                f"{self.user.username}_profile_pic.gif",
+                                ContentFile(response.content),
+                                save=False,
+                            )
+                        else:
+                            # Convert RGBA to RGB if necessary
+                            if image.mode in ('RGBA', 'LA'):
+                                background = Image.new('RGB', image.size, (255, 255, 255))
+                                background.paste(image, mask=image.split()[-1])
+                                image = background
+                            elif image.mode != 'RGB':
+                                image = image.convert('RGB')
 
-                    # Resize if necessary
-                    if image.height > 300 or image.width > 300:
-                        output_size = (300, 300)
-                        image.thumbnail(output_size)
+                            # Resize if necessary
+                            if image.height > 300 or image.width > 300:
+                                output_size = (300, 300)
+                                image.thumbnail(output_size)
 
-                    # Save as JPEG
-                    image_io = BytesIO()
-                    image.save(image_io, format="JPEG", quality=85)
-                    self.profile_pic.save(
-                        f"{self.user.username}_profile_pic.jpg",
-                        ContentFile(image_io.getvalue()),
-                        save=False,
-                    )
+                            # Save as JPEG
+                            image_io = BytesIO()
+                            image.save(image_io, format="JPEG", quality=85)
+                            self.profile_pic.save(
+                                f"{self.user.username}_profile_pic.jpg",
+                                ContentFile(image_io.getvalue()),
+                                save=False,
+                            )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Could not download or save profile picture for {self.user.username}: {e}")
 
         super().save(*args, **kwargs)
-        def __str__(self):
-            return f"{self.user.username} Profile"
+
+    def __str__(self):
+        return f"{self.user.username} Profile"
 
 
 class Subscription(models.Model):

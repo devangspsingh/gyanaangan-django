@@ -444,41 +444,10 @@ class GoogleLoginView(APIView):
                 profile.bio = f"This is {name}'s bio."
                 profile.emoji_tag = "😊"
             
-            # Update img_google_url and attempt to download/update profile_pic
+            # Update img_google_url if changed
             if picture_url and profile.img_google_url != picture_url:
                 profile.img_google_url = picture_url
-                try:
-                    img_response = requests.get(picture_url, stream=True)
-                    if img_response.status_code == 200:
-                        # Try to get a reasonable filename
-                        parsed_url = urlparse(picture_url)
-                        img_name_base, img_ext = os.path.splitext(os.path.basename(parsed_url.path))
-                        
-                        # Google URLs might not have extensions, or might be complex.
-                        # Use content type if available, otherwise default.
-                        content_type = img_response.headers.get('content-type')
-                        if not img_ext and content_type:
-                            if 'jpeg' in content_type or 'jpg' in content_type:
-                                img_ext = '.jpg'
-                            elif 'png' in content_type:
-                                img_ext = '.png'
-                            elif 'gif' in content_type:
-                                img_ext = '.gif'
-                            else: # Fallback for unknown image types from content-type
-                                img_ext = '.jpg' 
-                        elif not img_ext: # If no extension and no content type, default
-                            img_ext = '.jpg'
 
-                        # Sanitize base name or use a generic one
-                        img_filename = f"{user.username}_google_pic{img_ext}"
-                        
-                        profile.profile_pic.save(img_filename, ContentFile(img_response.content), save=False)
-                        logger.info(f"Successfully downloaded and saved Google profile picture for {user.email} as {img_filename}")
-                    else:
-                        logger.warning(f"Failed to download Google profile picture for {user.email}. Status: {img_response.status_code}")
-                except Exception as e:
-                    logger.error(f"Error downloading or saving Google profile picture for {user.email}: {e}", exc_info=True)
-            
             profile.save()
 
 
