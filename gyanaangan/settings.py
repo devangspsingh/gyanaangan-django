@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "topics",
     "planner",
     "mcp_server",
+    "oauth2_provider",
 ]
 
 MIDDLEWARE = [
@@ -321,3 +322,14 @@ DJOSER = {
         "https://api.gyanaangan.in/login",
     ],
 }
+
+OAUTH2_PROVIDER = {
+    "SCOPES": {
+        "read": "Read GyanAangan blog posts and categories",
+        "write": "Create and update GyanAangan blog posts",
+    },
+    "DEFAULT_SCOPES": ["read", "write"],
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 86400 * 180,  # 6 Months (180 days)
+}
+
+

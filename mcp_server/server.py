@@ -81,25 +81,38 @@ async def mcp_asgi_app(scope, receive, send):
         await send_with_cors(res)
         return
 
-    # 4. Token Authentication (if configured)
-    if MCP_AUTH_TOKEN:
-        headers = dict(scope.get("headers", []))
-        auth_header = headers.get(b"authorization", b"").decode("latin-1")
-        token = ""
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:].strip()
-        elif "token=" in scope.get("query_string", b"").decode("latin-1"):
-            import urllib.parse
-            qs = urllib.parse.parse_qs(scope.get("query_string", b"").decode("latin-1"))
-            token = qs.get("token", [""])[0]
+    # 4. Token & OAuth2 Authentication
+    headers = dict(scope.get("headers", []))
+    auth_header = headers.get(b"authorization", b"").decode("latin-1")
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    elif "token=" in scope.get("query_string", b"").decode("latin-1"):
+        import urllib.parse
+        qs = urllib.parse.parse_qs(scope.get("query_string", b"").decode("latin-1"))
+        token = qs.get("token", [""])[0]
 
-        if token != MCP_AUTH_TOKEN:
-            res = JSONResponse(
-                {"error": "Unauthorized. Please provide a valid Bearer token."},
-                status_code=401
-            )
-            await send_with_cors(res)
-            return
+    is_authenticated = False
+    if MCP_AUTH_TOKEN and token == MCP_AUTH_TOKEN:
+        is_authenticated = True
+    elif token:
+        try:
+            from oauth2_provider.models import AccessToken
+            from django.utils import timezone
+            def check_oauth(tok):
+                return AccessToken.objects.filter(token=tok, expires__gt=timezone.now()).exists()
+            is_authenticated = await sync_to_async(check_oauth)(token)
+        except Exception:
+            pass
+
+    if (MCP_AUTH_TOKEN or token) and not is_authenticated:
+        res = JSONResponse(
+            {"error": "Unauthorized. Please provide a valid Bearer or OAuth token."},
+            status_code=401,
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'}
+        )
+        await send_with_cors(res)
+        return
 
     # 5. Route to MCP Streamable App
     # Ensure the inner app receives path '/mcp'
