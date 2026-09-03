@@ -327,10 +327,17 @@ OAUTH2_PROVIDER = {
     "SCOPES": {
         "read": "Read GyanAangan blog posts and categories",
         "write": "Create and update GyanAangan blog posts",
+        "offline_access": "Offline access for refresh tokens",
+        "mcp": "Access Model Context Protocol (MCP) server",
+        "openid": "OpenID Connect access",
+        "email": "Email address",
+        "profile": "Basic profile info",
+        "user": "User access",
     },
     "DEFAULT_SCOPES": ["read", "write"],
     "ACCESS_TOKEN_EXPIRE_SECONDS": 86400 * 180,  # 6 Months (180 days)
 }
+
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
