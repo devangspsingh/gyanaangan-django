@@ -19,6 +19,7 @@ urlpatterns = (
         # path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
         path("", include("courses.urls")),
         path("ckeditor/", include("ckeditor_uploader.urls")),
+        path("__reload__/", include("django_browser_reload.urls")),
         path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path(".well-known/oauth-authorization-server", oauth_authorization_server_discovery),
         path(".well-known/oauth-protected-resource", oauth_protected_resource_metadata),
