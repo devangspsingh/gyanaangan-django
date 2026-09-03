@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     "tracking",
     "django_filters",
     "topics",
-    "planner"
+    "planner",
+    "mcp_server",
 ]
 
 MIDDLEWARE = [
