@@ -27,6 +27,7 @@ urlpatterns = (
         path("o/authorize/", AutoApproveAuthorizationView.as_view(), name="authorize"),
         path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path(".well-known/oauth-authorization-server", oauth_authorization_server_discovery),
+        path(".well-known/oauth-protected-resource/mcp", oauth_protected_resource_metadata),
         path(".well-known/oauth-protected-resource", oauth_protected_resource_metadata),
     ]
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
