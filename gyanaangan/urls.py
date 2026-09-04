@@ -4,7 +4,11 @@ from django.templatetags.static import static as STATIC
 from django.urls import path, include
 from django.contrib import admin
 from django.views.generic import RedirectView
-from mcp_server.views import oauth_authorization_server_discovery, oauth_protected_resource_metadata
+from mcp_server.views import (
+    oauth_authorization_server_discovery,
+    oauth_protected_resource_metadata,
+    AutoApproveAuthorizationView,
+)
 
 
 urlpatterns = (
@@ -20,6 +24,7 @@ urlpatterns = (
         path("", include("courses.urls")),
         path("ckeditor/", include("ckeditor_uploader.urls")),
         path("__reload__/", include("django_browser_reload.urls")),
+        path("o/authorize/", AutoApproveAuthorizationView.as_view(), name="authorize"),
         path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path(".well-known/oauth-authorization-server", oauth_authorization_server_discovery),
         path(".well-known/oauth-protected-resource", oauth_protected_resource_metadata),

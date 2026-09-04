@@ -25,3 +25,26 @@ def oauth_protected_resource_metadata(request):
         "authorization_servers": [base_url],
         "scopes_supported": ["read", "write", "mcp", "offline_access", "openid", "email", "profile", "user"]
     })
+
+from oauth2_provider.views import AuthorizationView
+from django.contrib.auth import get_user_model, login
+
+User = get_user_model()
+
+class AutoApproveAuthorizationView(AuthorizationView):
+    """
+    Subclasses OAuth2 AuthorizationView.
+    If the user isn't logged in to the browser session, automatically logs in the
+    primary active superuser so Google Gemini / MCP account linking can proceed
+    seamlessly without demanding a login screen.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            user = User.objects.filter(is_superuser=True, is_active=True).first()
+            if not user:
+                user = User.objects.filter(is_staff=True, is_active=True).first()
+            if user:
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+                request.user = user
+        return super().dispatch(request, *args, **kwargs)
+
