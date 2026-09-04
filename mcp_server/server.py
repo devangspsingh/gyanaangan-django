@@ -13,8 +13,15 @@ MCP_AUTH_TOKEN = os.getenv("MCP_AUTH_TOKEN", "")
 # Initialize MCPServer instance
 mcp_server = MCPServer(
     name="gyanaangan-blog-mcp",
-    version="0.2.0",
-    instructions="Manage, scan, filter, read, update, draft, and publish GyanAangan blog posts."
+    version="0.3.0",
+    instructions=(
+        "Manage, scan, filter, read, update, draft, and publish GyanAangan blog posts. "
+        "CRITICAL FORMATTING REQUIREMENT: When generating, creating, updating, or appending blog post content, "
+        "ALWAYS provide the content strictly in clean, valid semantic HTML format "
+        "(e.g. using <p>, <h2>, <h3>, <h4>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>). "
+        "NEVER output raw unformatted markdown (#, **, -) for blog content. "
+        "Featured cover images can be added or updated via image URLs (HTTP/HTTPS) or base64 data URIs."
+    )
 )
 
 # Register all tools

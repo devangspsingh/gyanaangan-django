@@ -72,13 +72,18 @@ def register_tools(server: MCPServer):
         meta_description: Optional[str] = None,
         keywords: Optional[str] = None,
         is_featured: bool = False,
+        featured_image_url: Optional[str] = None,
         author_email: Optional[str] = None
     ) -> Dict[str, Any]:
         """Create a new blog post on GyanAangan.
 
+        IMPORTANT FORMATTING RULE FOR CONTENT:
+        The 'content' field MUST ALWAYS be provided in clean, semantic HTML format (e.g. using <p>, <h2>, <h3>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>).
+        Do NOT output raw, plain Markdown syntax (#, **, -) in 'content'. Always use valid HTML tags.
+
         Args:
             title: The title of the blog post.
-            content: The full content (supports Markdown or HTML).
+            content: The full content of the blog post. MUST ALWAYS BE VALID SEMANTIC HTML (e.g. <p>...</p>, <h2>...</h2>, <ul><li>...</li></ul>). Do NOT pass raw markdown.
             category: The category name or slug (e.g. 'Technology', 'Exams'). Auto-created if it does not exist.
             tags: List of tags for discovery (e.g. ['AKTU', 'Syllabus', 'BTech']).
             status: Initial status: 'draft' or 'published' (defaults to 'draft').
@@ -86,10 +91,11 @@ def register_tools(server: MCPServer):
             meta_description: SEO meta description (max 160 chars).
             keywords: SEO keywords (comma-separated).
             is_featured: Whether this post is featured on the homepage.
+            featured_image_url: Optional public image URL (HTTP/HTTPS) or base64 data URI for the post's featured cover image.
             author_email: Optional author email/username to assign as author. Defaults to DEFAULT_AUTHOR_EMAIL or primary superuser.
 
         Returns:
-            The created blog post details with assigned slug and URL.
+            The created blog post details with assigned slug, URL, and featured image.
         """
         try:
             return await sync_to_async(blog_operations.create_post)(
@@ -102,6 +108,7 @@ def register_tools(server: MCPServer):
                 meta_description=meta_description,
                 keywords=keywords,
                 is_featured=is_featured,
+                featured_image_url=featured_image_url,
                 author_email=author_email
             )
         except Exception as e:
@@ -118,14 +125,19 @@ def register_tools(server: MCPServer):
         excerpt: Optional[str] = None,
         meta_description: Optional[str] = None,
         keywords: Optional[str] = None,
-        is_featured: Optional[bool] = None
+        is_featured: Optional[bool] = None,
+        featured_image_url: Optional[str] = None
     ) -> Dict[str, Any]:
         """Update any fields of an existing blog post on GyanAangan.
+
+        IMPORTANT FORMATTING RULE FOR CONTENT:
+        If 'content' is provided, it MUST ALWAYS be formatted in clean, semantic HTML (<p>, <h2>, <h3>, <ul>, <li>, <code>, etc.).
+        Do NOT output raw markdown.
 
         Args:
             identifier: The blog post ID or slug to update.
             title: New title (optional).
-            content: New full content in Markdown or HTML (optional).
+            content: New full content. MUST ALWAYS BE VALID SEMANTIC HTML (e.g. <p>...</p>, <h2>...</h2>). Do NOT pass raw markdown.
             category: New category name or slug (optional).
             tags: New list of tags (optional).
             status: Change status to 'draft' or 'published' (optional).
@@ -133,6 +145,7 @@ def register_tools(server: MCPServer):
             meta_description: New SEO meta description (optional).
             keywords: New SEO keywords (optional).
             is_featured: Toggle featured status (optional).
+            featured_image_url: Optional new public image URL or base64 data URI to set as featured cover image (or 'remove' to delete).
 
         Returns:
             Updated blog post details.
@@ -148,13 +161,33 @@ def register_tools(server: MCPServer):
                 excerpt=excerpt,
                 meta_description=meta_description,
                 keywords=keywords,
-                is_featured=is_featured
+                is_featured=is_featured,
+                featured_image_url=featured_image_url
             )
             if not res:
                 return {"error": f"Blog post '{identifier}' not found."}
             return res
         except Exception as e:
             return {"error": f"Failed to update blog post: {str(e)}"}
+
+    @server.tool()
+    async def set_featured_image(identifier: str, image_url: str) -> Dict[str, Any]:
+        """Set, update, or remove the featured cover image for a blog post.
+
+        Args:
+            identifier: The blog post ID (e.g. '55') or slug.
+            image_url: Public image URL (HTTP/HTTPS) or base64 data URI (e.g. 'data:image/jpeg;base64,...'). To remove an existing featured image, pass 'remove' or 'none'.
+
+        Returns:
+            The updated blog post details including the new featured image URL.
+        """
+        try:
+            res = await sync_to_async(blog_operations.set_featured_image)(identifier, image_url)
+            if not res:
+                return {"error": f"Blog post '{identifier}' not found."}
+            return res
+        except Exception as e:
+            return {"error": f"Failed to set featured image: {str(e)}"}
 
     @server.tool()
     async def append_to_blog_post(
@@ -164,10 +197,13 @@ def register_tools(server: MCPServer):
     ) -> Dict[str, Any]:
         """Append an update, note, or new section to an existing blog post without rewriting its body.
 
+        IMPORTANT FORMATTING RULE FOR CONTENT:
+        'content_to_append' MUST ALWAYS be provided in valid HTML format (<p>...</p>, <ul>...</ul>, <blockquote>...</blockquote>).
+
         Args:
             identifier: The blog post ID or slug.
-            content_to_append: The new text, HTML, or Markdown section to add to the end of the post.
-            heading: Optional H2 heading for the new section (e.g. '2026 Update', 'Key Takeaways').
+            content_to_append: The new HTML section to add to the end of the post. MUST BE VALID HTML (e.g. <p>...</p>). Do not pass raw markdown.
+            heading: Optional H2 heading text for the new section (e.g. '2026 Update', 'Key Takeaways').
 
         Returns:
             The updated post details with newly appended content.

@@ -1,14 +1,19 @@
 import os
+import base64
+import requests
 from datetime import timedelta
 from typing import Optional, List, Dict, Any
+from urllib.parse import urlparse
 from django.utils.text import slugify
 from django.utils import timezone
 from django.db.models import Q, Count
+from django.core.files.base import ContentFile
 from blog.models import BlogPost, Category
 from django.contrib.auth.models import User
 
 DEFAULT_AUTHOR_EMAIL = os.getenv("DEFAULT_AUTHOR_EMAIL", "")
 FRONTEND_BLOG_URL = os.getenv("FRONTEND_BLOG_URL", "https://gyanaangan.in/blog")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.gyanaangan.in").rstrip("/")
 
 def get_default_author(author_email: Optional[str] = None):
     """Find the author user for blog posts."""
@@ -35,6 +40,17 @@ def serialize_post(post: BlogPost, include_content: bool = False) -> Dict[str, A
     if len(excerpt) > 220 and not include_content:
         excerpt = excerpt[:217] + "..."
 
+    featured_image_url = None
+    if post.featured_image:
+        try:
+            url = post.featured_image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                featured_image_url = url
+            else:
+                featured_image_url = f"{API_BASE_URL}{url}"
+        except Exception:
+            featured_image_url = None
+
     data = {
         "id": post.id,
         "title": post.title,
@@ -49,6 +65,7 @@ def serialize_post(post: BlogPost, include_content: bool = False) -> Dict[str, A
         "reading_time_minutes": post.reading_time,
         "view_count": getattr(post, "view_count", 0),
         "is_featured": post.is_featured,
+        "featured_image": featured_image_url,
         "excerpt": excerpt,
         "tags": list(post.tags.names()),
         "url": f"{FRONTEND_BLOG_URL}/{post.slug}" if post.slug else None,
@@ -61,6 +78,88 @@ def serialize_post(post: BlogPost, include_content: bool = False) -> Dict[str, A
         data["keywords"] = post.keywords
 
     return data
+
+def save_featured_image(post: BlogPost, image_source: str) -> Optional[str]:
+    """
+    Downloads or decodes an image and sets it as the post's featured_image.
+    Accepts:
+      - HTTP/HTTPS URL
+      - Base64 data URI (e.g. data:image/png;base64,...)
+    Returns the URL of the saved image.
+    """
+    if not image_source or not image_source.strip():
+        return None
+
+    src = image_source.strip()
+    image_bytes = None
+    ext = ".jpg"
+
+    if src.startswith("data:image/"):
+        try:
+            header, b64data = src.split(",", 1)
+            if "image/png" in header:
+                ext = ".png"
+            elif "image/webp" in header:
+                ext = ".webp"
+            elif "image/gif" in header:
+                ext = ".gif"
+            elif "image/jpeg" in header or "image/jpg" in header:
+                ext = ".jpg"
+            image_bytes = base64.b64decode(b64data)
+        except Exception as e:
+            raise ValueError(f"Invalid base64 image data: {str(e)}")
+    elif src.startswith("http://") or src.startswith("https://"):
+        try:
+            resp = requests.get(
+                src,
+                timeout=20,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            resp.raise_for_status()
+            content_type = resp.headers.get("content-type", "").lower()
+            if "image/png" in content_type:
+                ext = ".png"
+            elif "image/webp" in content_type:
+                ext = ".webp"
+            elif "image/gif" in content_type:
+                ext = ".gif"
+            elif "image/jpeg" in content_type or "image/jpg" in content_type:
+                ext = ".jpg"
+            else:
+                parsed = urlparse(src)
+                path_ext = os.path.splitext(parsed.path)[1].lower()
+                if path_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                    ext = path_ext if path_ext != ".jpeg" else ".jpg"
+
+            image_bytes = resp.content
+        except Exception as e:
+            raise ValueError(f"Failed to download image from URL '{src}': {str(e)}")
+    else:
+        raise ValueError("Invalid image source. Must be a valid HTTP/HTTPS URL or base64 data URI.")
+
+    if not image_bytes:
+        raise ValueError("Image content is empty.")
+
+    if len(image_bytes) > 15 * 1024 * 1024:
+        raise ValueError("Image exceeds maximum allowed size of 15MB.")
+
+    if post.featured_image:
+        try:
+            post.featured_image.delete(save=False)
+        except Exception:
+            pass
+
+    slug_clean = post.slug or slugify(post.title) or "post"
+    filename = f"{slug_clean}-featured-{int(timezone.now().timestamp())}{ext}"
+    post.featured_image.save(filename, ContentFile(image_bytes), save=True)
+
+    try:
+        url = post.featured_image.url
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        return f"{API_BASE_URL}{url}"
+    except Exception:
+        return None
 
 def list_posts(
     status: Optional[str] = "all",
@@ -166,6 +265,7 @@ def create_post(
     meta_description: Optional[str] = None,
     keywords: Optional[str] = None,
     is_featured: bool = False,
+    featured_image_url: Optional[str] = None,
     author_email: Optional[str] = None,
 ) -> Dict[str, Any]:
     author = get_default_author(author_email)
@@ -211,6 +311,9 @@ def create_post(
         if clean_tags:
             post.tags.set(clean_tags)
 
+    if featured_image_url:
+        save_featured_image(post, featured_image_url)
+
     post.save()
     return serialize_post(post, include_content=True)
 
@@ -224,7 +327,8 @@ def update_post(
     excerpt: Optional[str] = None,
     meta_description: Optional[str] = None,
     keywords: Optional[str] = None,
-    is_featured: Optional[bool] = None
+    is_featured: Optional[bool] = None,
+    featured_image_url: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     post = None
     if identifier.isdigit():
@@ -269,7 +373,38 @@ def update_post(
         clean_tags = [t.strip() for t in tags if t.strip()]
         post.tags.set(clean_tags)
 
+    if featured_image_url is not None:
+        clean_img = featured_image_url.strip().lower()
+        if clean_img in ["", "none", "remove", "delete", "clear"]:
+            if post.featured_image:
+                post.featured_image.delete(save=False)
+                post.featured_image = None
+        else:
+            save_featured_image(post, featured_image_url)
+
     post.save()
+    return serialize_post(post, include_content=True)
+
+def set_featured_image(identifier: str, image_url: str) -> Optional[Dict[str, Any]]:
+    """Set, replace, or clear the featured image for a specific blog post."""
+    post = None
+    if identifier.isdigit():
+        post = BlogPost.objects.filter(id=int(identifier)).first()
+    if not post:
+        post = BlogPost.objects.filter(slug=identifier).first()
+    if not post:
+        return None
+
+    clean_img = (image_url or "").strip().lower()
+    if clean_img in ["", "none", "remove", "delete", "clear"]:
+        if post.featured_image:
+            post.featured_image.delete(save=False)
+            post.featured_image = None
+            post.save()
+    else:
+        save_featured_image(post, image_url)
+        post.save()
+
     return serialize_post(post, include_content=True)
 
 def append_to_post(
