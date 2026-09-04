@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict, Any
+from pydantic import Field
 from asgiref.sync import sync_to_async
 from mcp.server.mcpserver import MCPServer
 from . import blog_operations
@@ -8,32 +9,17 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def list_blog_posts(
-        status: Optional[str] = "all",
-        category: Optional[str] = None,
-        search: Optional[str] = None,
-        time_filter: Optional[str] = None,
-        days_ago: Optional[int] = None,
-        sort_by: str = "updated_at",
-        order: str = "desc",
-        limit: int = 15,
-        offset: int = 0
+        status: Optional[str] = Field(default="all", description="Filter by post status ('all', 'published', or 'draft'). Default is 'all'."),
+        category: Optional[str] = Field(default=None, description="Optional category name or slug to filter (e.g. 'Technology', 'AI', 'AKTU-Guides', 'Trading')."),
+        search: Optional[str] = Field(default=None, description="Keyword to search across title, content, excerpt, and tags."),
+        time_filter: Optional[str] = Field(default=None, description="Quick time window filter ('today', 'yesterday', 'this_week', 'this_month', 'last_30_days', 'older')."),
+        days_ago: Optional[int] = Field(default=None, description="Number of days to look back for updated posts (e.g. 7 for posts modified in last 7 days)."),
+        sort_by: str = Field(default="updated_at", description="Sort field ('updated_at', 'publish_date', 'created_at', 'view_count', 'title'). Default is 'updated_at'."),
+        order: str = Field(default="desc", description="Sort direction ('desc' for newest first, 'asc' for oldest first). Default is 'desc'."),
+        limit: int = Field(default=15, description="Number of posts to return (1-50, default 15)."),
+        offset: int = Field(default=0, description="Starting index for pagination (default 0).")
     ) -> Dict[str, Any]:
-        """Scan, filter, and search GyanAangan blog posts by status, category, date, or keyword.
-
-        Args:
-            status: Filter by post status ('all', 'published', or 'draft'). Default is 'all'.
-            category: Optional category name or slug to filter (e.g. 'Technology', 'AI', 'AKTU-Guides', 'Trading').
-            search: Keyword to search across title, content, excerpt, and tags.
-            time_filter: Quick time window filter ('today', 'yesterday', 'this_week', 'this_month', 'last_30_days', 'older').
-            days_ago: Number of days to look back for updated posts (e.g. 7 for posts modified in last 7 days).
-            sort_by: Sort field ('updated_at', 'publish_date', 'created_at', 'view_count', 'title'). Default is 'updated_at'.
-            order: Sort direction ('desc' for newest first, 'asc' for oldest first). Default is 'desc'.
-            limit: Number of posts to return (1-50, default 15).
-            offset: Starting index for pagination (default 0).
-
-        Returns:
-            A dictionary with total_matching_posts, total_in_database, pagination offsets, and the list of post summaries.
-        """
+        """Scan, filter, and search GyanAangan blog posts by status, category, date, or keyword."""
         return await sync_to_async(blog_operations.list_posts)(
             status=status,
             category=category,
@@ -47,15 +33,10 @@ def register_tools(server: MCPServer):
         )
 
     @server.tool()
-    async def get_blog_post(identifier: str) -> Dict[str, Any]:
-        """Retrieve full details of a specific blog post including entire body content and SEO metadata.
-
-        Args:
-            identifier: The blog post ID (e.g. '55') or slug (e.g. 'aktu-btech-1st-year-syllabus-2026-27-complete-subjects-course-structure-pdf').
-
-        Returns:
-            Complete post details with full content, word count, reading time, SEO keywords, description, tags, and status.
-        """
+    async def get_blog_post(
+        identifier: str = Field(description="The blog post ID (e.g. '55') or slug (e.g. 'aktu-btech-1st-year-syllabus-2026-27').")
+    ) -> Dict[str, Any]:
+        """Retrieve full details of a specific blog post including entire body content and SEO metadata."""
         post = await sync_to_async(blog_operations.get_post_by_id_or_slug)(identifier, include_content=True)
         if not post:
             return {"error": f"Blog post '{identifier}' not found."}
@@ -63,39 +44,30 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def create_blog_post(
-        title: str,
-        content: str,
-        category: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        status: str = "draft",
-        excerpt: Optional[str] = None,
-        meta_description: Optional[str] = None,
-        keywords: Optional[str] = None,
-        is_featured: bool = False,
-        featured_image_url: Optional[str] = None,
-        author_email: Optional[str] = None
+        title: str = Field(description="The title of the blog post."),
+        content: str = Field(
+            description=(
+                "The full content of the blog post. "
+                "CRITICAL: Content MUST ALWAYS be provided in clean, semantic HTML format "
+                "(e.g. using <p>, <h2>, <h3>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>). "
+                "NEVER provide raw markdown."
+            )
+        ),
+        category: Optional[str] = Field(default=None, description="The category name or slug (e.g. 'Technology', 'Exams'). Auto-created if it does not exist."),
+        tags: Optional[List[str]] = Field(default=None, description="List of tags for discovery (e.g. ['AKTU', 'Syllabus', 'BTech'])."),
+        status: str = Field(default="draft", description="Initial status: 'draft' or 'published' (defaults to 'draft')."),
+        excerpt: Optional[str] = Field(default=None, description="Short summary (max 500 chars). Auto-extracted from content if omitted."),
+        meta_description: Optional[str] = Field(default=None, description="SEO meta description (max 160 chars)."),
+        keywords: Optional[str] = Field(default=None, description="SEO keywords (comma-separated)."),
+        is_featured: bool = Field(default=False, description="Whether this post is featured on the homepage."),
+        featured_image_url: Optional[str] = Field(default=None, description="Optional public image URL (HTTP/HTTPS) or base64 data URI to download and set as the post's featured cover image."),
+        author_email: Optional[str] = Field(default=None, description="Optional author email/username to assign as author. Defaults to DEFAULT_AUTHOR_EMAIL or primary superuser.")
     ) -> Dict[str, Any]:
         """Create a new blog post on GyanAangan.
 
         IMPORTANT FORMATTING RULE FOR CONTENT:
         The 'content' field MUST ALWAYS be provided in clean, semantic HTML format (e.g. using <p>, <h2>, <h3>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>).
         Do NOT output raw, plain Markdown syntax (#, **, -) in 'content'. Always use valid HTML tags.
-
-        Args:
-            title: The title of the blog post.
-            content: The full content of the blog post. MUST ALWAYS BE VALID SEMANTIC HTML (e.g. <p>...</p>, <h2>...</h2>, <ul><li>...</li></ul>). Do NOT pass raw markdown.
-            category: The category name or slug (e.g. 'Technology', 'Exams'). Auto-created if it does not exist.
-            tags: List of tags for discovery (e.g. ['AKTU', 'Syllabus', 'BTech']).
-            status: Initial status: 'draft' or 'published' (defaults to 'draft').
-            excerpt: Short summary (max 500 chars). Auto-extracted from content if omitted.
-            meta_description: SEO meta description (max 160 chars).
-            keywords: SEO keywords (comma-separated).
-            is_featured: Whether this post is featured on the homepage.
-            featured_image_url: Optional public image URL (HTTP/HTTPS) or base64 data URI for the post's featured cover image.
-            author_email: Optional author email/username to assign as author. Defaults to DEFAULT_AUTHOR_EMAIL or primary superuser.
-
-        Returns:
-            The created blog post details with assigned slug, URL, and featured image.
         """
         try:
             return await sync_to_async(blog_operations.create_post)(
@@ -116,39 +88,30 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def update_blog_post(
-        identifier: str,
-        title: Optional[str] = None,
-        content: Optional[str] = None,
-        category: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        status: Optional[str] = None,
-        excerpt: Optional[str] = None,
-        meta_description: Optional[str] = None,
-        keywords: Optional[str] = None,
-        is_featured: Optional[bool] = None,
-        featured_image_url: Optional[str] = None
+        identifier: str = Field(description="The blog post ID or slug to update."),
+        title: Optional[str] = Field(default=None, description="New title (optional)."),
+        content: Optional[str] = Field(
+            default=None,
+            description=(
+                "New full content for the post. "
+                "CRITICAL: Content MUST ALWAYS be formatted in clean, semantic HTML format "
+                "(<p>, <h2>, <h3>, <ul>, <li>, <code>, etc.). NEVER provide raw markdown."
+            )
+        ),
+        category: Optional[str] = Field(default=None, description="New category name or slug (optional)."),
+        tags: Optional[List[str]] = Field(default=None, description="New list of tags (optional)."),
+        status: Optional[str] = Field(default=None, description="Change status to 'draft' or 'published' (optional)."),
+        excerpt: Optional[str] = Field(default=None, description="New short excerpt (optional)."),
+        meta_description: Optional[str] = Field(default=None, description="New SEO meta description (optional)."),
+        keywords: Optional[str] = Field(default=None, description="New SEO keywords (optional)."),
+        is_featured: Optional[bool] = Field(default=None, description="Toggle featured status (optional)."),
+        featured_image_url: Optional[str] = Field(default=None, description="Optional new public image URL or base64 data URI to set as featured cover image (or 'remove' to delete).")
     ) -> Dict[str, Any]:
         """Update any fields of an existing blog post on GyanAangan.
 
         IMPORTANT FORMATTING RULE FOR CONTENT:
         If 'content' is provided, it MUST ALWAYS be formatted in clean, semantic HTML (<p>, <h2>, <h3>, <ul>, <li>, <code>, etc.).
         Do NOT output raw markdown.
-
-        Args:
-            identifier: The blog post ID or slug to update.
-            title: New title (optional).
-            content: New full content. MUST ALWAYS BE VALID SEMANTIC HTML (e.g. <p>...</p>, <h2>...</h2>). Do NOT pass raw markdown.
-            category: New category name or slug (optional).
-            tags: New list of tags (optional).
-            status: Change status to 'draft' or 'published' (optional).
-            excerpt: New short excerpt (optional).
-            meta_description: New SEO meta description (optional).
-            keywords: New SEO keywords (optional).
-            is_featured: Toggle featured status (optional).
-            featured_image_url: Optional new public image URL or base64 data URI to set as featured cover image (or 'remove' to delete).
-
-        Returns:
-            Updated blog post details.
         """
         try:
             res = await sync_to_async(blog_operations.update_post)(
@@ -171,15 +134,13 @@ def register_tools(server: MCPServer):
             return {"error": f"Failed to update blog post: {str(e)}"}
 
     @server.tool()
-    async def set_featured_image(identifier: str, image_url: str) -> Dict[str, Any]:
+    async def set_featured_image(
+        identifier: str = Field(description="The blog post ID (e.g. '55') or slug."),
+        image_url: str = Field(description="Public image URL (HTTP/HTTPS) or base64 data URI (e.g. 'data:image/jpeg;base64,...'). To remove an existing featured image, pass 'remove' or 'none'.")
+    ) -> Dict[str, Any]:
         """Set, update, or remove the featured cover image for a blog post.
 
-        Args:
-            identifier: The blog post ID (e.g. '55') or slug.
-            image_url: Public image URL (HTTP/HTTPS) or base64 data URI (e.g. 'data:image/jpeg;base64,...'). To remove an existing featured image, pass 'remove' or 'none'.
-
-        Returns:
-            The updated blog post details including the new featured image URL.
+        Accepts a public web URL or base64 data URI, downloads/decodes the image, and sets it as the post's featured cover image.
         """
         try:
             res = await sync_to_async(blog_operations.set_featured_image)(identifier, image_url)
@@ -191,22 +152,20 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def append_to_blog_post(
-        identifier: str,
-        content_to_append: str,
-        heading: Optional[str] = None
+        identifier: str = Field(description="The blog post ID or slug."),
+        content_to_append: str = Field(
+            description=(
+                "The new HTML section/content to append to the end of the post. "
+                "CRITICAL: Content MUST ALWAYS be in valid HTML format (e.g. <p>...</p>, <ul>...</ul>). "
+                "Do NOT pass raw markdown."
+            )
+        ),
+        heading: Optional[str] = Field(default=None, description="Optional H2 heading text for the new section (e.g. '2026 Update', 'Key Takeaways').")
     ) -> Dict[str, Any]:
         """Append an update, note, or new section to an existing blog post without rewriting its body.
 
         IMPORTANT FORMATTING RULE FOR CONTENT:
         'content_to_append' MUST ALWAYS be provided in valid HTML format (<p>...</p>, <ul>...</ul>, <blockquote>...</blockquote>).
-
-        Args:
-            identifier: The blog post ID or slug.
-            content_to_append: The new HTML section to add to the end of the post. MUST BE VALID HTML (e.g. <p>...</p>). Do not pass raw markdown.
-            heading: Optional H2 heading text for the new section (e.g. '2026 Update', 'Key Takeaways').
-
-        Returns:
-            The updated post details with newly appended content.
         """
         try:
             res = await sync_to_async(blog_operations.append_to_post)(
