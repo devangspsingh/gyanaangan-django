@@ -16,6 +16,10 @@ mcp_server = MCPServer(
     version="0.3.0",
     instructions=(
         "Manage, scan, filter, read, update, draft, and publish GyanAangan blog posts. "
+        "DIRECT PUBLISHING ALLOWED: You are fully authorized to publish blog posts directly to the live site. "
+        "When the user asks to publish a blog post or create a live post, set status='published' directly in create_blog_post "
+        "or call publish_blog_post. You do NOT need to save as draft first unless the user explicitly requests a draft. "
+        "Never tell the user that you cannot publish directly or that you can only create drafts. "
         "CRITICAL FORMATTING REQUIREMENT: When generating, creating, updating, or appending blog post content, "
         "ALWAYS provide the content strictly in clean, valid semantic HTML format "
         "(e.g. using <p>, <h2>, <h3>, <h4>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>). "

@@ -55,7 +55,7 @@ def register_tools(server: MCPServer):
         ),
         category: Optional[str] = Field(default=None, description="The category name or slug (e.g. 'Technology', 'Exams'). Auto-created if it does not exist."),
         tags: Optional[List[str]] = Field(default=None, description="List of tags for discovery (e.g. ['AKTU', 'Syllabus', 'BTech'])."),
-        status: str = Field(default="draft", description="Initial status: 'draft' or 'published' (defaults to 'draft')."),
+        status: str = Field(default="draft", description="Post status: 'published' (or 'publish') to publish directly live immediately, or 'draft' to save as an unpublished draft (defaults to 'draft'). Direct publishing is fully supported."),
         excerpt: Optional[str] = Field(default=None, description="Short summary (max 500 chars). Auto-extracted from content if omitted."),
         meta_description: Optional[str] = Field(default=None, description="SEO meta description (max 160 chars)."),
         keywords: Optional[str] = Field(default=None, description="SEO keywords (comma-separated)."),
@@ -63,7 +63,12 @@ def register_tools(server: MCPServer):
         featured_image_url: Optional[str] = Field(default=None, description="Optional public image URL (HTTP/HTTPS) or base64 data URI to download and set as the post's featured cover image."),
         author_email: Optional[str] = Field(default=None, description="Optional author email/username to assign as author. Defaults to DEFAULT_AUTHOR_EMAIL or primary superuser.")
     ) -> Dict[str, Any]:
-        """Create a new blog post on GyanAangan.
+        """Create a new blog post on GyanAangan. Can be saved as draft or published directly to the live site.
+
+        DIRECT PUBLISHING:
+        You can publish directly to the live site immediately by setting status='published'.
+        Direct publishing is fully authorized and supported. When the user asks to publish or create a live post,
+        set status='published' directly without saving as draft first.
 
         IMPORTANT FORMATTING RULE FOR CONTENT:
         The 'content' field MUST ALWAYS be provided in clean, semantic HTML format (e.g. using <p>, <h2>, <h3>, <ul>, <ol>, <li>, <blockquote>, <code>, <pre>, <strong>, <em>, <a>, <table>).
@@ -100,14 +105,14 @@ def register_tools(server: MCPServer):
         ),
         category: Optional[str] = Field(default=None, description="New category name or slug (optional)."),
         tags: Optional[List[str]] = Field(default=None, description="New list of tags (optional)."),
-        status: Optional[str] = Field(default=None, description="Change status to 'draft' or 'published' (optional)."),
+        status: Optional[str] = Field(default=None, description="Change status to 'published' (or 'publish') to publish live immediately, or 'draft' (optional)."),
         excerpt: Optional[str] = Field(default=None, description="New short excerpt (optional)."),
         meta_description: Optional[str] = Field(default=None, description="New SEO meta description (optional)."),
         keywords: Optional[str] = Field(default=None, description="New SEO keywords (optional)."),
         is_featured: Optional[bool] = Field(default=None, description="Toggle featured status (optional)."),
         featured_image_url: Optional[str] = Field(default=None, description="Optional new public image URL or base64 data URI to set as featured cover image (or 'remove' to delete).")
     ) -> Dict[str, Any]:
-        """Update any fields of an existing blog post on GyanAangan.
+        """Update any fields of an existing blog post on GyanAangan. Can also directly publish a post by setting status='published'.
 
         IMPORTANT FORMATTING RULE FOR CONTENT:
         If 'content' is provided, it MUST ALWAYS be formatted in clean, semantic HTML (<p>, <h2>, <h3>, <ul>, <li>, <code>, etc.).
@@ -181,7 +186,7 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def publish_blog_post(identifier: str) -> Dict[str, Any]:
-        """Instantly publish a draft blog post on GyanAangan.
+        """Instantly publish a blog post live on GyanAangan.
 
         Args:
             identifier: The blog post ID or slug to publish.

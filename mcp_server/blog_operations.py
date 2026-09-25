@@ -177,8 +177,12 @@ def list_posts(
     total_in_db = qs.count()
 
     # 1. Status Filter
-    if status and status.lower() in ["draft", "published"]:
-        qs = qs.filter(status=status.lower())
+    if status:
+        st = status.lower().strip()
+        if st in ["published", "publish", "live"]:
+            qs = qs.filter(status="published")
+        elif st in ["draft", "drafts"]:
+            qs = qs.filter(status="draft")
 
     # 2. Category Filter
     if category:
@@ -289,7 +293,8 @@ def create_post(
         slug = f"{base_slug}-{counter}"
         counter += 1
 
-    post_status = "published" if status.lower() == "published" else "draft"
+    status_lower = (status or "").lower().strip()
+    post_status = "published" if status_lower in ["published", "publish", "live"] else "draft"
     publish_date = timezone.now() if post_status == "published" else None
 
     post = BlogPost.objects.create(
@@ -352,7 +357,8 @@ def update_post(
         post.is_featured = is_featured
 
     if status is not None:
-        new_status = "published" if status.lower() == "published" else "draft"
+        status_lower = status.lower().strip()
+        new_status = "published" if status_lower in ["published", "publish", "live"] else "draft"
         if new_status == "published" and post.status != "published":
             if not post.publish_date:
                 post.publish_date = timezone.now()
