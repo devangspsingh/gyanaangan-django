@@ -113,10 +113,14 @@ async def mcp_asgi_app(scope, receive, send):
             pass
 
     if (MCP_AUTH_TOKEN or token) and not is_authenticated:
+        headers_dict = dict(scope.get("headers", []))
+        host = headers_dict.get(b"host", b"api.gyanaangan.in").decode("latin-1")
+        proto = headers_dict.get(b"x-forwarded-proto", b"https").decode("latin-1")
+        metadata_url = f"{proto}://{host}/.well-known/oauth-protected-resource"
         res = JSONResponse(
             {"error": "Unauthorized. Please provide a valid Bearer or OAuth token."},
             status_code=401,
-            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'}
+            headers={"WWW-Authenticate": f'Bearer realm="gyanaangan", error="invalid_token", resource_metadata="{metadata_url}"'}
         )
         await send_with_cors(res)
         return
