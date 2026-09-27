@@ -349,3 +349,8 @@ FRONTEND_REVALIDATE_URL = os.getenv(
 )
 REVALIDATE_SECRET_TOKEN = os.getenv("REVALIDATE_SECRET_TOKEN", "")
 
+# Cloudflare Edge Cache Purge Configuration
+CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+
+
