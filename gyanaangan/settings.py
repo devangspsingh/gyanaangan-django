@@ -342,3 +342,10 @@ OAUTH2_PROVIDER = {
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+# Frontend Next.js On-Demand ISR Revalidation Webhook
+FRONTEND_REVALIDATE_URL = os.getenv(
+    "FRONTEND_REVALIDATE_URL", ""
+)
+REVALIDATE_SECRET_TOKEN = os.getenv("REVALIDATE_SECRET_TOKEN", "")
+
