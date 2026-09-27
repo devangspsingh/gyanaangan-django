@@ -1,4 +1,5 @@
 from django.urls import path
+from django.shortcuts import redirect
 from .views import (
     home,
     subject_list,
@@ -12,33 +13,44 @@ from .views import (
     year_detail,
 )
 
+
+def frontend_redirect(request, *args, **kwargs):
+    path = request.path
+    if path != "/" and path.endswith("/"):
+        path = path.rstrip("/")
+    qs = request.META.get("QUERY_STRING", "")
+    target = f"https://gyanaangan.in{path}" + (f"?{qs}" if qs else "")
+    return redirect(target, permanent=True)
+
+
 urlpatterns = [
-    path("", home, name="home"),
-    path("search/", search, name="search"),
-    path("subjects/", subject_list, name="subject_list"),
-    path("courses/", course_list, name="course_list"),
-    path("resources/", resource_list, name="resource_list"),
-    path("subjects/<slug:subject_slug>/", subject_detail, name="subject_detail"),
+    path("", frontend_redirect, name="home"),
+    path("search/", frontend_redirect, name="search"),
+    path("subjects/", frontend_redirect, name="subject_list"),
+    path("courses/", frontend_redirect, name="course_list"),
+    path("resources/", frontend_redirect, name="resource_list"),
+    path("subjects/<slug:subject_slug>/", frontend_redirect, name="subject_detail"),
     path(
         "resources/<slug:resource_slug>",
-        resource_view,
+        frontend_redirect,
         name="resource_view",
     ),
-    path("<slug:course_slug>/", course_detail, name="course_detail"),
-    path("<slug:course_slug>/<slug:stream_slug>", stream_detail, name="stream_detail"),
+    path("<slug:course_slug>/", frontend_redirect, name="course_detail"),
+    path("<slug:course_slug>/<slug:stream_slug>", frontend_redirect, name="stream_detail"),
     path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>",
-        year_detail,
+        frontend_redirect,
         name="year_detail",
     ),
     path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>",
-        subject_detail,
+        frontend_redirect,
         name="subject_all_detail",
     ),
     path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>/<slug:resource_slug>",
-        resource_view,
+        frontend_redirect,
         name="resource_view_all_detail",
     ),
 ]
+
