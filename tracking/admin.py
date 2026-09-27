@@ -27,7 +27,7 @@ class SessionAdmin(admin.ModelAdmin):
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ('event_type', 'url', 'get_user', 'get_ip', 'timestamp')
-    list_filter = ('event_type', 'timestamp', 'session__user', 'session__visitor__ip_address')
+    list_filter = ('event_type', 'timestamp')
     search_fields = ('url', 'target_resource', 'session__user__username', 'session__visitor__ip_address', 'session__visitor__visitor_id')
     readonly_fields = ('id', 'timestamp')
 
