@@ -36,11 +36,17 @@ urlpatterns = [
         name="resource_view",
     ),
     path("<slug:course_slug>/", frontend_redirect, name="course_detail"),
+    path("<slug:course_slug>", frontend_redirect),
     path("<slug:course_slug>/<slug:stream_slug>", frontend_redirect, name="stream_detail"),
+    path("<slug:course_slug>/<slug:stream_slug>/", frontend_redirect),
     path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>",
         frontend_redirect,
         name="year_detail",
+    ),
+    path(
+        "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/",
+        frontend_redirect,
     ),
     path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>",
@@ -48,9 +54,18 @@ urlpatterns = [
         name="subject_all_detail",
     ),
     path(
+        "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>/",
+        frontend_redirect,
+    ),
+    path(
         "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>/<slug:resource_slug>",
         frontend_redirect,
         name="resource_view_all_detail",
     ),
+    path(
+        "<slug:course_slug>/<slug:stream_slug>/<slug:year_slug>/<slug:subject_slug>/<slug:resource_slug>/",
+        frontend_redirect,
+    ),
 ]
+
 
