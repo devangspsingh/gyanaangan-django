@@ -1,12 +1,13 @@
 from datetime import timedelta
 from urllib.parse import urlparse
 from django.contrib import admin, messages
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Case, When, Value, IntegerField
 from django.shortcuts import redirect
 from django.urls import path
 from django.utils import timezone
 from .models import Visitor, Session, Event, UserVisitor, BlogAnalytics, ResourceAnalytics
 from .sync_service import sync_tracking_analytics
+from .tasks import sync_analytics_task
 
 @admin.register(Visitor)
 class VisitorAdmin(admin.ModelAdmin):
@@ -55,87 +56,136 @@ class EventAdmin(admin.ModelAdmin):
 @admin.register(BlogAnalytics)
 class BlogAnalyticsAdmin(admin.ModelAdmin):
     change_list_template = "admin/tracking/bloganalytics/change_list.html"
-    list_display = ('post_title', 'formatted_views', 'views_6h', 'views_24h', 'views_7d', 'last_processed_at')
+    list_display = (
+        'post_title',
+        'published_at',
+        'views_30d',
+        'views_7d',
+        'views_24h',
+        'views_6h',
+        'formatted_views',
+        'last_processed_at',
+    )
     search_fields = ('post__title', 'post_slug')
     readonly_fields = ('post', 'post_slug', 'total_views', 'unique_visitors', 'last_processed_at', 'created_at')
-    ordering = ('-total_views',)
     actions = ['trigger_sync_action']
 
-    def changelist_view(self, request, extra_context=None):
+    def get_queryset(self, request):
         now = timezone.now()
         counts = Event.objects.filter(
             url__icontains="/blog/",
-            timestamp__gte=now - timedelta(days=7),
+            timestamp__gte=now - timedelta(days=30),
         ).values("url").annotate(
-            c_7d=Count("id"),
+            c_30d=Count("id"),
+            c_7d=Count("id", filter=Q(timestamp__gte=now - timedelta(days=7))),
             c_24h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=24))),
             c_6h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=6))),
         )
 
-        slug_6h = {}
-        slug_24h = {}
-        slug_7d = {}
+        s_6h, s_24h, s_7d, s_30d = {}, {}, {}, {}
         for item in counts:
             parts = urlparse(item["url"] or "").path.strip("/").split("/")
             if len(parts) >= 2 and parts[0] == "blog":
                 s = parts[1].split("?")[0].strip()
                 if s:
-                    slug_6h[s] = slug_6h.get(s, 0) + item["c_6h"]
-                    slug_24h[s] = slug_24h.get(s, 0) + item["c_24h"]
-                    slug_7d[s] = slug_7d.get(s, 0) + item["c_7d"]
+                    s_6h[s] = s_6h.get(s, 0) + item["c_6h"]
+                    s_24h[s] = s_24h.get(s, 0) + item["c_24h"]
+                    s_7d[s] = s_7d.get(s, 0) + item["c_7d"]
+                    s_30d[s] = s_30d.get(s, 0) + item["c_30d"]
 
-        request._blog_views_6h = slug_6h
-        request._blog_views_24h = slug_24h
-        request._blog_views_7d = slug_7d
-
-        extra_context = extra_context or {}
-        extra_context["live_stats"] = {
-            "views_6h": f"{sum(request._blog_views_6h.values()):,}",
-            "views_24h": f"{sum(request._blog_views_24h.values()):,}",
-            "views_7d": f"{sum(request._blog_views_7d.values()):,}",
+        request._blog_totals = {
+            "views_6h": sum(s_6h.values()),
+            "views_24h": sum(s_24h.values()),
+            "views_7d": sum(s_7d.values()),
+            "views_30d": sum(s_30d.values()),
         }
-        return super().changelist_view(request, extra_context=extra_context)
 
-    def get_queryset(self, request):
-        self._current_request = request
-        return super().get_queryset(request)
+        w_6h = [When(post_slug=s, then=Value(c)) for s, c in s_6h.items()]
+        w_24h = [When(post_slug=s, then=Value(c)) for s, c in s_24h.items()]
+        w_7d = [When(post_slug=s, then=Value(c)) for s, c in s_7d.items()]
+        w_30d = [When(post_slug=s, then=Value(c)) for s, c in s_30d.items()]
+
+        return self.model._default_manager.get_queryset().select_related("post").annotate(
+            v_6h=Case(*w_6h, default=Value(0), output_field=IntegerField()) if w_6h else Value(0),
+            v_24h=Case(*w_24h, default=Value(0), output_field=IntegerField()) if w_24h else Value(0),
+            v_7d=Case(*w_7d, default=Value(0), output_field=IntegerField()) if w_7d else Value(0),
+            v_30d=Case(*w_30d, default=Value(0), output_field=IntegerField()) if w_30d else Value(0),
+        )
+
+    def get_ordering(self, request):
+        if request.GET.get('o'):
+            return super().get_ordering(request)
+        return ['-v_30d', '-total_views']
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        if hasattr(response, "context_data") and response.context_data:
+            totals = getattr(request, "_blog_totals", {})
+            response.context_data["live_stats"] = {
+                "views_6h": f"{totals.get('views_6h', 0):,}",
+                "views_24h": f"{totals.get('views_24h', 0):,}",
+                "views_7d": f"{totals.get('views_7d', 0):,}",
+                "views_30d": f"{totals.get('views_30d', 0):,}",
+            }
+        return response
 
     def post_title(self, obj):
         return obj.post.title if obj.post else obj.post_slug
     post_title.short_description = "Blog Post"
+
+    def published_at(self, obj):
+        if obj.post and obj.post.publish_date:
+            return obj.post.publish_date.strftime("%Y-%m-%d")
+        return "-"
+    published_at.short_description = "Published"
+    published_at.admin_order_field = "post__publish_date"
+
+    def views_30d(self, obj):
+        val = getattr(obj, "v_30d", 0)
+        return f"{val:,}" if val else "-"
+    views_30d.short_description = "🗓️ Views (30d)"
+    views_30d.admin_order_field = "v_30d"
+
+    def views_7d(self, obj):
+        val = getattr(obj, "v_7d", 0)
+        return f"{val:,}" if val else "-"
+    views_7d.short_description = "📈 Views (7d)"
+    views_7d.admin_order_field = "v_7d"
+
+    def views_24h(self, obj):
+        val = getattr(obj, "v_24h", 0)
+        return f"{val:,}" if val else "-"
+    views_24h.short_description = "📅 Views (24h)"
+    views_24h.admin_order_field = "v_24h"
+
+    def views_6h(self, obj):
+        val = getattr(obj, "v_6h", 0)
+        return f"{val:,}" if val else "-"
+    views_6h.short_description = "⚡ Views (6h)"
+    views_6h.admin_order_field = "v_6h"
 
     def formatted_views(self, obj):
         return f"👁️ {obj.total_views:,}"
     formatted_views.short_description = "All Views"
     formatted_views.admin_order_field = "total_views"
 
-    def views_6h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_blog_views_6h", {}).get(obj.post_slug, 0)
-        return f"{val:,}" if val else "-"
-    views_6h.short_description = "⚡ Views (6h)"
-
-    def views_24h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_blog_views_24h", {}).get(obj.post_slug, 0)
-        return f"{val:,}" if val else "-"
-    views_24h.short_description = "📅 Views (24h)"
-
-    def views_7d(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_blog_views_7d", {}).get(obj.post_slug, 0)
-        return f"{val:,}" if val else "-"
-    views_7d.short_description = "📈 Views (7d)"
-
-    @admin.action(description="🔄 Run Incremental Sync (Process Unprocessed Events)")
+    @admin.action(description="🚀 Run Incremental Sync via Celery")
     def trigger_sync_action(self, request, queryset):
-        res = sync_tracking_analytics()
-        self.message_user(
-            request,
-            f"✅ Sync complete! Processed {res['processed_events']:,} events in {res['duration_seconds']}s. "
-            f"Updated {res['updated_blogs']} blog records, {res['updated_resources']} resource records.",
-            level=messages.SUCCESS,
-        )
+        try:
+            task = sync_analytics_task.delay()
+            self.message_user(
+                request,
+                f"🚀 Celery background sync task dispatched! (Task ID: {task.id})",
+                level=messages.SUCCESS,
+            )
+        except Exception as exc:
+            res = sync_tracking_analytics()
+            self.message_user(
+                request,
+                f"⚠️ Celery dispatch failed ({exc}); ran direct sync: "
+                f"Processed {res['processed_events']:,} events in {res['duration_seconds']}s.",
+                level=messages.WARNING,
+            )
 
     def get_urls(self):
         urls = super().get_urls()
@@ -145,12 +195,20 @@ class BlogAnalyticsAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def sync_now_view(self, request):
-        res = sync_tracking_analytics()
-        messages.success(
-            request,
-            f"✅ Manual Sync Complete: Processed {res['processed_events']:,} events ({res['duration_seconds']}s). "
-            f"Updated {res['updated_blogs']} blog posts, {res['updated_resources']} resources."
-        )
+        try:
+            task = sync_analytics_task.delay()
+            messages.success(
+                request,
+                f"🚀 Celery background sync task dispatched! (Task ID: {task.id}). "
+                f"Unprocessed events are syncing in the background."
+            )
+        except Exception as exc:
+            res = sync_tracking_analytics()
+            messages.warning(
+                request,
+                f"⚠️ Celery dispatch failed ({exc}); ran direct sync: "
+                f"Processed {res['processed_events']:,} events in {res['duration_seconds']}s."
+            )
         return redirect('admin:tracking_bloganalytics_changelist')
 
 
@@ -160,39 +218,38 @@ class ResourceAnalyticsAdmin(admin.ModelAdmin):
     list_display = (
         'resource_name',
         'resource_type',
-        'formatted_views',
-        'views_6h',
-        'views_24h',
+        'views_30d',
         'views_7d',
-        'formatted_downloads',
-        'downloads_6h',
-        'downloads_24h',
+        'views_24h',
+        'views_6h',
+        'formatted_views',
+        'downloads_30d',
         'downloads_7d',
+        'downloads_24h',
+        'downloads_6h',
+        'formatted_downloads',
         'formatted_engagement',
         'last_processed_at',
     )
     list_filter = ('resource_type', 'last_processed_at')
     search_fields = ('resource__name', 'resource_slug')
     readonly_fields = ('resource', 'resource_slug', 'resource_type', 'total_views', 'total_downloads', 'total_engagement', 'unique_visitors', 'last_processed_at', 'created_at')
-    ordering = ('-total_engagement', '-total_views')
     actions = ['trigger_sync_action']
 
-    def changelist_view(self, request, extra_context=None):
+    def get_queryset(self, request):
         now = timezone.now()
 
-        # 1. Resource Page Views (7d, 24h, 6h in a single conditional aggregation query)
+        # 1. Resource Page Views (30d, 7d, 24h, 6h in a single query)
         res_counts = Event.objects.filter(
             url__icontains="/resources/",
-            timestamp__gte=now - timedelta(days=7),
+            timestamp__gte=now - timedelta(days=30),
         ).values("url").annotate(
-            c_7d=Count("id"),
+            c_30d=Count("id"),
+            c_7d=Count("id", filter=Q(timestamp__gte=now - timedelta(days=7))),
             c_24h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=24))),
             c_6h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=6))),
         )
-
-        res_6h = {}
-        res_24h = {}
-        res_7d = {}
+        res_6h, res_24h, res_7d, res_30d = {}, {}, {}, {}
         for item in res_counts:
             parts = urlparse(item["url"] or "").path.strip("/").split("/")
             if len(parts) >= 2 and parts[0] == "resources":
@@ -201,113 +258,164 @@ class ResourceAnalyticsAdmin(admin.ModelAdmin):
                     res_6h[s] = res_6h.get(s, 0) + item["c_6h"]
                     res_24h[s] = res_24h.get(s, 0) + item["c_24h"]
                     res_7d[s] = res_7d.get(s, 0) + item["c_7d"]
+                    res_30d[s] = res_30d.get(s, 0) + item["c_30d"]
 
-        # 2. Resource File Downloads (7d, 24h, 6h in a single conditional aggregation query)
+        # 2. Resource File Downloads (30d, 7d, 24h, 6h in a single query)
         dl_counts = Event.objects.filter(
             event_type="download",
-            timestamp__gte=now - timedelta(days=7),
+            timestamp__gte=now - timedelta(days=30),
         ).exclude(target_resource__isnull=True).exclude(target_resource="").values("target_resource").annotate(
-            c_7d=Count("id"),
+            c_30d=Count("id"),
+            c_7d=Count("id", filter=Q(timestamp__gte=now - timedelta(days=7))),
             c_24h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=24))),
             c_6h=Count("id", filter=Q(timestamp__gte=now - timedelta(hours=6))),
         )
-
-        dl_6h = {}
-        dl_24h = {}
-        dl_7d = {}
+        dl_6h, dl_24h, dl_7d, dl_30d = {}, {}, {}, {}
         for item in dl_counts:
-            target = (item.get("target_resource") or "").split("?")[0].strip("/").split("/")[-1].strip()
-            if target:
-                dl_6h[target] = dl_6h.get(target, 0) + item["c_6h"]
-                dl_24h[target] = dl_24h.get(target, 0) + item["c_24h"]
-                dl_7d[target] = dl_7d.get(target, 0) + item["c_7d"]
+            t = (item.get("target_resource") or "").split("?")[0].strip("/").split("/")[-1].strip()
+            if t:
+                dl_6h[t] = dl_6h.get(t, 0) + item["c_6h"]
+                dl_24h[t] = dl_24h.get(t, 0) + item["c_24h"]
+                dl_7d[t] = dl_7d.get(t, 0) + item["c_7d"]
+                dl_30d[t] = dl_30d.get(t, 0) + item["c_30d"]
 
-        request._res_views_6h = res_6h
-        request._res_views_24h = res_24h
-        request._res_views_7d = res_7d
-        request._res_dl_6h = dl_6h
-        request._res_dl_24h = dl_24h
-        request._res_dl_7d = dl_7d
-
-        extra_context = extra_context or {}
-        extra_context["live_stats"] = {
-            "views_6h": f"{sum(request._res_views_6h.values()):,}",
-            "views_24h": f"{sum(request._res_views_24h.values()):,}",
-            "views_7d": f"{sum(request._res_views_7d.values()):,}",
-            "downloads_6h": f"{sum(request._res_dl_6h.values()):,}",
-            "downloads_24h": f"{sum(request._res_dl_24h.values()):,}",
-            "downloads_7d": f"{sum(request._res_dl_7d.values()):,}",
+        request._res_totals = {
+            "views_6h": sum(res_6h.values()),
+            "views_24h": sum(res_24h.values()),
+            "views_7d": sum(res_7d.values()),
+            "views_30d": sum(res_30d.values()),
+            "downloads_6h": sum(dl_6h.values()),
+            "downloads_24h": sum(dl_24h.values()),
+            "downloads_7d": sum(dl_7d.values()),
+            "downloads_30d": sum(dl_30d.values()),
         }
-        return super().changelist_view(request, extra_context=extra_context)
 
-    def get_queryset(self, request):
-        self._current_request = request
-        return super().get_queryset(request)
+        w_res_30d = [When(resource_slug=s, then=Value(c)) for s, c in res_30d.items()]
+        w_res_7d = [When(resource_slug=s, then=Value(c)) for s, c in res_7d.items()]
+        w_res_24h = [When(resource_slug=s, then=Value(c)) for s, c in res_24h.items()]
+        w_res_6h = [When(resource_slug=s, then=Value(c)) for s, c in res_6h.items()]
+
+        w_dl_30d = [When(resource_slug=s, then=Value(c)) for s, c in dl_30d.items()]
+        w_dl_7d = [When(resource_slug=s, then=Value(c)) for s, c in dl_7d.items()]
+        w_dl_24h = [When(resource_slug=s, then=Value(c)) for s, c in dl_24h.items()]
+        w_dl_6h = [When(resource_slug=s, then=Value(c)) for s, c in dl_6h.items()]
+
+        return self.model._default_manager.get_queryset().select_related("resource").annotate(
+            v_30d=Case(*w_res_30d, default=Value(0), output_field=IntegerField()) if w_res_30d else Value(0),
+            v_7d=Case(*w_res_7d, default=Value(0), output_field=IntegerField()) if w_res_7d else Value(0),
+            v_24h=Case(*w_res_24h, default=Value(0), output_field=IntegerField()) if w_res_24h else Value(0),
+            v_6h=Case(*w_res_6h, default=Value(0), output_field=IntegerField()) if w_res_6h else Value(0),
+            dl_30d=Case(*w_dl_30d, default=Value(0), output_field=IntegerField()) if w_dl_30d else Value(0),
+            dl_7d=Case(*w_dl_7d, default=Value(0), output_field=IntegerField()) if w_dl_7d else Value(0),
+            dl_24h=Case(*w_dl_24h, default=Value(0), output_field=IntegerField()) if w_dl_24h else Value(0),
+            dl_6h=Case(*w_dl_6h, default=Value(0), output_field=IntegerField()) if w_dl_6h else Value(0),
+        )
+
+    def get_ordering(self, request):
+        if request.GET.get('o'):
+            return super().get_ordering(request)
+        return ['-v_30d', '-total_engagement']
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        if hasattr(response, "context_data") and response.context_data:
+            totals = getattr(request, "_res_totals", {})
+            response.context_data["live_stats"] = {
+                "views_6h": f"{totals.get('views_6h', 0):,}",
+                "views_24h": f"{totals.get('views_24h', 0):,}",
+                "views_7d": f"{totals.get('views_7d', 0):,}",
+                "views_30d": f"{totals.get('views_30d', 0):,}",
+                "downloads_6h": f"{totals.get('downloads_6h', 0):,}",
+                "downloads_24h": f"{totals.get('downloads_24h', 0):,}",
+                "downloads_7d": f"{totals.get('downloads_7d', 0):,}",
+                "downloads_30d": f"{totals.get('downloads_30d', 0):,}",
+            }
+        return response
 
     def resource_name(self, obj):
         return obj.resource.name if obj.resource else obj.resource_slug
     resource_name.short_description = "Resource"
+
+    def views_30d(self, obj):
+        val = getattr(obj, "v_30d", 0)
+        return f"{val:,}" if val else "-"
+    views_30d.short_description = "🗓️ Views (30d)"
+    views_30d.admin_order_field = "v_30d"
+
+    def views_7d(self, obj):
+        val = getattr(obj, "v_7d", 0)
+        return f"{val:,}" if val else "-"
+    views_7d.short_description = "📈 Views (7d)"
+    views_7d.admin_order_field = "v_7d"
+
+    def views_24h(self, obj):
+        val = getattr(obj, "v_24h", 0)
+        return f"{val:,}" if val else "-"
+    views_24h.short_description = "📅 Views (24h)"
+    views_24h.admin_order_field = "v_24h"
+
+    def views_6h(self, obj):
+        val = getattr(obj, "v_6h", 0)
+        return f"{val:,}" if val else "-"
+    views_6h.short_description = "⚡ Views (6h)"
+    views_6h.admin_order_field = "v_6h"
 
     def formatted_views(self, obj):
         return f"👁️ {obj.total_views:,}"
     formatted_views.short_description = "All Views"
     formatted_views.admin_order_field = "total_views"
 
-    def views_6h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_views_6h", {}).get(obj.resource_slug, 0)
+    def downloads_30d(self, obj):
+        val = getattr(obj, "dl_30d", 0)
         return f"{val:,}" if val else "-"
-    views_6h.short_description = "⚡ Views (6h)"
+    downloads_30d.short_description = "🗓️ DL (30d)"
+    downloads_30d.admin_order_field = "dl_30d"
 
-    def views_24h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_views_24h", {}).get(obj.resource_slug, 0)
+    def downloads_7d(self, obj):
+        val = getattr(obj, "dl_7d", 0)
         return f"{val:,}" if val else "-"
-    views_24h.short_description = "📅 Views (24h)"
+    downloads_7d.short_description = "📈 DL (7d)"
+    downloads_7d.admin_order_field = "dl_7d"
 
-    def views_7d(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_views_7d", {}).get(obj.resource_slug, 0)
+    def downloads_24h(self, obj):
+        val = getattr(obj, "dl_24h", 0)
         return f"{val:,}" if val else "-"
-    views_7d.short_description = "📈 Views (7d)"
+    downloads_24h.short_description = "📅 DL (24h)"
+    downloads_24h.admin_order_field = "dl_24h"
+
+    def downloads_6h(self, obj):
+        val = getattr(obj, "dl_6h", 0)
+        return f"{val:,}" if val else "-"
+    downloads_6h.short_description = "⚡ DL (6h)"
+    downloads_6h.admin_order_field = "dl_6h"
 
     def formatted_downloads(self, obj):
         return f"📥 {obj.total_downloads:,}"
-    formatted_downloads.short_description = "All Downloads"
+    formatted_downloads.short_description = "All DL"
     formatted_downloads.admin_order_field = "total_downloads"
 
-    def downloads_6h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_dl_6h", {}).get(obj.resource_slug, 0)
-        return f"{val:,}" if val else "-"
-    downloads_6h.short_description = "⚡ DL (6h)"
-
-    def downloads_24h(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_dl_24h", {}).get(obj.resource_slug, 0)
-        return f"{val:,}" if val else "-"
-    downloads_24h.short_description = "📅 DL (24h)"
-
-    def downloads_7d(self, obj):
-        req = getattr(self, "_current_request", None)
-        val = getattr(req, "_res_dl_7d", {}).get(obj.resource_slug, 0)
-        return f"{val:,}" if val else "-"
-    downloads_7d.short_description = "📈 DL (7d)"
-
     def formatted_engagement(self, obj):
-        return f"⚡ {obj.total_engagement:,}"
+        return f"🔥 {obj.total_engagement:,}"
     formatted_engagement.short_description = "Engagement"
     formatted_engagement.admin_order_field = "total_engagement"
 
-    @admin.action(description="🔄 Run Incremental Sync (Process Unprocessed Events)")
+    @admin.action(description="🚀 Run Incremental Sync via Celery")
     def trigger_sync_action(self, request, queryset):
-        res = sync_tracking_analytics()
-        self.message_user(
-            request,
-            f"✅ Sync complete! Processed {res['processed_events']:,} events in {res['duration_seconds']}s. "
-            f"Updated {res['updated_blogs']} blog records, {res['updated_resources']} resource records.",
-            level=messages.SUCCESS,
-        )
+        try:
+            task = sync_analytics_task.delay()
+            self.message_user(
+                request,
+                f"🚀 Celery background sync task dispatched! (Task ID: {task.id})",
+                level=messages.SUCCESS,
+            )
+        except Exception as exc:
+            res = sync_tracking_analytics()
+            self.message_user(
+                request,
+                f"⚠️ Celery dispatch failed ({exc}); ran direct sync: "
+                f"Processed {res['processed_events']:,} events in {res['duration_seconds']}s.",
+                level=messages.WARNING,
+            )
 
     def get_urls(self):
         urls = super().get_urls()
@@ -317,12 +425,20 @@ class ResourceAnalyticsAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def sync_now_view(self, request):
-        res = sync_tracking_analytics()
-        messages.success(
-            request,
-            f"✅ Manual Sync Complete: Processed {res['processed_events']:,} events ({res['duration_seconds']}s). "
-            f"Updated {res['updated_blogs']} blog posts, {res['updated_resources']} resources."
-        )
+        try:
+            task = sync_analytics_task.delay()
+            messages.success(
+                request,
+                f"🚀 Celery background sync task dispatched! (Task ID: {task.id}). "
+                f"Unprocessed events are syncing in the background."
+            )
+        except Exception as exc:
+            res = sync_tracking_analytics()
+            messages.warning(
+                request,
+                f"⚠️ Celery dispatch failed ({exc}); ran direct sync: "
+                f"Processed {res['processed_events']:,} events in {res['duration_seconds']}s."
+            )
         return redirect('admin:tracking_resourceanalytics_changelist')
 
 

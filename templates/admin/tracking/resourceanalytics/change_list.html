@@ -6,9 +6,10 @@
   {% if live_stats %}
     <div style="background: rgba(49, 130, 206, 0.12); border-left: 4px solid #3182ce; padding: 10px 14px; margin: 12px 0 16px 0; border-radius: 4px; font-size: 13px; color: #2b6cb0; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
       <span><strong>⚡ Live Activity:</strong></span>
-      <span>⏱️ <strong>Last 6 Hours:</strong> {{ live_stats.views_6h }} views, {{ live_stats.downloads_6h }} downloads</span>
-      <span>📅 <strong>Last 24 Hours:</strong> {{ live_stats.views_24h }} views, {{ live_stats.downloads_24h }} downloads</span>
-      <span>📈 <strong>Last 7 Days:</strong> {{ live_stats.views_7d }} views, {{ live_stats.downloads_7d }} downloads</span>
+      <span>⏱️ <strong>Last 6 Hours:</strong> {{ live_stats.views_6h }} views, {{ live_stats.downloads_6h }} dl</span>
+      <span>📅 <strong>Last 24 Hours:</strong> {{ live_stats.views_24h }} views, {{ live_stats.downloads_24h }} dl</span>
+      <span>📈 <strong>Last 7 Days:</strong> {{ live_stats.views_7d }} views, {{ live_stats.downloads_7d }} dl</span>
+      <span>🗓️ <strong>Last 30 Days:</strong> {{ live_stats.views_30d }} views, {{ live_stats.downloads_30d }} dl</span>
     </div>
   {% endif %}
 {% endblock %}
@@ -16,7 +17,7 @@
 {% block object-tools-items %}
   <li>
     <a href="sync-now/" class="button" style="background: #2b6cb0; color: #ffffff !important; font-weight: bold; border-radius: 4px; padding: 6px 14px; margin-right: 8px; display: inline-flex; align-items: center; gap: 6px;">
-      🔄 Sync Resource Analytics Now
+      🚀 Run Celery Sync Now
     </a>
   </li>
   {{ block.super }}
