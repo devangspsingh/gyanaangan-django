@@ -74,22 +74,34 @@ class BlogPostAdmin(admin.ModelAdmin):
     @admin.display(description="Total Views", ordering="view_count")
     def real_views_badge(self, obj):
         views = obj.view_count or 0
-        return format_html(
-            '<a href="{}" style="font-weight: 700; color: #48bb78; text-decoration: none;" title="Open detailed metrics">'
-            '👁️ {:,}'
-            '</a>',
-            reverse("admin:blog_analytics_detail", args=[obj.slug]),
-            views,
-        )
+        if not obj.slug:
+            return f"👁️ {views:,}"
+        try:
+            url = reverse("admin:blog_analytics_detail", args=[obj.slug])
+            return format_html(
+                '<a href="{}" style="font-weight: 700; color: #48bb78; text-decoration: none;" title="Open detailed metrics">'
+                '👁️ {}'
+                '</a>',
+                url,
+                f"{views:,}",
+            )
+        except Exception:
+            return f"👁️ {views:,}"
 
     @admin.display(description="Metrics")
     def analytics_action(self, obj):
-        return format_html(
-            '<a class="button" style="padding: 3px 8px; font-size: 11px; background: #3182ce; color: #fff;" href="{}">'
-            '📈 Stats'
-            '</a>',
-            reverse("admin:blog_analytics_detail", args=[obj.slug]),
-        )
+        if not obj.slug:
+            return "-"
+        try:
+            url = reverse("admin:blog_analytics_detail", args=[obj.slug])
+            return format_html(
+                '<a class="button" style="padding: 3px 8px; font-size: 11px; background: #3182ce; color: #fff;" href="{}">'
+                '📈 Stats'
+                '</a>',
+                url,
+            )
+        except Exception:
+            return "-"
 
 
 @admin.register(BlogAnalytics)
