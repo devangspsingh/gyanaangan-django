@@ -136,18 +136,36 @@ def sync_tracking_analytics() -> dict:
             )
             total_resource_updates += 1
 
-    # 4. Mark processed events in bulk
-    processed_count = current_run_qs.update(is_processed=True)
+    # 4. Mark processed events in chunked batches for DB efficiency
+    from django.db import connection
+    total_marked = 0
+    with connection.cursor() as cursor:
+        while True:
+            cursor.execute("""
+                UPDATE tracking_event 
+                SET is_processed = true 
+                WHERE id IN (
+                    SELECT id FROM tracking_event 
+                    WHERE is_processed = false AND timestamp <= %s 
+                    LIMIT 50000
+                );
+            """, [max_timestamp])
+            rc = cursor.rowcount
+            total_marked += rc
+            if rc == 0:
+                break
+
     elapsed = round(time.time() - start_time, 2)
 
     logger.info(
-        f"Tracking sync finished: {processed_count} events marked processed, "
+        f"Tracking sync finished: {total_marked} events marked processed, "
         f"{total_blog_updates} blog posts, {total_resource_updates} resources in {elapsed}s"
     )
 
     return {
-        "processed_events": processed_count,
+        "processed_events": total_marked,
         "updated_blogs": total_blog_updates,
         "updated_resources": total_resource_updates,
         "duration_seconds": elapsed,
     }
+
