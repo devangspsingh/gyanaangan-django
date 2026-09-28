@@ -163,3 +163,15 @@ class SocialMediaShare(models.Model):
 
     def __str__(self):
         return f"Shared on {self.platform} for post {self.post.title}"
+
+
+class BlogAnalytics(BlogPost):
+    """
+    Proxy model providing dedicated Blog Analytics and Traffic Performance
+    dashboard directly in the Django Admin sidebar.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = "Blog Analytics & Traffic"
+        verbose_name_plural = "📊 Blog Analytics & Traffic"
+

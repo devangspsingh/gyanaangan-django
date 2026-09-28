@@ -1,0 +1,379 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ post.title }} - Blog Metrics | Gyan Aangan Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .analytics-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .post-header-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+  }
+  .post-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 10px 0;
+  }
+  .post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #a0aec0;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .kpi-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .kpi-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .kpi-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 8px;
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .chart-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-card h3 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #edf2f7;
+    margin-bottom: 16px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #cbd5e0;
+  }
+  .stat-track {
+    background: #2d3748;
+    height: 7px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .stat-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: #4299e1;
+  }
+  .timeline-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 140px;
+    padding-top: 20px;
+    margin-top: 10px;
+    border-bottom: 1px solid #4a5568;
+  }
+  .timeline-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .timeline-bar {
+    width: 100%;
+    max-width: 24px;
+    background: #48bb78;
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: height 0.3s;
+  }
+  .timeline-label {
+    font-size: 10px;
+    color: #a0aec0;
+    margin-top: 6px;
+    transform: rotate(-30deg);
+    white-space: nowrap;
+  }
+  .timeline-val {
+    font-size: 11px;
+    color: #e2e8f0;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .table-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  .logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: #cbd5e0;
+  }
+  .logs-table th {
+    background: #2d3748;
+    color: #a0aec0;
+    padding: 10px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    text-align: left;
+    border-bottom: 2px solid #4a5568;
+  }
+  .logs-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #2d3748;
+  }
+  .logs-table tr:hover td {
+    background: #242d3d;
+  }
+  .ip-tag {
+    font-family: monospace;
+    background: #2d3748;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #e2e8f0;
+  }
+  .ua-snippet {
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #718096;
+    font-size: 11px;
+    font-family: monospace;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label='blog' %}">Blog</a>
+  &rsaquo; <a href="{% url 'admin:blog_analytics' %}">📊 Blog Analytics</a>
+  &rsaquo; {{ post.title|truncatechars:40 }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+
+  <!-- Header Card -->
+  <div class="post-header-card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
+      <div>
+        <h1 class="post-title">{{ post.title }}</h1>
+        <div class="post-meta-row">
+          <span>Slug: <strong style="color: #63b3ed;">{{ post.slug }}</strong></span>
+          <span>Category: <strong style="color: #fff;">{{ post.category.name|default:"Uncategorized" }}</strong></span>
+          <span>Author: <strong style="color: #fff;">{{ post.author.username }}</strong></span>
+          <span>Published: <strong style="color: #fff;">{{ post.publish_date|date:"M d, Y"|default:"Not published" }}</strong></span>
+          <span>Status: 
+            {% if post.status == 'published' %}
+              <span style="background: #22543d; color: #9ae6b4; padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 11px;">Published</span>
+            {% else %}
+              <span style="background: #744210; color: #fbd38d; padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 11px;">Draft</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="https://gyanaangan.in/blog/{{ post.slug }}" target="_blank" rel="noopener noreferrer" class="button" style="background: #3182ce; color: #fff;">
+          Live Post ↗
+        </a>
+        <a href="{% url 'admin:blog_blogpost_change' post.pk %}" class="button">
+          Edit Post
+        </a>
+        <a href="{% url 'admin:blog_analytics' %}" class="button" style="background: #4a5568; color: #fff;">
+          ← Back to All Blogs
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">All-Time Page Views</div>
+      <div class="kpi-num" style="color: #68d391;">{{ total_views|default:"0" }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Unique Visitors (Devices)</div>
+      <div class="kpi-num" style="color: #63b3ed;">{{ unique_visitors|default:"0" }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Views (Last 24 Hours)</div>
+      <div class="kpi-num">{{ views_24h|default:"0" }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Views (Last 7 Days)</div>
+      <div class="kpi-num">{{ views_7d|default:"0" }}</div>
+    </div>
+  </div>
+
+  <!-- 14-Day View Timeline -->
+  <div class="chart-card" style="margin-bottom: 30px;">
+    <h3>📅 Daily Views Timeline (Last 14 Days)</h3>
+    <div class="timeline-bar-chart">
+      {% for day in daily_views %}
+        <div class="timeline-bar-col">
+          <div class="timeline-val">{{ day.count }}</div>
+          <div class="timeline-bar" style="height: {{ day.height_pct }}%;"></div>
+          <div class="timeline-label">{{ day.date }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Technical Breakdown (Browsers, OS, Devices) -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>🌐 Top Browsers</h3>
+      {% for b in browsers %}
+        <div style="margin-bottom: 12px;">
+          <div class="stat-row">
+            <span>{{ b.name }}</span>
+            <span style="font-weight: 700;">{{ b.count }} ({{ b.pct }}%)</span>
+          </div>
+          <div class="stat-track">
+            <div class="stat-fill" style="width: {{ b.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No browser details recorded yet.</p>
+      {% endfor %}
+    </div>
+
+    <div class="chart-card">
+      <h3>💻 Operating Systems</h3>
+      {% for o in os_list %}
+        <div style="margin-bottom: 12px;">
+          <div class="stat-row">
+            <span>{{ o.name }}</span>
+            <span style="font-weight: 700;">{{ o.count }} ({{ o.pct }}%)</span>
+          </div>
+          <div class="stat-track">
+            <div class="stat-fill" style="background: #48bb78; width: {{ o.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No OS details recorded yet.</p>
+      {% endfor %}
+    </div>
+
+    <div class="chart-card">
+      <h3>📱 Device Types</h3>
+      {% for d in devices %}
+        <div style="margin-bottom: 12px;">
+          <div class="stat-row">
+            <span style="text-transform: capitalize;">{{ d.name }}</span>
+            <span style="font-weight: 700;">{{ d.count }} ({{ d.pct }}%)</span>
+          </div>
+          <div class="stat-track">
+            <div class="stat-fill" style="background: #9f7aea; width: {{ d.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No device details recorded yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent Visitor Logs Table -->
+  <div class="table-card">
+    <h3 style="margin-top: 0; font-size: 16px; color: #fff; margin-bottom: 15px;">
+      🛡️ Recent Visitor Logs (Last {{ recent_logs|length }} Visits)
+    </h3>
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Visitor IP</th>
+          <th>Browser</th>
+          <th>OS</th>
+          <th>Device</th>
+          <th>User</th>
+          <th>User-Agent Header</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td style="white-space: nowrap; color: #a0aec0;">
+            {{ log.timestamp|date:"M d, Y H:i:s" }}
+          </td>
+          <td>
+            <span class="ip-tag">{{ log.ip_address }}</span>
+          </td>
+          <td style="color: #63b3ed; font-weight: 600;">
+            {{ log.browser }}
+          </td>
+          <td style="color: #68d391;">
+            {{ log.os }}
+          </td>
+          <td>
+            {{ log.device }}
+          </td>
+          <td>
+            <span style="color: #e2e8f0;">{{ log.user }}</span>
+          </td>
+          <td>
+            <div class="ua-snippet" title="{{ log.user_agent }}">
+              {{ log.user_agent }}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 30px; color: #718096;">
+            No visitor logs recorded for this blog post yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,504 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Blog Analytics & Performance | Gyan Aangan Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .analytics-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #2d3748;
+  }
+  .analytics-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0;
+    color: #f7fafc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .analytics-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #2d3748;
+    color: #e2e8f0;
+    transition: all 0.2s;
+  }
+  .filter-pill:hover {
+    background: #4a5568;
+    color: #fff;
+  }
+  .filter-pill.active {
+    background: #3182ce;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(49, 130, 206, 0.4);
+  }
+  .btn-sync {
+    background: #38a169;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-sync:hover {
+    background: #2f855a;
+    color: #fff;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .kpi-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .kpi-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #a0aec0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    margin: 12px 0 6px 0;
+  }
+  .kpi-subtitle {
+    font-size: 13px;
+    color: #718096;
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  .chart-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-card h3 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #edf2f7;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .stat-bar-row {
+    margin-bottom: 12px;
+  }
+  .stat-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #cbd5e0;
+    margin-bottom: 4px;
+  }
+  .stat-bar-track {
+    background: #2d3748;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .fill-blue { background: #4299e1; }
+  .fill-green { background: #48bb78; }
+  .fill-purple { background: #9f7aea; }
+  .fill-orange { background: #ed8936; }
+  .fill-pink { background: #ed64a6; }
+
+  .table-card {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  .table-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .search-box {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 13px;
+    width: 250px;
+  }
+  .analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  .analytics-table th {
+    background: #2d3748;
+    color: #a0aec0;
+    padding: 12px 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #4a5568;
+  }
+  .analytics-table td {
+    padding: 14px;
+    border-bottom: 1px solid #2d3748;
+    color: #e2e8f0;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  .analytics-table tr:hover td {
+    background: #242d3d;
+  }
+  .badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-published { background: #22543d; color: #9ae6b4; }
+  .badge-draft { background: #744210; color: #fbd38d; }
+  .rank-pill {
+    background: #4a5568;
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .rank-pill.top-3 {
+    background: #d69e2e;
+  }
+  .action-btn {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #3182ce;
+    color: #fff;
+    display: inline-block;
+  }
+  .action-btn:hover {
+    background: #2b6cb0;
+    color: #fff;
+  }
+  .ext-link {
+    color: #a0aec0;
+    margin-left: 6px;
+    font-size: 12px;
+  }
+  .ext-link:hover {
+    color: #63b3ed;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label='blog' %}">Blog</a>
+  &rsaquo; 📊 Blog Performance & Analytics
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+  
+  <!-- Header with Time Filters & Actions -->
+  <div class="analytics-header">
+    <div>
+      <h1 class="analytics-title">📊 Blog Traffic & Views Analytics</h1>
+      <p style="color: #a0aec0; margin: 5px 0 0 0; font-size: 14px;">
+        Real-time metrics, reader header details, device breakdown, and blog post engagement.
+      </p>
+    </div>
+    
+    <div class="analytics-actions">
+      <!-- Time Range Filters -->
+      <a href="?range=today{% if query %}&q={{ query }}{% endif %}" class="filter-pill {% if time_filter == 'today' %}active{% endif %}">Last 24 Hours</a>
+      <a href="?range=7d{% if query %}&q={{ query }}{% endif %}" class="filter-pill {% if time_filter == '7d' %}active{% endif %}">Last 7 Days</a>
+      <a href="?range=30d{% if query %}&q={{ query }}{% endif %}" class="filter-pill {% if time_filter == '30d' %}active{% endif %}">Last 30 Days</a>
+      <a href="?range=all{% if query %}&q={{ query }}{% endif %}" class="filter-pill {% if time_filter == 'all' %}active{% endif %}">All Time</a>
+
+      <!-- Sync Button -->
+      <form method="post" action="{% url 'admin:blog_analytics_sync' %}" style="display: inline; margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="btn-sync" title="Sync all historical Event views directly to BlogPost.view_count">
+          🔄 Sync Views
+        </button>
+      </form>
+
+      <a href="{% url 'admin:blog_blogpost_changelist' %}" class="button" style="padding: 7px 14px;">← Blog Posts</a>
+    </div>
+  </div>
+
+  <!-- KPI Top Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span>Total Blog Views</span>
+        <span>👁️</span>
+      </div>
+      <div class="kpi-value">{{ total_views|default:"0" }}</div>
+      <div class="kpi-subtitle">
+        {% if time_filter == 'all' %}Lifetime views recorded{% else %}In selected time range{% endif %}
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span>Unique Readers</span>
+        <span>👥</span>
+      </div>
+      <div class="kpi-value">{{ unique_visitors|default:"0" }}</div>
+      <div class="kpi-subtitle">Distinct visitor devices identified</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span>Views (Last 24 Hours)</span>
+        <span>⚡</span>
+      </div>
+      <div class="kpi-value" style="color: #68d391;">{{ views_24h|default:"0" }}</div>
+      <div class="kpi-subtitle">Activity today across all posts</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span>Views (Last 7 Days)</span>
+        <span>📈</span>
+      </div>
+      <div class="kpi-value" style="color: #63b3ed;">{{ views_7d|default:"0" }}</div>
+      <div class="kpi-subtitle">Total weekly reader engagement</div>
+    </div>
+  </div>
+
+  <!-- Charts & Audience Breakdown (Headers, Browsers, OS) -->
+  <div class="charts-grid">
+    <!-- Top Browsers -->
+    <div class="chart-card">
+      <h3>
+        <span>🌐 Top Browsers</span>
+        <span style="font-size: 12px; color: #a0aec0; font-weight: normal;">From client headers</span>
+      </h3>
+      {% for b in browsers %}
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">
+            <span>{{ b.name }}</span>
+            <span style="font-weight: 700;">{{ b.count }} ({{ b.pct }}%)</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill fill-blue" style="width: {{ b.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No browser data recorded in this range.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Top Operating Systems -->
+    <div class="chart-card">
+      <h3>
+        <span>💻 Operating Systems</span>
+        <span style="font-size: 12px; color: #a0aec0; font-weight: normal;">From client headers</span>
+      </h3>
+      {% for o in os_list %}
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">
+            <span>{{ o.name }}</span>
+            <span style="font-weight: 700;">{{ o.count }} ({{ o.pct }}%)</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill fill-green" style="width: {{ o.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No OS data recorded in this range.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Device Types -->
+    <div class="chart-card">
+      <h3>
+        <span>📱 Device Types</span>
+        <span style="font-size: 12px; color: #a0aec0; font-weight: normal;">Screen / Form factor</span>
+      </h3>
+      {% for d in devices %}
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">
+            <span style="text-transform: capitalize;">{{ d.name }}</span>
+            <span style="font-weight: 700;">{{ d.count }} ({{ d.pct }}%)</span>
+          </div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill fill-purple" style="width: {{ d.pct }}%;"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="color: #718096; font-size: 13px;">No device data recorded in this range.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Blog Posts Ranking Table -->
+  <div class="table-card">
+    <div class="table-header-row">
+      <h3 style="margin: 0; font-size: 18px; color: #fff;">
+        🏆 Blog Posts Ranked by Views ({{ blog_list|length }} Posts)
+      </h3>
+      
+      <form method="get" action="" style="display: flex; gap: 8px;">
+        {% if time_filter %}<input type="hidden" name="range" value="{{ time_filter }}" />{% endif %}
+        <input 
+          type="text" 
+          name="q" 
+          value="{{ query }}" 
+          placeholder="Filter by title or slug..." 
+          class="search-box"
+        />
+        <button type="submit" class="button" style="padding: 6px 12px;">Search</button>
+        {% if query %}
+          <a href="?range={{ time_filter }}" class="button cancel-link" style="padding: 6px 12px;">Clear</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <table class="analytics-table">
+      <thead>
+        <tr>
+          <th style="width: 50px;">Rank</th>
+          <th>Blog Post Title</th>
+          <th>Category</th>
+          <th>Author</th>
+          <th>Status</th>
+          <th style="text-align: right;">Period Views</th>
+          <th style="text-align: right;">All-Time Views</th>
+          <th style="text-align: right;">Unique Visitors</th>
+          <th style="text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in blog_list %}
+        <tr>
+          <td>
+            <span class="rank-pill {% if forloop.counter <= 3 %}top-3{% endif %}">
+              #{{ forloop.counter }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: #fff;">
+              <a href="{% url 'admin:blog_analytics_detail' item.post.slug %}" style="color: #63b3ed; text-decoration: none;">
+                {{ item.post.title }}
+              </a>
+              <a href="https://gyanaangan.in/blog/{{ item.post.slug }}" target="_blank" rel="noopener noreferrer" class="ext-link" title="Open live post on website">
+                ↗
+              </a>
+            </div>
+            <div style="font-size: 12px; color: #718096; margin-top: 2px;">
+              /blog/{{ item.post.slug }}
+            </div>
+          </td>
+          <td>
+            <span style="color: #cbd5e0; font-size: 13px;">
+              {{ item.post.category.name|default:"Uncategorized" }}
+            </span>
+          </td>
+          <td>
+            <span style="color: #a0aec0; font-size: 13px;">
+              {{ item.post.author.username }}
+            </span>
+          </td>
+          <td>
+            {% if item.post.status == 'published' %}
+              <span class="badge badge-published">Published</span>
+            {% else %}
+              <span class="badge badge-draft">Draft</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; font-weight: 700; color: #68d391; font-size: 15px;">
+            {{ item.views|default:"0" }}
+          </td>
+          <td style="text-align: right; font-weight: 600; color: #e2e8f0;">
+            {{ item.all_time_views|default:"0" }}
+          </td>
+          <td style="text-align: right; color: #cbd5e0;">
+            {{ item.visitors|default:"0" }}
+          </td>
+          <td style="text-align: center; white-space: nowrap;">
+            <a href="{% url 'admin:blog_analytics_detail' item.post.slug %}" class="action-btn">
+              📈 View Metrics
+            </a>
+            <a href="{% url 'admin:blog_blogpost_change' item.post.pk %}" class="button" style="padding: 4px 8px; font-size: 12px; margin-left: 4px;">
+              Edit
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 40px; color: #a0aec0;">
+            No blog posts found matching your search.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
