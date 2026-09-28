@@ -358,4 +358,17 @@ REVALIDATE_SECRET_TOKEN = os.getenv("REVALIDATE_SECRET_TOKEN", "")
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
 
+# Analytics Background Synchronization (Every 12 Hours)
+ANALYTICS_SYNC_INTERVAL_HOURS = 12
+
+# Celery Configuration
+CELERY_TIMEZONE = "Asia/Kolkata"
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "")
+CELERY_BEAT_SCHEDULE = {
+    "sync-tracking-analytics-every-12h": {
+        "task": "tracking.tasks.sync_analytics_task",
+        "schedule": timedelta(hours=ANALYTICS_SYNC_INTERVAL_HOURS),
+    },
+}
+
 

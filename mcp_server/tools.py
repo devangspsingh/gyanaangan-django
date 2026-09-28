@@ -277,19 +277,22 @@ def register_tools(server: MCPServer):
 
     @server.tool()
     async def get_blog_views(
-        slug: Optional[str] = Field(default=None, description="Optional blog post slug or ID. If provided, returns view counts for that specific post. If omitted, returns ranked top-performing blog posts by view count."),
+        slug: Optional[str] = Field(default=None, description="Optional blog post slug or ID. If provided, returns view counts and live 6h, 24h, 7d breakdown for that post. If omitted, returns ranked top posts."),
+        time_window: str = Field(default="all", description="Time window for ranking top posts ('all', '6h', '24h', '7d'). Default is 'all'."),
         limit: int = Field(default=15, description="Number of top blog posts to return when slug is not provided (1-50, default 15).")
     ) -> Dict[str, Any]:
         """Retrieve view metrics and reader statistics for GyanAangan blog posts.
 
-        Allows the AI agent to inspect blog performance, check individual post view counts,
-        and find the most popular articles on the platform.
+        Allows the AI agent to inspect live and historical blog performance, check individual post 6h/24h/7d counts,
+        and find trending articles on the platform.
         """
-        return await sync_to_async(analytics_operations.get_blog_views_analytics)(slug=slug, limit=limit)
+        return await sync_to_async(analytics_operations.get_blog_views_analytics)(
+            slug=slug, time_window=time_window, limit=limit
+        )
 
     @server.tool()
     async def get_resource_views(
-        slug: Optional[str] = Field(default=None, description="Optional resource slug or ID. If provided, returns views, downloads, and engagement for that resource. If omitted, returns top resources."),
+        slug: Optional[str] = Field(default=None, description="Optional resource slug or ID. If provided, returns views, downloads, and 6h/24h/7d breakdown for that resource. If omitted, returns top resources."),
         resource_type: Optional[str] = Field(default=None, description="Optional filter by resource type (e.g. 'notes', 'pyq', 'lab manual', 'pdf')."),
         limit: int = Field(default=15, description="Number of top resources to return when slug is omitted (1-50, default 15).")
     ) -> Dict[str, Any]:
@@ -300,3 +303,4 @@ def register_tools(server: MCPServer):
         return await sync_to_async(analytics_operations.get_resource_views_analytics)(
             slug=slug, resource_type=resource_type, limit=limit
         )
+
