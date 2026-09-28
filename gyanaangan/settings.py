@@ -217,6 +217,9 @@ if not DEBUG:
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
+AWS_QUERYSTRING_EXPIRE = 86400 * 7  # 7 days (maximum allowed for presigned S3 URLs)
+
+
 class PublicMediaStorage(S3Boto3Storage):
     location = "public"
     default_acl = "public-read"
@@ -229,6 +232,7 @@ class PrivateMediaStorage(S3Boto3Storage):
     default_acl = "private"
     file_overwrite = True
     querystring_auth = True
+    querystring_expire = AWS_QUERYSTRING_EXPIRE
 
 
 # Set the default file storage to private
@@ -336,6 +340,7 @@ OAUTH2_PROVIDER = {
     },
     "DEFAULT_SCOPES": ["read", "write"],
     "ACCESS_TOKEN_EXPIRE_SECONDS": 86400 * 180,  # 6 Months (180 days)
+    "OAUTH2_VALIDATOR_CLASS": "mcp_server.oauth_validator.AIConnectOAuth2Validator",
 }
 
 
