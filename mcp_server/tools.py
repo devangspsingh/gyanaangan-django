@@ -2,7 +2,7 @@ from typing import Optional, List, Dict, Any
 from pydantic import Field
 from asgiref.sync import sync_to_async
 from mcp.server.mcpserver import MCPServer
-from . import blog_operations
+from . import blog_operations, analytics_operations
 
 def register_tools(server: MCPServer):
     """Register all blog management tools on the MCPServer instance."""
@@ -274,3 +274,29 @@ def register_tools(server: MCPServer):
             Overview statistics for rapid scanning and status assessment.
         """
         return await sync_to_async(blog_operations.get_blog_stats)()
+
+    @server.tool()
+    async def get_blog_views(
+        slug: Optional[str] = Field(default=None, description="Optional blog post slug or ID. If provided, returns view counts for that specific post. If omitted, returns ranked top-performing blog posts by view count."),
+        limit: int = Field(default=15, description="Number of top blog posts to return when slug is not provided (1-50, default 15).")
+    ) -> Dict[str, Any]:
+        """Retrieve view metrics and reader statistics for GyanAangan blog posts.
+
+        Allows the AI agent to inspect blog performance, check individual post view counts,
+        and find the most popular articles on the platform.
+        """
+        return await sync_to_async(analytics_operations.get_blog_views_analytics)(slug=slug, limit=limit)
+
+    @server.tool()
+    async def get_resource_views(
+        slug: Optional[str] = Field(default=None, description="Optional resource slug or ID. If provided, returns views, downloads, and engagement for that resource. If omitted, returns top resources."),
+        resource_type: Optional[str] = Field(default=None, description="Optional filter by resource type (e.g. 'notes', 'pyq', 'lab manual', 'pdf')."),
+        limit: int = Field(default=15, description="Number of top resources to return when slug is omitted (1-50, default 15).")
+    ) -> Dict[str, Any]:
+        """Retrieve view, download, and student engagement metrics for educational resources on GyanAangan.
+
+        Allows the AI agent to analyze which notes, question papers, and study materials are most downloaded and viewed.
+        """
+        return await sync_to_async(analytics_operations.get_resource_views_analytics)(
+            slug=slug, resource_type=resource_type, limit=limit
+        )
