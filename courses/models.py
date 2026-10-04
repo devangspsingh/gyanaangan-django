@@ -177,16 +177,14 @@ class Subject(SEOModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        super(Subject, self).save(*args, **kwargs)
-        self.update_last_resource_updated()
-
-        super(Subject, self).save(*args, **kwargs)
         if self.pk:
+            self.update_last_resource_updated()
             self.search_vector = (
                 SearchVector('name', weight='A') + 
                 SearchVector('description', weight='B') +
                 SearchVector('meta_description', weight='C')
             )
+        super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
