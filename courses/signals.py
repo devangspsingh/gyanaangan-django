@@ -129,8 +129,12 @@ def on_resource_changed(sender, instance, **kwargs):
         paths.append(f"/resources/{instance.slug}")
     if instance.subject and instance.subject.slug:
         paths.append(f"/subjects/{instance.subject.slug}")
-        if instance.subject.course and instance.subject.course.slug:
-            paths.append(f"/{instance.subject.course.slug}")
+        try:
+            for course_slug in Course.objects.filter(streams__subjects=instance.subject).values_list("slug", flat=True).distinct():
+                if course_slug:
+                    paths.append(f"/{course_slug}")
+        except Exception as e:
+            logger.warning("Could not resolve course slugs for resource revalidation: %s", e)
     trigger_paths_revalidation(paths)
 
 
@@ -140,8 +144,12 @@ def on_subject_changed(sender, instance, **kwargs):
     paths = ["/", "/subjects"]
     if instance.slug:
         paths.append(f"/subjects/{instance.slug}")
-    if instance.course and instance.course.slug:
-        paths.append(f"/{instance.course.slug}")
+    try:
+        for course_slug in Course.objects.filter(streams__subjects=instance).values_list("slug", flat=True).distinct():
+            if course_slug:
+                paths.append(f"/{course_slug}")
+    except Exception as e:
+        logger.warning("Could not resolve course slugs for subject revalidation: %s", e)
     trigger_paths_revalidation(paths)
 
 
