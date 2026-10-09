@@ -363,12 +363,25 @@ ANALYTICS_SYNC_INTERVAL_HOURS = 12
 
 # Celery Configuration
 CELERY_TIMEZONE = "Asia/Kolkata"
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_BEAT_SCHEDULE = {
     "sync-tracking-analytics-every-12h": {
         "task": "tracking.tasks.sync_analytics_task",
         "schedule": timedelta(hours=ANALYTICS_SYNC_INTERVAL_HOURS),
     },
 }
+
+
+REDIS_CACHE_URL = os.getenv("REDIS_CACHE_URL")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_CACHE_URL,
+        "KEY_PREFIX": "gyanaangan",
+        "TIMEOUT": 1800,  # 30 minutes default cache timeout
+    }
+}
+
 
 

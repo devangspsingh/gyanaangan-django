@@ -52,6 +52,8 @@ from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimil
 from django.db.models import Q, F, Count
 from django.db.models.functions import Greatest
 from rest_framework.pagination import PageNumberPagination
+from .cache_utils import UnauthenticatedCacheMixin, get_cache_version
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)  # Initialize logger for this module
 
@@ -62,7 +64,8 @@ class StandardResultsSetPagination(PageNumberPagination):
     # max_page_size = 0
 
 
-class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+class CourseViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "courses"
     queryset = Course.published.all().order_by('-updated_at', 'name')  # Ensure ordering
     serializer_class = CourseSerializer
     lookup_field = "slug"
@@ -72,7 +75,8 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         return {'request': self.request}
 
 
-class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
+class SubjectViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "subjects"
     queryset = Subject.published.all()  # Will use model's default ordering
     serializer_class = SubjectSerializer
     lookup_field = "slug"
@@ -141,7 +145,8 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
+class ResourceViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "resources"
     permission_classes = [IsVisitorAllowed]
     # serializer_class = ResourceSimpleSerializer
     lookup_field = "slug"
@@ -240,7 +245,8 @@ class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({"error": "Could not serve the file for download."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class StreamViewSet(viewsets.ReadOnlyModelViewSet):
+class StreamViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "streams"
     queryset = Stream.published.all()
     serializer_class = StreamSerializer
     lookup_field = "slug"
@@ -249,7 +255,8 @@ class StreamViewSet(viewsets.ReadOnlyModelViewSet):
         return {'request': self.request}
 
 
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+class NotificationViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "notifications"
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
@@ -297,8 +304,9 @@ class SavedResourceViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SpecialPageListViewSet(
-    viewsets.ReadOnlyModelViewSet
+    UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet
 ):  # For listing special pages if needed
+    cache_prefix = "special_pages"
     queryset = SpecialPage.published.all()
     serializer_class = SpecialPageSerializer
     # Add filtering if necessary, e.g., by course
@@ -314,6 +322,17 @@ class SpecialPageDetailView(APIView):
         return {'request': self.request}
 
     def get(self, request, course_slug, stream_slug, year_slug, *args, **kwargs):
+        is_anon = not (request.user and request.user.is_authenticated)
+        cache_key = f"special_pages:detail:{course_slug}:{stream_slug}:{year_slug}"
+        version = get_cache_version("special_pages")
+        if is_anon:
+            try:
+                cached_data = cache.get(cache_key, version=version)
+                if cached_data is not None:
+                    return Response(cached_data)
+            except Exception as e:
+                logger.warning("Cache get error for special page %s: %s", cache_key, e)
+
         try:
             course_obj = get_object_or_404(Course.published, slug=course_slug)
             stream_obj = get_object_or_404(Stream.published, slug=stream_slug)
@@ -343,6 +362,11 @@ class SpecialPageDetailView(APIView):
             context['related_subjects'] = related_subjects # Pass subjects to serializer context
 
             serializer = SpecialPageSerializer(special_page, context=context)
+            if is_anon:
+                try:
+                    cache.set(cache_key, serializer.data, timeout=1800, version=version)
+                except Exception as e:
+                    logger.warning("Cache set error for special page %s: %s", cache_key, e)
             return Response(serializer.data)
         except Course.DoesNotExist:
             return Response({"error": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -666,7 +690,8 @@ class GlobalSearchAPIView(APIView):
             "resources": resource_serializer.data,
         })  
 
-class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
+class BlogPostViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "blog"
     queryset = BlogPost.published.all()
     lookup_field = "slug"
     pagination_class = StandardResultsSetPagination
@@ -713,7 +738,8 @@ class BlogPostViewSet(viewsets.ReadOnlyModelViewSet):
             return BlogPostSerializer
         return BlogPostSimpleSerializer
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
+    cache_prefix = "categories"
     serializer_class = CategorySerializer
     lookup_field = "slug"
 
@@ -724,11 +750,12 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         ).filter(post_count__gt=0).order_by('-post_count', 'name')
 
 
-class BannerViewSet(viewsets.ReadOnlyModelViewSet):
+class BannerViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for retrieving active banners.
     Provides list of all active banners and detail view for individual banners.
     """
+    cache_prefix = "banners"
     queryset = Banner.active.all()
     serializer_class = BannerSerializer
     pagination_class = None  # No pagination for banners

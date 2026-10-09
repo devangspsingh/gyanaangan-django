@@ -5,7 +5,8 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import BlogPost
+from .models import BlogPost, Category
+from api.cache_utils import bump_cache_version
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +114,9 @@ def trigger_blog_revalidation(slug):
 @receiver(post_save, sender=BlogPost)
 def on_blog_post_saved(sender, instance, created, **kwargs):
     """
-    Trigger Next.js ISR cache invalidation and Cloudflare edge purge when a blog post is saved.
+    Trigger Next.js ISR cache invalidation, Cloudflare edge purge, and Redis cache invalidation when a blog post is saved.
     """
+    bump_cache_version("blog")
     if instance.slug:
         trigger_blog_revalidation(instance.slug)
 
@@ -122,7 +124,16 @@ def on_blog_post_saved(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=BlogPost)
 def on_blog_post_deleted(sender, instance, **kwargs):
     """
-    Trigger Next.js ISR cache invalidation and Cloudflare edge purge when a blog post is deleted.
+    Trigger Next.js ISR cache invalidation, Cloudflare edge purge, and Redis cache invalidation when a blog post is deleted.
     """
+    bump_cache_version("blog")
     if instance.slug:
         trigger_blog_revalidation(instance.slug)
+
+
+@receiver(post_save, sender=Category)
+@receiver(post_delete, sender=Category)
+def on_category_changed(sender, instance, **kwargs):
+    bump_cache_version("categories")
+    bump_cache_version("blog")
+

@@ -5,8 +5,9 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Resource, Subject, Course, Notification
+from .models import Resource, Subject, Course, Notification, Stream, SpecialPage
 from core.models import Banner
+from api.cache_utils import bump_cache_version
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,7 @@ def update_subject_last_resource_updated(sender, instance, **kwargs):
 @receiver(post_save, sender=Resource)
 @receiver(post_delete, sender=Resource)
 def on_resource_changed(sender, instance, **kwargs):
+    bump_cache_version("resources")
     paths = ["/", "/resources"]
     if instance.slug:
         paths.append(f"/resources/{instance.slug}")
@@ -141,6 +143,7 @@ def on_resource_changed(sender, instance, **kwargs):
 @receiver(post_save, sender=Subject)
 @receiver(post_delete, sender=Subject)
 def on_subject_changed(sender, instance, **kwargs):
+    bump_cache_version("subjects")
     paths = ["/", "/subjects"]
     if instance.slug:
         paths.append(f"/subjects/{instance.slug}")
@@ -156,19 +159,36 @@ def on_subject_changed(sender, instance, **kwargs):
 @receiver(post_save, sender=Course)
 @receiver(post_delete, sender=Course)
 def on_course_changed(sender, instance, **kwargs):
+    bump_cache_version("courses")
     paths = ["/", "/courses"]
     if instance.slug:
         paths.append(f"/{instance.slug}")
     trigger_paths_revalidation(paths)
 
 
+@receiver(post_save, sender=Stream)
+@receiver(post_delete, sender=Stream)
+def on_stream_changed(sender, instance, **kwargs):
+    bump_cache_version("streams")
+    bump_cache_version("courses")
+
+
+@receiver(post_save, sender=SpecialPage)
+@receiver(post_delete, sender=SpecialPage)
+def on_special_page_changed(sender, instance, **kwargs):
+    bump_cache_version("special_pages")
+
+
 @receiver(post_save, sender=Notification)
 @receiver(post_delete, sender=Notification)
 def on_notification_changed(sender, instance, **kwargs):
+    bump_cache_version("notifications")
     trigger_paths_revalidation(["/"])
 
 
 @receiver(post_save, sender=Banner)
 @receiver(post_delete, sender=Banner)
 def on_banner_changed(sender, instance, **kwargs):
+    bump_cache_version("banners")
     trigger_paths_revalidation(["/"])
+
