@@ -20,6 +20,11 @@ from .views import (
     CategoryManagementViewSet,  # Import CategoryManagementViewSet
     StudentProfileViewSet,  # Import StudentProfileViewSet
     SubscriptionViewSet,  # Import SubscriptionViewSet
+    SitemapBlogsView,
+    SitemapResourcesView,
+    SitemapSubjectsView,
+    SitemapCoursesView,
+    SitemapAllView,
 )
 from .admin_views import (
     AdminResourceViewSet,
@@ -83,4 +88,10 @@ urlpatterns = [
     path("ai/generate-paper/", GenerateQuestionPaperView.as_view(), name="ai-generate-paper"),
     path("ai/quick-answer/", QuickAnswerView.as_view(), name="ai-quick-answer"),
     path("ai/generate-content/", AIGenerateContentView.as_view(), name="ai-generate-content"),
+    # Lightweight SEO Sitemap Feeds
+    path("sitemap/blogs/", SitemapBlogsView.as_view(), name="sitemap_blogs"),
+    path("sitemap/resources/", SitemapResourcesView.as_view(), name="sitemap_resources"),
+    path("sitemap/subjects/", SitemapSubjectsView.as_view(), name="sitemap_subjects"),
+    path("sitemap/courses/", SitemapCoursesView.as_view(), name="sitemap_courses"),
+    path("sitemap/all/", SitemapAllView.as_view(), name="sitemap_all"),
 ]

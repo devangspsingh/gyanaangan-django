@@ -60,8 +60,8 @@ logger = logging.getLogger(__name__)  # Initialize logger for this module
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 9
-    # page_size_query_param = "page_size"
-    # max_page_size = 0
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class CourseViewSet(UnauthenticatedCacheMixin, viewsets.ReadOnlyModelViewSet):
@@ -1209,3 +1209,13 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 'message': 'Successfully subscribed',
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
+
+
+# Re-export SEO sitemap views
+from .sitemap_views import (
+    SitemapBlogsView,
+    SitemapResourcesView,
+    SitemapSubjectsView,
+    SitemapCoursesView,
+    SitemapAllView,
+)
