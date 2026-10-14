@@ -7,6 +7,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .models import BlogPost, Category
 from api.cache_utils import bump_cache_version
+from api.sitemap_views import invalidate_sitemap_cache
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,13 @@ def _send_frontend_revalidation(slug):
         "secret": secret_token,
         "slug": slug,
         "path": f"/blog/{slug}",
+        "paths": [
+            f"/blog/{slug}",
+            "/blog",
+            "/sitemap-blogs.xml",
+            "/sitemap.xml",
+            "/sitemap-all.xml",
+        ],
     }
 
     try:
@@ -47,7 +55,7 @@ def _send_frontend_revalidation(slug):
 
 def _purge_cloudflare_cache(slug):
     """
-    Purges Cloudflare Edge Cache for the specific blog post and the blog index.
+    Purges Cloudflare Edge Cache for the specific blog post, blog index, and sitemaps.
     """
     zone_id = getattr(settings, "CLOUDFLARE_ZONE_ID", None)
     api_token = getattr(settings, "CLOUDFLARE_API_TOKEN", None)
@@ -66,6 +74,9 @@ def _purge_cloudflare_cache(slug):
     files = [
         f"https://gyanaangan.in/blog/{slug}",
         "https://gyanaangan.in/blog",
+        "https://gyanaangan.in/sitemap-blogs.xml",
+        "https://gyanaangan.in/sitemap.xml",
+        "https://gyanaangan.in/sitemap-all.xml",
     ]
     payload = {"files": files}
 
@@ -117,6 +128,7 @@ def on_blog_post_saved(sender, instance, created, **kwargs):
     Trigger Next.js ISR cache invalidation, Cloudflare edge purge, and Redis cache invalidation when a blog post is saved.
     """
     bump_cache_version("blog")
+    invalidate_sitemap_cache("blogs")
     if instance.slug:
         trigger_blog_revalidation(instance.slug)
 
@@ -127,6 +139,7 @@ def on_blog_post_deleted(sender, instance, **kwargs):
     Trigger Next.js ISR cache invalidation, Cloudflare edge purge, and Redis cache invalidation when a blog post is deleted.
     """
     bump_cache_version("blog")
+    invalidate_sitemap_cache("blogs")
     if instance.slug:
         trigger_blog_revalidation(instance.slug)
 
@@ -136,4 +149,5 @@ def on_blog_post_deleted(sender, instance, **kwargs):
 def on_category_changed(sender, instance, **kwargs):
     bump_cache_version("categories")
     bump_cache_version("blog")
+    invalidate_sitemap_cache("blogs")
 

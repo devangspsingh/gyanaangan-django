@@ -12,6 +12,23 @@ logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 1800  # 30 minutes
 
 
+def invalidate_sitemap_cache(section=None):
+    """
+    Clears cached sitemap data in Django cache.
+    """
+    try:
+        if section:
+            cache.delete(f"sitemap:{section}")
+        else:
+            cache.delete("sitemap:blogs")
+            cache.delete("sitemap:resources")
+            cache.delete("sitemap:subjects")
+            cache.delete("sitemap:courses")
+        cache.delete("sitemap:all")
+    except Exception as e:
+        logger.warning("Could not invalidate sitemap cache: %s", e)
+
+
 class SitemapBlogsView(APIView):
     """
     Ultra-lightweight endpoint returning only slug, updated_at, and publish_date
@@ -171,11 +188,22 @@ class SitemapAllView(APIView):
                     "streams": streams_data,
                 })
 
+            latest_blogs = blogs[0]["updated_at"] if blogs else None
+            latest_resources = resources[0]["updated_at"] if resources else None
+            latest_subjects = subjects[0]["updated_at"] if subjects else None
+            latest_courses = courses[0]["updated_at"] if courses else None
+
             payload = {
                 "blogs": blogs,
                 "resources": resources,
                 "subjects": subjects,
                 "courses": courses,
+                "latest_updates": {
+                    "blogs": latest_blogs,
+                    "resources": latest_resources,
+                    "subjects": latest_subjects,
+                    "courses": latest_courses,
+                },
                 "counts": {
                     "blogs": len(blogs),
                     "resources": len(resources),

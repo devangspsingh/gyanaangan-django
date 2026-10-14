@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from .models import Resource, Subject, Course, Notification, Stream, SpecialPage
 from core.models import Banner
 from api.cache_utils import bump_cache_version
+from api.sitemap_views import invalidate_sitemap_cache
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,14 @@ def update_subject_last_resource_updated(sender, instance, **kwargs):
 @receiver(post_delete, sender=Resource)
 def on_resource_changed(sender, instance, **kwargs):
     bump_cache_version("resources")
-    paths = ["/", "/resources"]
+    invalidate_sitemap_cache("resources")
+    paths = [
+        "/",
+        "/resources",
+        "/sitemap-resources.xml",
+        "/sitemap.xml",
+        "/sitemap-all.xml",
+    ]
     if instance.slug:
         paths.append(f"/resources/{instance.slug}")
     if instance.subject and instance.subject.slug:
@@ -144,7 +152,14 @@ def on_resource_changed(sender, instance, **kwargs):
 @receiver(post_delete, sender=Subject)
 def on_subject_changed(sender, instance, **kwargs):
     bump_cache_version("subjects")
-    paths = ["/", "/subjects"]
+    invalidate_sitemap_cache("subjects")
+    paths = [
+        "/",
+        "/subjects",
+        "/sitemap-subjects.xml",
+        "/sitemap.xml",
+        "/sitemap-all.xml",
+    ]
     if instance.slug:
         paths.append(f"/subjects/{instance.slug}")
     try:
@@ -160,7 +175,14 @@ def on_subject_changed(sender, instance, **kwargs):
 @receiver(post_delete, sender=Course)
 def on_course_changed(sender, instance, **kwargs):
     bump_cache_version("courses")
-    paths = ["/", "/courses"]
+    invalidate_sitemap_cache("courses")
+    paths = [
+        "/",
+        "/courses",
+        "/sitemap-courses.xml",
+        "/sitemap.xml",
+        "/sitemap-all.xml",
+    ]
     if instance.slug:
         paths.append(f"/{instance.slug}")
     trigger_paths_revalidation(paths)
@@ -171,6 +193,15 @@ def on_course_changed(sender, instance, **kwargs):
 def on_stream_changed(sender, instance, **kwargs):
     bump_cache_version("streams")
     bump_cache_version("courses")
+    invalidate_sitemap_cache("courses")
+    paths = [
+        "/",
+        "/courses",
+        "/sitemap-courses.xml",
+        "/sitemap.xml",
+        "/sitemap-all.xml",
+    ]
+    trigger_paths_revalidation(paths)
 
 
 @receiver(post_save, sender=SpecialPage)
