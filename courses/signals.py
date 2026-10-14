@@ -123,6 +123,31 @@ def update_subject_last_resource_updated(sender, instance, **kwargs):
             logger.warning("Could not update subject last_resource_updated_at: %s", e)
 
 
+def _get_special_page_paths_for_subject(subject, resource_slug=None):
+    """
+    Finds and returns paths for all SpecialPage entries associated with the given subject.
+    """
+    paths = []
+    if not subject:
+        return paths
+    try:
+        special_pages = SpecialPage.objects.filter(
+            course__streams__subjects=subject,
+            stream__subjects=subject,
+            year__subjects=subject,
+        ).select_related("course", "stream", "year").distinct()
+        for sp in special_pages:
+            if sp.course and sp.stream and sp.year:
+                c, s, y = sp.course.slug, sp.stream.slug, sp.year.slug
+                paths.append(f"/{c}/{s}/{y}")
+                paths.append(f"/{c}/{s}/{y}/{subject.slug}")
+                if resource_slug:
+                    paths.append(f"/{c}/{s}/{y}/{subject.slug}/{resource_slug}")
+    except Exception as e:
+        logger.warning("Could not resolve special pages for subject %s: %s", getattr(subject, "slug", ""), e)
+    return paths
+
+
 @receiver(post_save, sender=Resource)
 @receiver(post_delete, sender=Resource)
 def on_resource_changed(sender, instance, **kwargs):
@@ -139,6 +164,7 @@ def on_resource_changed(sender, instance, **kwargs):
         paths.append(f"/resources/{instance.slug}")
     if instance.subject and instance.subject.slug:
         paths.append(f"/subjects/{instance.subject.slug}")
+        paths.extend(_get_special_page_paths_for_subject(instance.subject, instance.slug))
         try:
             for course_slug in Course.objects.filter(streams__subjects=instance.subject).values_list("slug", flat=True).distinct():
                 if course_slug:
@@ -162,6 +188,7 @@ def on_subject_changed(sender, instance, **kwargs):
     ]
     if instance.slug:
         paths.append(f"/subjects/{instance.slug}")
+        paths.extend(_get_special_page_paths_for_subject(instance))
     try:
         for course_slug in Course.objects.filter(streams__subjects=instance).values_list("slug", flat=True).distinct():
             if course_slug:
@@ -208,6 +235,15 @@ def on_stream_changed(sender, instance, **kwargs):
 @receiver(post_delete, sender=SpecialPage)
 def on_special_page_changed(sender, instance, **kwargs):
     bump_cache_version("special_pages")
+    paths = ["/"]
+    if instance.course and instance.stream and instance.year:
+        c = instance.course.slug
+        s = instance.stream.slug
+        y = instance.year.slug
+        paths.append(f"/{c}/{s}/{y}")
+        paths.append(f"/{c}/{s}")
+        paths.append(f"/{c}")
+    trigger_paths_revalidation(paths)
 
 
 @receiver(post_save, sender=Notification)
