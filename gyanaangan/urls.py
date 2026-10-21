@@ -16,6 +16,8 @@ from mcp_server.views import (
 urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
+        path("o/authorize/", AutoApproveAuthorizationView.as_view(), name="authorize"),
+        path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path("results/", include("results.urls")),
         path("api/", include("api.urls")),
         path("blog/", include("blog.urls")),
@@ -37,8 +39,6 @@ urlpatterns = (
         path("api/sse/", mcp_http_view),
 
         # Google Gemini, ChatGPT & Claude OAuth 2.0 Endpoints
-        path("o/authorize/", AutoApproveAuthorizationView.as_view(), name="authorize"),
-        path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path("authorize/", AutoApproveAuthorizationView.as_view()),
         path("authorize", AutoApproveAuthorizationView.as_view()),
         path("token/", oauth2_views.TokenView.as_view()),
