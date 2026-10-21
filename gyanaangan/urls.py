@@ -17,6 +17,7 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls, name="admin"),
         path("o/authorize/", AutoApproveAuthorizationView.as_view(), name="authorize"),
+        path("o/authorize", AutoApproveAuthorizationView.as_view()),
         path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
         path("results/", include("results.urls")),
         path("api/", include("api.urls")),
@@ -24,7 +25,6 @@ urlpatterns = (
         path("accounts/", include("accounts.urls")),
         path("core/", include("core.urls")),
         path("ads.txt", RedirectView.as_view(url=STATIC("ads.txt"), permanent=True)),
-        path("", include("courses.urls")),
         path("ckeditor/", include("ckeditor_uploader.urls")),
         path("__reload__/", include("django_browser_reload.urls")),
 
@@ -48,8 +48,11 @@ urlpatterns = (
         path("api/token/", oauth2_views.TokenView.as_view()),
         path("api/token", oauth2_views.TokenView.as_view()),
         path("api/o/authorize/", AutoApproveAuthorizationView.as_view()),
+        path("api/o/authorize", AutoApproveAuthorizationView.as_view()),
         path("api/o/token/", oauth2_views.TokenView.as_view()),
+        path("api/o/token", oauth2_views.TokenView.as_view()),
         path("api/o/revoke_token/", oauth2_views.RevokeTokenView.as_view()),
+        path("api/o/revoke_token", oauth2_views.RevokeTokenView.as_view()),
 
         # RFC 8414 & RFC 9449 Discovery Endpoints
         path(".well-known/oauth-authorization-server", oauth_authorization_server_discovery),
@@ -58,6 +61,9 @@ urlpatterns = (
         path("api/.well-known/oauth-authorization-server", oauth_authorization_server_discovery),
         path("api/.well-known/oauth-protected-resource/mcp", oauth_protected_resource_metadata),
         path("api/.well-known/oauth-protected-resource", oauth_protected_resource_metadata),
+
+        # Catch-all frontend course & stream redirects (must remain last)
+        path("", include("courses.urls")),
     ]
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
