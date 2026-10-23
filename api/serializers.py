@@ -338,10 +338,11 @@ class ResourceUploaderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'name', 'profile_pic', 'branch', 'year']
+        fields = ['id', 'name', 'profile_pic', 'branch', 'year']
         
     def get_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+        full_name = f"{obj.first_name} {obj.last_name}".strip()
+        return full_name or "Contributor"
         
     def get_profile_pic(self, obj):
         try:
