@@ -711,7 +711,8 @@ class BlogPostSerializer(TaggitSerializer, serializers.ModelSerializer):
         read_only_fields = ['author', 'slug', 'reading_time', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
-        return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
+        full_name = f"{obj.author.first_name} {obj.author.last_name}".strip()
+        return full_name or "Gyan Aangan"
     
     # def get_author_username(self, obj):
     #     return obj.author.username
@@ -781,7 +782,8 @@ class BlogPostSimpleSerializer(TaggitSerializer, serializers.ModelSerializer):
         read_only_fields = ['author', 'slug', 'reading_time', 'created_at', 'updated_at']
     
     def get_author_name(self, obj):
-        return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
+        full_name = f"{obj.author.first_name} {obj.author.last_name}".strip()
+        return full_name or "Gyan Aangan"
     
     # def get_author_username(self, obj):
     #     return obj.author.username
