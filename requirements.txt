@@ -68,7 +68,7 @@ openpyxl==3.1.5
 packaging==24.1
 pandas==2.3.1
 pathspec==0.12.1
-pillow==10.4.0
+pillow==13.0.0
 prompt_toolkit==3.0.47
 psycopg2==2.9.9
 pycairo==1.26.1
